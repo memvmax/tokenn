@@ -2,7 +2,11 @@
   <div class="app-container">
     <div class="main-content">
       <main>
-        <TotalAsset :assets="assets" :t="t" :format-currency="formatCurrency" />
+        <TotalAsset 
+          :assets="assets" 
+          :t="t" 
+          :format-currency="formatCurrency"
+        />
 
         <WarningAlert :total-ideal-percentage="totalIdealPercentage" :t="t" />
 
@@ -20,15 +24,27 @@
           />
         </div>
 
-        <div class="chart-section">
-          <div class="section-header">
-            <h3 class="section-title">
-              <i class="fas fa-chart-pie"></i>
-              {{ t('assetDistribution') }}
-            </h3>
+        <div class="detail-section" v-if="selectedAssetId && selectedAssetId !== 'overview'">
+          <CashDetail 
+            v-if="selectedAssetId === 'cash'"
+            :t="t"
+            :format-amount="formatAmount"
+            @update:total="updateCashTotal"
+            @transfer="handleTransfer"
+          />
+          <GoldDetail 
+            v-else-if="selectedAssetId === 'gold'"
+            :t="t"
+            :format-currency="formatCurrency"
+            @update:total="updateGoldTotal"
+          />
+          <div v-else class="detail-placeholder">
+            <i class="fas fa-tools"></i>
+            <p>{{ t('detailComingSoon') }}</p>
           </div>
-          <div ref="chartRef" class="chart-container"></div>
         </div>
+
+        <NewsFeed :t="t" />
       </main>
 
       <footer class="app-footer">
@@ -39,17 +55,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
-import * as echarts from 'echarts';
+import { ref, computed, onMounted } from 'vue';
 import TotalAsset from './components/TotalAsset.vue';
 import AssetCard from './components/AssetCard.vue';
 import WarningAlert from './components/WarningAlert.vue';
+import CashDetail from './components/CashDetail.vue';
+import GoldDetail from './components/GoldDetail.vue';
+import NewsFeed from './components/NewsFeed.vue';
 import { useLocale } from './composables/useLocale';
 
-const { t, currentLocale, initLocale, formatAmount, formatCurrency } = useLocale();
-
-const chartRef = ref(null);
-let chart = null;
+const { t, initLocale, formatAmount, formatCurrency } = useLocale();
 
 const selectedAssetId = ref(null);
 
@@ -60,7 +75,7 @@ const assets = ref([
     amount: 10000,
     idealPercentage: 20,
     icon: 'fa-wallet',
-    color: '#9ca3af'
+    color: '#67e8f9'
   },
   {
     id: 'stock',
@@ -68,7 +83,7 @@ const assets = ref([
     amount: 20000,
     idealPercentage: 30,
     icon: 'fa-chart-line',
-    color: '#787b86'
+    color: '#22d3ee'
   },
   {
     id: 'bond',
@@ -76,7 +91,7 @@ const assets = ref([
     amount: 15000,
     idealPercentage: 25,
     icon: 'fa-file-invoice-dollar',
-    color: '#5d606b'
+    color: '#06b6d4'
   },
   {
     id: 'gold',
@@ -84,7 +99,7 @@ const assets = ref([
     amount: 8000,
     idealPercentage: 15,
     icon: 'fa-coins',
-    color: '#4b5563'
+    color: '#0891b2'
   },
   {
     id: 'emerging',
@@ -92,7 +107,7 @@ const assets = ref([
     amount: 7000,
     idealPercentage: 10,
     icon: 'fa-rocket',
-    color: '#374151'
+    color: '#0e7490'
   }
 ]);
 
@@ -109,11 +124,11 @@ const totalIdealPercentage = computed(() => {
 });
 
 const defaultColors = {
-  cash: '#9ca3af',
-  stock: '#787b86',
-  bond: '#5d606b',
-  gold: '#4b5563',
-  emerging: '#374151'
+  cash: '#67e8f9',
+  stock: '#22d3ee',
+  bond: '#06b6d4',
+  gold: '#0891b2',
+  emerging: '#0e7490'
 };
 
 const loadFromLocalStorage = () => {
@@ -151,117 +166,42 @@ const handleAssetSelect = (id) => {
   selectedAssetId.value = selectedAssetId.value === id ? null : id;
 };
 
+const updateCashTotal = (total) => {
+  const cashIndex = assets.value.findIndex(asset => asset.id === 'cash');
+  if (cashIndex !== -1) {
+    assets.value[cashIndex].amount = total;
+    saveToLocalStorage();
+  }
+};
+
+const updateGoldTotal = (total) => {
+  const goldIndex = assets.value.findIndex(asset => asset.id === 'gold');
+  if (goldIndex !== -1) {
+    assets.value[goldIndex].amount = total;
+    saveToLocalStorage();
+  }
+};
+
+const handleTransfer = ({ amount, currency, toAsset }) => {
+  const targetIndex = assets.value.findIndex(asset => asset.id === toAsset);
+  if (targetIndex !== -1) {
+    const rate = currency === 'CNY' ? 1 : currency === 'USD' ? 7.24 : 0.93;
+    assets.value[targetIndex].amount += amount * rate;
+    saveToLocalStorage();
+  }
+};
+
 const updateAssetIdealPercentage = (id, idealPercentage) => {
   const assetIndex = assets.value.findIndex(asset => asset.id === id);
   if (assetIndex !== -1) {
     assets.value[assetIndex].idealPercentage = idealPercentage;
     saveToLocalStorage();
-    updateChart();
-  }
-};
-
-const initChart = () => {
-  if (chartRef.value) {
-    chart = echarts.init(chartRef.value, 'dark');
-    updateChart();
-  }
-};
-
-const updateChart = () => {
-  if (!chart) return;
-
-  const chartData = assets.value.map(asset => ({
-    name: t(asset.nameKey),
-    value: asset.amount,
-    itemStyle: {
-      color: asset.color
-    }
-  }));
-
-  const option = {
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'item',
-      formatter: '{b}: ¥{c} ({d}%)',
-      backgroundColor: '#1e222d',
-      borderColor: '#363a45',
-      borderWidth: 1,
-      textStyle: {
-        color: '#d1d4dc',
-        fontSize: 12
-      }
-    },
-    legend: {
-      orient: 'horizontal',
-      bottom: 0,
-      data: assets.value.map(asset => t(asset.nameKey)),
-      textStyle: {
-        color: '#787b86',
-        fontSize: 11
-      },
-      itemWidth: 10,
-      itemHeight: 10,
-      itemGap: 16
-    },
-    series: [
-      {
-        name: t('assetDistribution'),
-        type: 'pie',
-        radius: ['40%', '65%'],
-        center: ['50%', '45%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 4,
-          borderColor: '#1e222d',
-          borderWidth: 2
-        },
-        label: {
-          show: false
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: 14,
-            fontWeight: 500,
-            color: '#d1d4dc'
-          },
-          itemStyle: {
-            shadowBlur: 20,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          }
-        },
-        labelLine: {
-          show: false
-        },
-        data: chartData
-      }
-    ]
-  };
-
-  chart.setOption(option);
-};
-
-const handleResize = () => {
-  if (chart) {
-    chart.resize();
   }
 };
 
 onMounted(() => {
   initLocale();
   loadFromLocalStorage();
-  nextTick(() => {
-    initChart();
-  });
-  window.addEventListener('resize', handleResize);
-});
-
-watch(assets, () => {
-  updateChart();
-}, { deep: true });
-
-watch(currentLocale, () => {
-  updateChart();
 });
 </script>
 
@@ -302,34 +242,30 @@ watch(currentLocale, () => {
   }
 }
 
-.chart-section {
+.detail-section {
+  margin-bottom: 16px;
+}
+
+.detail-placeholder {
   background: var(--bg-secondary);
   border: 1px solid var(--border-light);
   border-radius: 4px;
-  padding: 16px;
-}
-
-.section-header {
-  margin-bottom: 12px;
-}
-
-.section-title {
+  padding: 60px 20px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.detail-placeholder i {
+  font-size: 32px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.detail-placeholder p {
   font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.section-title i {
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
-.chart-container {
-  width: 100%;
-  height: 280px;
 }
 
 .app-footer {
