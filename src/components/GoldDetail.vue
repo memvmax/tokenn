@@ -259,10 +259,10 @@ const props = defineProps({
 const emit = defineEmits(['update:total']);
 
 const metals = ref([
-  { code: 'gold', name: 'GOLD', color: '#ffd700', price: 0, symbol: 'FX:XAUUSD', tvSymbol: 'FX:XAUUSD', displayPrice: 0, chartData: [] },
-  { code: 'silver', name: 'SILVER', color: '#a8a8a8', price: 0, symbol: 'FX:XAGUSD', tvSymbol: 'FX:XAGUSD', displayPrice: 0, chartData: [] },
-  { code: 'copper', name: 'COPPER', color: '#b87333', price: 0, symbol: 'CME:HG1!', tvSymbol: 'CME:HG1!', displayPrice: 0, chartData: [] },
-  { code: 'crude', name: 'CRUDE OIL', color: '#2d2d2d', price: 0, symbol: 'TVC:UKOIL', tvSymbol: 'TVC:UKOIL', displayPrice: 0, chartData: [] }
+  { code: 'gold', name: 'GOLD', color: '#ffd700', price: 0, symbol: 'FX:XAUUSD', tvSymbol: 'XAUUSD', displayPrice: 0, chartData: [] },
+  { code: 'silver', name: 'SILVER', color: '#a8a8a8', price: 0, symbol: 'CAPITALCOM:XAGUSD', tvSymbol: 'CAPITALCOM:XAGUSD', displayPrice: 0, chartData: [] },
+  { code: 'copper', name: 'COPPER', color: '#b87333', price: 0, symbol: 'CAPITALCOM:XCUUSD', tvSymbol: 'CAPITALCOM:XCUUSD', displayPrice: 0, chartData: [] },
+  { code: 'crude', name: 'CRUDE OIL', color: '#2d2d2d', price: 0, symbol: 'OILUSD', tvSymbol: 'OILUSD', displayPrice: 0, chartData: [] }
 ]);
 
 const buyRecords = ref({});
@@ -1321,8 +1321,8 @@ onUnmounted(() => {
 
 .kline-chart {
   width: 100%;
-  aspect-ratio: 16 / 9;
-  min-height: 280px;
+  aspect-ratio: 2 / 1;
+  min-height: 200px;
 }
 
 .chart-hint {

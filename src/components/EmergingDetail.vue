@@ -1316,8 +1316,8 @@ onUnmounted(() => {
 
 .kline-chart {
   width: 100%;
-  aspect-ratio: 16 / 9;
-  min-height: 280px;
+  aspect-ratio: 2 / 1;
+  min-height: 200px;
 }
 
 .chart-hint {
