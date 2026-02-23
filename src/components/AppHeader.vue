@@ -85,10 +85,24 @@
                   <i class="fas fa-palette"></i>
                   {{ t('themes') }}
                 </div>
-                <button class="menu-item" @click="openThemes">
-                  <span>{{ currentThemeName }}</span>
-                  <i class="fas fa-chevron-right"></i>
-                </button>
+                <div class="theme-dropdown" @click.stop="toggleThemeDropdown">
+                  <button class="menu-item">
+                    <span>{{ currentThemeName }}</span>
+                    <i class="fas" :class="showThemeDropdown ? 'fa-chevron-up' : 'fa-chevron-right'"></i>
+                  </button>
+                  <div class="theme-dropdown-menu" v-if="showThemeDropdown">
+                    <button 
+                      v-for="theme in themes" 
+                      :key="theme.id" 
+                      class="theme-option"
+                      :class="{ 'active': theme.id === currentThemeId }"
+                      @click="selectTheme(theme.id)"
+                    >
+                      {{ theme.name }}
+                      <i v-if="theme.id === currentThemeId" class="fas fa-check"></i>
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div class="menu-divider"></div>
@@ -239,10 +253,29 @@ const props = defineProps({
   currentThemeName: {
     type: String,
     default: 'Default'
+  },
+  themes: {
+    type: Array,
+    default: () => []
+  },
+  currentThemeId: {
+    type: String,
+    default: 'default'
   }
 })
 
-const emit = defineEmits(['logout', 'switchAccount', 'openThemes', 'presetChange'])
+const emit = defineEmits(['logout', 'switchAccount', 'openThemes', 'presetChange', 'themeChange'])
+
+const showThemeDropdown = ref(false)
+
+const toggleThemeDropdown = () => {
+  showThemeDropdown.value = !showThemeDropdown.value
+}
+
+const selectTheme = (themeId) => {
+  emit('themeChange', themeId)
+  showThemeDropdown.value = false
+}
 
 const currentPreset = computed(() => {
   return presets.value.find(p => p.id === activePresetId.value) || presets.value[0]
@@ -1049,5 +1082,49 @@ onUnmounted(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.theme-dropdown {
+  position: relative;
+}
+
+.theme-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  margin-top: 4px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.theme-option:hover {
+  background: var(--bg-hover);
+}
+
+.theme-option.active {
+  color: var(--accent-blue);
+  background: rgba(41, 98, 255, 0.1);
+}
+
+.theme-option i {
+  font-size: 11px;
 }
 </style>

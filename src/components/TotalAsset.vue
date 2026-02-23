@@ -1,44 +1,3 @@
-<template>
-  <div class="total-asset-container">
-    <div class="asset-header">
-      <div class="asset-info">
-        <div class="asset-label">
-          <span>{{ t('totalAsset') }}</span>
-        </div>
-        <div class="asset-amount">
-          <span class="currency">{{ t('currency') }}</span>
-          <span class="value font-numeric">{{ formatCurrency(totalAsset) }}</span>
-        </div>
-      </div>
-    </div>
-    
-    <div class="allocation-bar">
-      <div 
-        v-for="asset in assets" 
-        :key="asset.id"
-        class="allocation-segment"
-        :style="{ 
-          width: getPercentage(asset.amount) + '%',
-          backgroundColor: asset.color 
-        }"
-        :title="`${t(asset.nameKey)}: ${getPercentage(asset.amount)}%`"
-      ></div>
-    </div>
-    
-    <div class="allocation-legend">
-      <div 
-        v-for="asset in assets" 
-        :key="asset.id"
-        class="legend-item"
-      >
-        <span class="legend-dot" :style="{ backgroundColor: asset.color }"></span>
-        <span class="legend-name">{{ t(asset.nameKey) }}</span>
-        <span class="legend-value font-numeric">{{ getPercentage(asset.amount) }}%</span>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup>
 import { computed } from 'vue';
 
@@ -55,43 +14,39 @@ const props = defineProps({
     type: Function,
     required: true
   }
-});
+})
 
-const totalAsset = computed(() => {
-  return props.assets.reduce((sum, asset) => {
-    return sum + (Number(asset.amount) || 0);
-  }, 0);
-});
-
-const getPercentage = (amount) => {
-  if (totalAsset.value === 0) return 0;
-  return ((Number(amount) || 0) / totalAsset.value * 100).toFixed(1);
-};
+const totalAmount = computed(() => {
+  return props.assets.reduce((sum, asset) => sum + (asset.amount || 0), 0)
+})
 </script>
+
+<template>
+  <div class="total-asset-container">
+    <div class="asset-header">
+      <span class="asset-label">{{ t('totalAsset') }}</span>
+    </div>
+    <div class="asset-value">
+      <span class="currency">¥</span>
+      <span class="amount font-numeric">{{ formatCurrency(totalAmount) }}</span>
+    </div>
+    <div class="asset-change">
+      <span class="change-value positive">+0.00%</span>
+      <span class="change-period">this month</span>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .total-asset-container {
-  background: var(--total-asset-bg), var(--total-asset-image) center/cover no-repeat;
+  background: var(--total-asset-bg);
+  background-image: var(--total-asset-overlay);
   border: 1px solid var(--border-light);
   border-radius: 4px;
   padding: 16px 20px;
   margin-bottom: 16px;
   position: relative;
   overflow: hidden;
-}
-
-.total-asset-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    radial-gradient(circle at 20% 80%, rgba(0, 255, 136, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 80% 20%, rgba(0, 191, 255, 0.08) 0%, transparent 40%),
-    linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
-  pointer-events: none;
 }
 
 .total-asset-container::after {
@@ -101,7 +56,8 @@ const getPercentage = (amount) => {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.5), transparent);
+  background: var(--total-asset-line);
+  pointer-events: none;
 }
 
 .asset-header {
@@ -117,81 +73,49 @@ const getPercentage = (amount) => {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  margin-bottom: 6px;
 }
 
-.asset-amount {
+.asset-value {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 4px;
+  margin-bottom: 8px;
 }
 
-.asset-amount .currency {
-  font-size: 12px;
-  color: var(--text-secondary);
-  font-weight: 400;
-}
-
-.asset-amount .value {
-  font-size: 28px;
-  color: var(--text-primary);
+.asset-value .currency {
+  font-size: 20px;
   font-weight: 500;
+  color: var(--text-secondary);
 }
 
-.settings-wrapper {
-  position: relative;
+.asset-value .amount {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
 }
 
-.allocation-bar {
-  display: flex;
-  height: 4px;
-  border-radius: 2px;
-  overflow: hidden;
-  background: var(--bg-tertiary);
-  margin-bottom: 12px;
-}
-
-.allocation-segment {
-  height: 100%;
-  transition: width 0.2s ease;
-}
-
-.allocation-segment:first-child {
-  border-radius: 2px 0 0 2px;
-}
-
-.allocation-segment:last-child {
-  border-radius: 0 2px 2px 0;
-}
-
-.allocation-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-}
-
-.legend-item {
+.asset-change {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-.legend-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 1px;
-}
-
-.legend-name {
-  color: var(--text-secondary);
-  font-size: 11px;
+.change-value {
+  font-size: 13px;
   font-weight: 500;
-  letter-spacing: 0.3px;
 }
 
-.legend-value {
-  color: var(--text-primary);
+.change-value.positive {
+  color: var(--accent-green);
+}
+
+.change-value.negative {
+  color: var(--accent-red);
+}
+
+.change-period {
   font-size: 12px;
-  font-weight: 500;
+  color: var(--text-muted);
 }
 </style>

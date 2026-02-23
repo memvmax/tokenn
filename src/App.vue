@@ -7,7 +7,10 @@
           @switchAccount="handleSwitchAccount"
           @openThemes="handleOpenThemes"
           @presetChange="handlePresetChange"
+          @themeChange="handleThemeChange"
           :currentThemeName="t(currentThemeInfo.nameKey)"
+          :themes="themes"
+          :currentThemeId="currentTheme"
         />
 
         <TotalAsset 
@@ -278,6 +281,12 @@ const switchTheme = () => {
 
 const handleOpenThemes = () => {
   switchTheme();
+};
+
+const handleThemeChange = (themeId) => {
+  currentTheme.value = themeId;
+  document.documentElement.setAttribute('data-theme', themeId);
+  saveToLocalStorage();
 };
 
 onMounted(() => {
