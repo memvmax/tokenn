@@ -5,9 +5,27 @@
         <i class="fas fa-newspaper"></i>
         <span>{{ t('financialNews') }}</span>
       </div>
-      <button class="refresh-btn" @click="fetchNews" :disabled="loading">
-        <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
-      </button>
+      <div class="header-actions">
+        <button class="source-btn" @click="toggleSourceDropdown">
+          <i class="fas fa-globe"></i>
+        </button>
+        <button class="refresh-btn" @click="fetchNews" :disabled="loading">
+          <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
+        </button>
+      </div>
+      <div class="source-dropdown" v-if="showSourceDropdown" @click.stop>
+        <div class="dropdown-header">{{ t('selectSource') }}</div>
+        <button 
+          v-for="feed in RSS_FEEDS" 
+          :key="feed.source"
+          class="dropdown-item"
+          :class="{ 'active': activeSource === feed.source }"
+          @click="selectSource(feed)"
+        >
+          <i class="fas fa-rss"></i>
+          <span>{{ feed.source }}</span>
+        </button>
+      </div>
     </div>
 
     <div class="news-list" v-if="news.length > 0">
@@ -15,9 +33,10 @@
         v-for="(item, index) in news" 
         :key="index" 
         class="news-item"
-        @click="openNews(item.link)"
+        :class="{ 'is-link': item.isLink }"
+        @click="item.isLink ? openNews(item.link) : null"
       >
-        <div class="news-time">
+        <div class="news-time" v-if="!item.isLink">
           <span class="time-value">{{ formatTimeValue(item.pubDate) }}</span>
           <span class="time-unit">{{ formatTimeUnit(item.pubDate) }}</span>
         </div>
@@ -53,6 +72,8 @@ const props = defineProps({
 
 const news = ref([]);
 const loading = ref(false);
+const showSourceDropdown = ref(false);
+const activeSource = ref('Yahoo Finance');
 let refreshInterval = null;
 
 const RSS_FEEDS = [
@@ -63,6 +84,11 @@ const RSS_FEEDS = [
   {
     url: 'https://www.investing.com/rss/news.rss',
     source: 'Investing.com'
+  },
+  {
+    url: 'https://q.futunn.com/profile/34125173/post/original',
+    source: 'Futu User',
+    type: 'web'
   }
 ];
 
@@ -73,37 +99,51 @@ const fetchNews = async () => {
   const allNews = [];
 
   try {
-    const promises = RSS_FEEDS.map(async (feed) => {
-      try {
-        const response = await fetch(CORS_PROXY + encodeURIComponent(feed.url));
-        const text = await response.text();
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(text, 'text/xml');
-        const items = xml.querySelectorAll('item');
+    const activeFeed = RSS_FEEDS.find(f => f.source === activeSource.value);
+    if (!activeFeed) {
+      loading.value = false;
+      return;
+    }
 
-        items.forEach((item, index) => {
-          if (index < 5) {
-            const title = item.querySelector('title')?.textContent || '';
-            const link = item.querySelector('link')?.textContent || '';
-            const pubDate = item.querySelector('pubDate')?.textContent || '';
+    if (activeFeed.type === 'web') {
+      news.value = [{
+        title: 'Futu User Feed',
+        link: activeFeed.url,
+        pubDate: new Date().toISOString(),
+        source: activeFeed.source,
+        isLink: true
+      }];
+      loading.value = false;
+      return;
+    }
 
-            allNews.push({
-              title: title.replace(/<!\[CDATA\[|\]\]>/g, '').trim(),
-              link,
-              pubDate,
-              source: feed.source
-            });
-          }
-        });
-      } catch (error) {
-        console.error(`Failed to fetch ${feed.source}:`, error);
-      }
-    });
+    try {
+      const response = await fetch(CORS_PROXY + encodeURIComponent(activeFeed.url));
+      const text = await response.text();
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(text, 'text/xml');
+      const items = xml.querySelectorAll('item');
 
-    await Promise.all(promises);
+      items.forEach((item, index) => {
+        if (index < 15) {
+          const title = item.querySelector('title')?.textContent || '';
+          const link = item.querySelector('link')?.textContent || '';
+          const pubDate = item.querySelector('pubDate')?.textContent || '';
+
+          allNews.push({
+            title: title.replace(/<!\[CDATA\[|\]\]>/g, '').trim(),
+            link,
+            pubDate,
+            source: activeFeed.source
+          });
+        }
+      });
+    } catch (error) {
+      console.error(`Failed to fetch ${activeFeed.source}:`, error);
+    }
 
     allNews.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-    news.value = allNews.slice(0, 15);
+    news.value = allNews;
   } catch (error) {
     console.error('Failed to fetch news:', error);
   } finally {
@@ -139,16 +179,34 @@ const openNews = (link) => {
   }
 };
 
+const toggleSourceDropdown = () => {
+  showSourceDropdown.value = !showSourceDropdown.value;
+};
+
+const selectSource = (feed) => {
+  activeSource.value = feed.source;
+  showSourceDropdown.value = false;
+  fetchNews();
+};
+
 onMounted(() => {
   fetchNews();
   refreshInterval = setInterval(fetchNews, 5 * 60 * 1000);
+  document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
   if (refreshInterval) {
     clearInterval(refreshInterval);
   }
+  document.removeEventListener('click', handleClickOutside);
 });
+
+const handleClickOutside = (e) => {
+  if (!e.target.closest('.source-dropdown') && !e.target.closest('.source-btn')) {
+    showSourceDropdown.value = false;
+  }
+};
 </script>
 
 <style scoped>
@@ -164,14 +222,94 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 16px;
+  position: relative;
+}
+
+.news-header .header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.source-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.source-btn:hover {
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.source-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  min-width: 160px;
+  overflow: hidden;
+}
+
+.dropdown-header {
+  padding: 8px 12px;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.dropdown-item.active {
+  background: rgba(8, 145, 178, 0.15);
+  color: #0891b2;
+}
+
+.dropdown-item i {
+  font-size: 10px;
+  width: 14px;
 }
 
 .news-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
   color: var(--text-primary);
   line-height: 1;
   padding-top: 7px;

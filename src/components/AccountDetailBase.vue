@@ -2,8 +2,8 @@
   <div class="detail-section" ref="sectionRef">
     <div class="detail-header">
       <div class="detail-title">
-        <i class="fas fa-wallet"></i>
-        <span>{{ t('cashDetail') }}</span>
+        <i :class="icon"></i>
+        <span>{{ t(titleKey) }}</span>
       </div>
       <div class="header-actions">
         <button class="edit-toggle-btn" @click="toggleEditMode" :class="{ 'is-editing': isEditMode }">
@@ -60,10 +60,7 @@
               <label>{{ t('toAsset') }}</label>
               <select v-model="transferToAsset" class="form-select">
                 <option value="">{{ t('selectAsset') }}</option>
-                <option value="stock">{{ t('stock') }}</option>
-                <option value="bond">{{ t('bond') }}</option>
-                <option value="gold">{{ t('gold') }}</option>
-                <option value="emerging">{{ t('emerging') }}</option>
+                <option v-for="asset in transferTargets" :key="asset.value" :value="asset.value">{{ asset.label }}</option>
               </select>
             </div>
             <div class="form-group">
@@ -124,9 +121,9 @@
               </thead>
               <tbody>
                 <tr>
-                  <td><span class="col-name">bankName</span></td>
+                  <td><span class="col-name">name</span></td>
                   <td>{{ t('column1') }}</td>
-                  <td>招商银行</td>
+                  <td>{{ nameExample }}</td>
                 </tr>
                 <tr>
                   <td><span class="col-name">currency</span></td>
@@ -145,24 +142,19 @@
             <h4>{{ t('exampleFile') }}</h4>
             <div class="example-table">
               <div class="example-row header">
-                <span>bankName</span>
+                <span>name</span>
                 <span>currency</span>
                 <span>amount</span>
               </div>
               <div class="example-row">
-                <span>招商银行</span>
+                <span>{{ nameExample }}</span>
                 <span>CNY</span>
                 <span>50000</span>
               </div>
               <div class="example-row">
-                <span>Bank of America</span>
+                <span>{{ nameExample }} 2</span>
                 <span>USD</span>
                 <span>10000</span>
-              </div>
-              <div class="example-row">
-                <span>汇丰银行</span>
-                <span>HKD</span>
-                <span>20000</span>
               </div>
             </div>
           </div>
@@ -174,7 +166,7 @@
       <div class="accounts-header">
         <div class="header-cell bank-cell">
           <div class="header-dropdown" @click.stop="toggleBankDropdown">
-            <span class="header-text">{{ t('bankName') }}</span>
+            <span class="header-text">{{ nameLabel }}</span>
             <i class="fas fa-chevron-down dropdown-icon" :class="{ 'rotated': showBankDropdown }"></i>
           </div>
           <div class="dropdown-menu" v-if="showBankDropdown" @click.stop>
@@ -260,7 +252,7 @@
             type="text" 
             v-model="account.bankName" 
             class="field-input"
-            :placeholder="t('enterBankName')"
+            :placeholder="namePlaceholder"
           >
           <span v-else class="field-display">{{ account.bankName || '-' }}</span>
         </div>
@@ -306,13 +298,13 @@
     </div>
 
     <div class="empty-state" v-if="accounts.length === 0">
-      <i class="fas fa-university"></i>
+      <i :class="icon"></i>
       <p>{{ t('noAccounts') }}</p>
     </div>
 
     <div class="detail-summary" v-if="accounts.length > 0">
       <div class="summary-row">
-        <span class="summary-label">{{ t('totalCash') }}</span>
+        <span class="summary-label">{{ t(totalLabelKey) }}</span>
         <span class="summary-value font-numeric">{{ formatAmount(filteredTotalCNY) }} CNY</span>
         <span v-if="filterBank || filterCurrency" class="filtered-hint">({{ t('filtered') }})</span>
       </div>
@@ -332,17 +324,53 @@ const props = defineProps({
   formatAmount: {
     type: Function,
     required: true
+  },
+  titleKey: {
+    type: String,
+    required: true
+  },
+  totalLabelKey: {
+    type: String,
+    required: true
+  },
+  icon: {
+    type: String,
+    required: true
+  },
+  storageKey: {
+    type: String,
+    required: true
+  },
+  assetId: {
+    type: String,
+    required: true
+  },
+  nameLabel: {
+    type: String,
+    default: 'NAME'
+  },
+  namePlaceholder: {
+    type: String,
+    default: 'Enter name'
+  },
+  nameExample: {
+    type: String,
+    default: 'Account 1'
+  },
+  transferTargets: {
+    type: Array,
+    default: () => []
   }
 });
 
 const emit = defineEmits(['update:total', 'transfer']);
 
-const sectionRef = ref(null);
 const accounts = ref([]);
 const showHelpModal = ref(false);
 const showTransferModal = ref(false);
 const isEditMode = ref(false);
 
+const sectionRef = ref(null);
 const transferFrom = ref('');
 const transferAmount = ref('');
 const transferToAsset = ref('');
@@ -556,9 +584,9 @@ const handleFileImport = async (e) => {
     const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
     jsonData.forEach(row => {
-      const bankName = row['bankName'] || row['Bank Name'] || row['bank_name'] || row['Bank'] || '';
-      const currency = row['currency'] || row['Currency'] || row['CNY'] || 'CNY';
-      const amount = parseFloat(row['amount'] || row['Amount'] || row['amount '] || 0) || 0;
+      const bankName = row['name'] || row['bankName'] || row['Name'] || row['Bank Name'] || '';
+      const currency = row['currency'] || row['Currency'] || 'CNY';
+      const amount = parseFloat(row['amount'] || row['Amount'] || 0) || 0;
       const comments = row['comments'] || row['Comments'] || row['comment'] || row['Note'] || '';
 
       if (bankName || amount > 0) {
@@ -577,7 +605,7 @@ const handleFileImport = async (e) => {
     e.target.value = '';
   } catch (error) {
     console.error('Import failed:', error);
-    alert(t('importFailed'));
+    alert(props.t('importFailed'));
   }
 };
 
@@ -592,7 +620,7 @@ const readFile = (file) => {
 
 const saveData = () => {
   try {
-    localStorage.setItem('cashAccounts', JSON.stringify(accounts.value));
+    localStorage.setItem(props.storageKey, JSON.stringify(accounts.value));
     emit('update:total', totalCNY.value);
   } catch (error) {
     console.error('Save failed:', error);
@@ -601,7 +629,7 @@ const saveData = () => {
 
 const saveTransfers = () => {
   try {
-    localStorage.setItem('cashTransfers', JSON.stringify(transfers.value));
+    localStorage.setItem(`${props.storageKey}Transfers`, JSON.stringify(transfers.value));
   } catch (error) {
     console.error('Save transfers failed:', error);
   }
@@ -609,11 +637,11 @@ const saveTransfers = () => {
 
 const loadData = () => {
   try {
-    const saved = localStorage.getItem('cashAccounts');
+    const saved = localStorage.getItem(props.storageKey);
     if (saved) {
       accounts.value = JSON.parse(saved);
     }
-    const savedTransfers = localStorage.getItem('cashTransfers');
+    const savedTransfers = localStorage.getItem(`${props.storageKey}Transfers`);
     if (savedTransfers) {
       transfers.value = JSON.parse(savedTransfers);
     }
@@ -649,823 +677,5 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.detail-section {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  padding: 16px;
-}
-
-.detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-}
-
-.detail-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: var(--text-primary);
-  line-height: 1;
-  padding-top: 7px;
-}
-
-.detail-title i {
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.import-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  height: 30px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-sizing: border-box;
-}
-
-.import-btn:hover {
-  border-color: var(--border-color);
-  color: var(--text-primary);
-}
-
-.add-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  height: 30px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-sizing: border-box;
-}
-
-.add-btn:hover {
-  border-color: var(--border-color);
-  color: var(--text-primary);
-}
-
-.edit-toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 10px;
-  height: 30px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-sizing: border-box;
-}
-
-.edit-toggle-btn:hover {
-  border-color: var(--border-color);
-  color: var(--text-primary);
-}
-
-.edit-toggle-btn.is-editing {
-  border-color: #0891b2;
-  color: #0891b2;
-  background: rgba(8, 145, 178, 0.1);
-}
-
-.transfer-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 10px;
-  height: 30px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-sizing: border-box;
-}
-
-.transfer-btn:hover {
-  border-color: var(--border-color);
-  color: #f59e0b;
-}
-
-.transfer-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.transfer-modal {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  width: 90%;
-  max-width: 400px;
-  max-height: 80vh;
-  overflow: hidden;
-}
-
-.transfer-modal .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.transfer-modal .modal-header h3 {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.transfer-modal .modal-body {
-  padding: 20px;
-  max-height: calc(80vh - 130px);
-  overflow-y: auto;
-}
-
-.transfer-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.form-group label {
-  font-size: 9px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  font-weight: 600;
-}
-
-.form-input,
-.form-select {
-  padding: 10px 12px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  color: var(--text-primary);
-  font-size: 13px;
-}
-
-.form-input:focus,
-.form-select:focus {
-  outline: none;
-  border-color: var(--border-color);
-}
-
-.transfer-history {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-light);
-}
-
-.transfer-history h4 {
-  font-size: 9px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  font-weight: 600;
-  margin: 0 0 12px 0;
-}
-
-.history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.history-item {
-  padding: 10px 12px;
-  background: var(--bg-tertiary);
-  border-radius: 4px;
-}
-
-.history-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.history-amount {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.history-arrow {
-  color: var(--text-muted);
-  font-size: 11px;
-}
-
-.history-target {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.history-meta {
-  display: flex;
-  gap: 12px;
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 16px 20px;
-  border-top: 1px solid var(--border-light);
-}
-
-.cancel-btn {
-  padding: 8px 16px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.cancel-btn:hover {
-  border-color: var(--border-color);
-  color: var(--text-primary);
-}
-
-.confirm-btn {
-  padding: 8px 16px;
-  background: #0891b2;
-  border: none;
-  border-radius: 4px;
-  color: #fff;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.confirm-btn:hover {
-  background: #0e7490;
-}
-
-.accounts-list {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 16px;
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  overflow: visible;
-}
-
-.accounts-header {
-  display: flex;
-  background: var(--bg-tertiary);
-  border-bottom: 1px solid var(--border-light);
-  position: relative;
-}
-
-.header-cell {
-  padding: 10px 14px;
-  font-size: 9px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: color 0.15s ease;
-  position: relative;
-  height: 44px;
-  box-sizing: border-box;
-}
-
-.header-cell.action-cell {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 10px 10px;
-}
-
-.header-cell:hover {
-  color: var(--text-secondary);
-}
-
-.header-cell.comments-cell {
-  cursor: default;
-}
-
-.header-text {
-  text-decoration: underline;
-  text-decoration-color: var(--border-color);
-  text-underline-offset: 3px;
-}
-
-.header-dropdown {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.dropdown-icon {
-  font-size: 8px;
-  opacity: 0.6;
-  transition: transform 0.15s ease;
-}
-
-.dropdown-icon.rotated {
-  transform: rotate(180deg);
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 4px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 100;
-  min-width: 140px;
-  overflow: hidden;
-}
-
-.dropdown-section {
-  padding: 8px 0;
-}
-
-.dropdown-label {
-  padding: 4px 12px;
-  font-size: 8px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-}
-
-.dropdown-divider {
-  height: 1px;
-  background: var(--border-light);
-}
-
-.dropdown-item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: left;
-}
-
-.dropdown-item:hover {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.dropdown-item.active {
-  background: rgba(8, 145, 178, 0.15);
-  color: #0891b2;
-}
-
-.dropdown-item i {
-  font-size: 10px;
-  width: 14px;
-}
-
-.sort-icon {
-  font-size: 8px;
-  opacity: 0.4;
-}
-
-.no-results-row {
-  padding: 24px 14px;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 12px;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.clear-filter-btn {
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 3px;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-size: 10px;
-}
-
-.clear-filter-btn:hover {
-  color: var(--accent-red);
-  border-color: var(--accent-red);
-}
-
-.account-row {
-  display: flex;
-  align-items: center;
-  border-bottom: 1px solid var(--border-light);
-  background: var(--bg-secondary);
-  height: 44px;
-  box-sizing: border-box;
-}
-
-.account-row:last-of-type {
-  border-bottom: none;
-}
-
-.account-row.is-editing {
-  background: var(--bg-secondary);
-}
-
-.cell {
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-}
-
-.bank-cell {
-  flex: 0 0 160px;
-}
-
-.currency-cell {
-  flex: 0 0 100px;
-}
-
-.amount-cell {
-  flex: 0 0 140px;
-}
-
-.comments-cell {
-  flex: 1;
-  min-width: 120px;
-}
-
-.action-cell {
-  flex: 0 0 50px;
-  display: flex;
-  justify-content: flex-end;
-  padding-right: 10px;
-}
-
-.field-input {
-  width: 100%;
-  padding: 6px 8px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 3px;
-  color: var(--text-primary);
-  font-size: 13px;
-}
-
-.field-input:focus {
-  outline: none;
-  border-color: #0891b2;
-}
-
-.field-input::placeholder {
-  color: var(--text-muted);
-}
-
-.amount-input {
-  font-family: 'Space Grotesk', 'SF Mono', monospace;
-  text-align: right;
-}
-
-.field-select {
-  width: 100%;
-  padding: 6px 8px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 3px;
-  color: var(--text-primary);
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.field-select:focus {
-  outline: none;
-  border-color: #0891b2;
-}
-
-.field-display {
-  font-size: 13px;
-  color: var(--text-primary);
-}
-
-.comments-text {
-  font-size: 12px;
-  color: var(--text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 200px;
-}
-
-.delete-btn {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.delete-btn:hover {
-  color: var(--accent-red);
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  color: var(--text-muted);
-}
-
-.empty-state i {
-  font-size: 32px;
-  margin-bottom: 12px;
-  opacity: 0.5;
-}
-
-.empty-state p {
-  font-size: 13px;
-}
-
-.detail-summary {
-  padding-top: 12px;
-  border-top: 1px solid var(--border-light);
-}
-
-.summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.summary-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: var(--text-secondary);
-}
-
-.summary-value {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.filtered-hint {
-  font-size: 10px;
-  color: var(--text-muted);
-  margin-left: 8px;
-}
-
-.help-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 10px;
-  height: 30px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-size: 12px;
-  box-sizing: border-box;
-}
-
-.help-btn:hover {
-  border-color: var(--border-color);
-  color: #06b6d4;
-}
-
-.help-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.help-modal {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  width: 90%;
-  max-width: 480px;
-  max-height: 80vh;
-  overflow: hidden;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.modal-header h3 {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.modal-close {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  border-radius: 4px;
-  transition: color 0.15s ease;
-}
-
-.modal-close:hover {
-  color: var(--text-primary);
-}
-
-.modal-body {
-  padding: 20px;
-  overflow-y: auto;
-  max-height: calc(80vh - 60px);
-}
-
-.guide-section {
-  margin-bottom: 20px;
-}
-
-.guide-section:last-child {
-  margin-bottom: 0;
-}
-
-.guide-section h4 {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin: 0 0 10px 0;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-}
-
-.format-tags {
-  display: flex;
-  gap: 8px;
-}
-
-.format-tag {
-  padding: 4px 10px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  font-size: 11px;
-  color: var(--text-primary);
-  font-family: 'Space Grotesk', monospace;
-}
-
-.format-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-
-.format-table th,
-.format-table td {
-  padding: 8px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.format-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-
-.format-table td {
-  color: var(--text-primary);
-}
-
-.format-table tr:last-child td {
-  border-bottom: none;
-}
-
-.col-name {
-  font-family: 'Space Grotesk', monospace;
-  color: #06b6d4;
-  background: rgba(6, 182, 212, 0.1);
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
-.example-table {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.example-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  padding: 8px 12px;
-  font-size: 12px;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.example-row:last-child {
-  border-bottom: none;
-}
-
-.example-row.header {
-  background: var(--bg-secondary);
-  color: var(--text-muted);
-  font-size: 10px;
-  text-transform: uppercase;
-}
-
-.example-row span {
-  color: var(--text-primary);
-}
-
-.example-row.header span {
-  color: var(--text-muted);
-}
+@import './AccountDetailStyles.css';
 </style>

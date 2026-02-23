@@ -2,8 +2,15 @@
   <div class="app-container">
     <div class="main-content">
       <main>
+        <AppHeader 
+          @logout="handleLogout"
+          @switchAccount="handleSwitchAccount"
+          @openThemes="handleOpenThemes"
+          @presetChange="handlePresetChange"
+        />
+
         <TotalAsset 
-          :assets="assets" 
+          :assets="visibleAssets" 
           :t="t" 
           :format-currency="formatCurrency"
         />
@@ -12,14 +19,13 @@
 
         <div class="assets-grid">
           <AssetCard 
-            v-for="asset in assets" 
+            v-for="asset in visibleAssets" 
             :key="asset.id" 
             :asset="asset" 
             :total-asset="totalAsset" 
             :t="t"
             :format-amount="formatAmount"
             :selected="selectedAssetId === asset.id"
-            @update:ideal-percentage="updateAssetIdealPercentage" 
             @select="handleAssetSelect" 
           />
         </div>
@@ -37,6 +43,20 @@
             :t="t"
             :format-currency="formatCurrency"
             @update:total="updateGoldTotal"
+          />
+          <BondDetail 
+            v-else-if="selectedAssetId === 'bond'"
+            :t="t"
+            :format-amount="formatAmount"
+            @update:total="updateBondTotal"
+            @transfer="handleTransfer"
+          />
+          <EmergingDetail 
+            v-else-if="selectedAssetId === 'emerging'"
+            :t="t"
+            :format-amount="formatAmount"
+            @update:total="updateEmergingTotal"
+            @transfer="handleTransfer"
           />
           <div v-else class="detail-placeholder">
             <i class="fas fa-tools"></i>
@@ -56,24 +76,34 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import AppHeader from './components/AppHeader.vue';
 import TotalAsset from './components/TotalAsset.vue';
 import AssetCard from './components/AssetCard.vue';
 import WarningAlert from './components/WarningAlert.vue';
 import CashDetail from './components/CashDetail.vue';
 import GoldDetail from './components/GoldDetail.vue';
+import BondDetail from './components/BondDetail.vue';
+import EmergingDetail from './components/EmergingDetail.vue';
 import NewsFeed from './components/NewsFeed.vue';
 import { useLocale } from './composables/useLocale';
 
 const { t, initLocale, formatAmount, formatCurrency } = useLocale();
 
 const selectedAssetId = ref(null);
+const visibleModules = ref(['cash', 'stock', 'bond', 'gold', 'emerging']);
+const idealPercentages = ref({
+  cash: 20,
+  stock: 30,
+  bond: 25,
+  gold: 15,
+  emerging: 10
+});
 
 const assets = ref([
   {
     id: 'cash',
     nameKey: 'cash',
     amount: 10000,
-    idealPercentage: 20,
     icon: 'fa-wallet',
     color: '#67e8f9'
   },
@@ -81,7 +111,6 @@ const assets = ref([
     id: 'stock',
     nameKey: 'stock',
     amount: 20000,
-    idealPercentage: 30,
     icon: 'fa-chart-line',
     color: '#22d3ee'
   },
@@ -89,7 +118,6 @@ const assets = ref([
     id: 'bond',
     nameKey: 'bond',
     amount: 15000,
-    idealPercentage: 25,
     icon: 'fa-file-invoice-dollar',
     color: '#06b6d4'
   },
@@ -97,7 +125,6 @@ const assets = ref([
     id: 'gold',
     nameKey: 'gold',
     amount: 8000,
-    idealPercentage: 15,
     icon: 'fa-coins',
     color: '#0891b2'
   },
@@ -105,20 +132,28 @@ const assets = ref([
     id: 'emerging',
     nameKey: 'emerging',
     amount: 7000,
-    idealPercentage: 10,
     icon: 'fa-rocket',
     color: '#0e7490'
   }
 ]);
 
+const visibleAssets = computed(() => {
+  return assets.value
+    .filter(asset => visibleModules.value.includes(asset.id))
+    .map(asset => ({
+      ...asset,
+      idealPercentage: idealPercentages.value[asset.id] || 0
+    }));
+});
+
 const totalAsset = computed(() => {
-  return assets.value.reduce((sum, asset) => {
+  return visibleAssets.value.reduce((sum, asset) => {
     return sum + (Number(asset.amount) || 0);
   }, 0);
 });
 
 const totalIdealPercentage = computed(() => {
-  return assets.value.reduce((sum, asset) => {
+  return visibleAssets.value.reduce((sum, asset) => {
     return sum + (Number(asset.idealPercentage) || 0);
   }, 0);
 });
@@ -140,7 +175,6 @@ const loadFromLocalStorage = () => {
         parsed.forEach((saved, index) => {
           if (assets.value[index]) {
             assets.value[index].amount = saved.amount || 0;
-            assets.value[index].idealPercentage = saved.idealPercentage || 0;
             assets.value[index].color = defaultColors[saved.id] || assets.value[index].color;
           }
         });
@@ -159,6 +193,14 @@ const saveToLocalStorage = () => {
     localStorage.setItem('wealthAssets', JSON.stringify(assets.value));
   } catch (error) {
     console.error('Save failed:', error);
+  }
+};
+
+const handlePresetChange = (preset) => {
+  visibleModules.value = preset.modules;
+  idealPercentages.value = preset.percentages || {};
+  if (!visibleModules.value.includes(selectedAssetId.value)) {
+    selectedAssetId.value = null;
   }
 };
 
@@ -182,6 +224,22 @@ const updateGoldTotal = (total) => {
   }
 };
 
+const updateBondTotal = (total) => {
+  const bondIndex = assets.value.findIndex(asset => asset.id === 'bond');
+  if (bondIndex !== -1) {
+    assets.value[bondIndex].amount = total;
+    saveToLocalStorage();
+  }
+};
+
+const updateEmergingTotal = (total) => {
+  const emergingIndex = assets.value.findIndex(asset => asset.id === 'emerging');
+  if (emergingIndex !== -1) {
+    assets.value[emergingIndex].amount = total;
+    saveToLocalStorage();
+  }
+};
+
 const handleTransfer = ({ amount, currency, toAsset }) => {
   const targetIndex = assets.value.findIndex(asset => asset.id === toAsset);
   if (targetIndex !== -1) {
@@ -191,12 +249,16 @@ const handleTransfer = ({ amount, currency, toAsset }) => {
   }
 };
 
-const updateAssetIdealPercentage = (id, idealPercentage) => {
-  const assetIndex = assets.value.findIndex(asset => asset.id === id);
-  if (assetIndex !== -1) {
-    assets.value[assetIndex].idealPercentage = idealPercentage;
-    saveToLocalStorage();
-  }
+const handleLogout = () => {
+  console.log('Logout clicked');
+};
+
+const handleSwitchAccount = () => {
+  console.log('Switch account clicked');
+};
+
+const handleOpenThemes = () => {
+  console.log('Open themes clicked');
 };
 
 onMounted(() => {

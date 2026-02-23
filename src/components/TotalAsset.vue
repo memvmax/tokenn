@@ -10,9 +10,6 @@
           <span class="value font-numeric">{{ formatCurrency(totalAsset) }}</span>
         </div>
       </div>
-      <div class="settings-wrapper">
-        <SettingsButton />
-      </div>
     </div>
     
     <div class="allocation-bar">
@@ -44,7 +41,6 @@
 
 <script setup>
 import { computed } from 'vue';
-import SettingsButton from './SettingsButton.vue';
 
 const props = defineProps({
   assets: {
@@ -91,10 +87,10 @@ const getPercentage = (amount) => {
 
 .asset-label {
   color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 10px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
   margin-bottom: 6px;
 }
 
@@ -162,7 +158,9 @@ const getPercentage = (amount) => {
 
 .legend-name {
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
 }
 
 .legend-value {

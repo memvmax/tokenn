@@ -2,8 +2,8 @@
   <div class="detail-section">
     <div class="detail-header">
       <div class="detail-title">
-        <i class="fas fa-coins"></i>
-        <span>{{ t('goldDetail') }}</span>
+        <i class="fas fa-rocket"></i>
+        <span>{{ t('emergingDetail') }}</span>
       </div>
       <div class="header-actions">
         <button class="refresh-btn" @click="fetchPrices" :disabled="loading">
@@ -12,16 +12,16 @@
       </div>
     </div>
 
-    <div class="gold-content">
+    <div class="emerging-content">
       <div class="holdings-table-section">
-        <div class="holdings-list" v-if="metals.length > 0">
+        <div class="holdings-list" v-if="assets.length > 0">
           <div class="accounts-header">
-            <div class="header-cell metal-cell">
-              <div class="header-dropdown" @click.stop="toggleMetalDropdown">
-                <span class="header-text">METAL</span>
-                <i class="fas fa-chevron-down dropdown-icon" :class="{ 'rotated': showMetalDropdown }"></i>
+            <div class="header-cell asset-cell">
+              <div class="header-dropdown" @click.stop="toggleAssetDropdown">
+                <span class="header-text">ASSET</span>
+                <i class="fas fa-chevron-down dropdown-icon" :class="{ 'rotated': showAssetDropdown }"></i>
               </div>
-              <div class="dropdown-menu" v-if="showMetalDropdown" @click.stop>
+              <div class="dropdown-menu" v-if="showAssetDropdown" @click.stop>
                 <div class="dropdown-section">
                   <div class="dropdown-label">{{ t('sortBy') }}</div>
                   <button class="dropdown-item" :class="{ 'active': sortField === 'name' && sortOrder === 'asc' }" @click="selectSort('name', 'asc')">
@@ -36,11 +36,11 @@
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-section">
                   <div class="dropdown-label">{{ t('filterBy') }}</div>
-                  <button class="dropdown-item" :class="{ 'active': !filterMetal }" @click="selectMetalFilter('')">
+                  <button class="dropdown-item" :class="{ 'active': !filterAsset }" @click="selectAssetFilter('')">
                     <span>{{ t('all') }}</span>
                   </button>
-                  <button v-for="m in uniqueMetals" :key="m" class="dropdown-item" :class="{ 'active': filterMetal === m }" @click="selectMetalFilter(m)">
-                    <span>{{ m }}</span>
+                  <button v-for="a in uniqueAssets" :key="a" class="dropdown-item" :class="{ 'active': filterAsset === a }" @click="selectAssetFilter(a)">
+                    <span>{{ a }}</span>
                   </button>
                 </div>
               </div>
@@ -67,61 +67,61 @@
               <span class="header-text">P&L</span>
             </div>
             <div class="header-cell action-cell">
-              <button v-if="filterMetal" class="clear-filter-btn" @click="clearFilters">
+              <button v-if="filterAsset" class="clear-filter-btn" @click="clearFilters">
                 <i class="fas fa-times"></i>
               </button>
             </div>
           </div>
           <div 
-            v-for="(metal, index) in filteredMetals" 
-            :key="metal.code"
-            class="metal-row"
-            :class="{ 'active': chartMetal === metal.code }"
-            @click="switchChart(metal.code)"
+            v-for="(asset, index) in filteredAssets" 
+            :key="asset.code"
+            class="asset-row"
+            :class="{ 'active': chartAsset === asset.code }"
+            @click="switchChart(asset.code)"
           >
-            <div class="cell metal-cell">
-              <div class="metal-info">
-                <span class="metal-dot" :style="{ background: metal.color }"></span>
-                <span class="metal-name">{{ metal.name }}</span>
+            <div class="cell asset-cell">
+              <div class="asset-info">
+                <span class="asset-dot" :style="{ background: asset.color }"></span>
+                <span class="asset-name">{{ asset.name }}</span>
               </div>
             </div>
             <div class="cell current-price-cell">
-              <span class="price-value font-numeric">{{ formatPrice(metal.price) }}</span>
+              <span class="price-value font-numeric">{{ formatPrice(asset.price) }}</span>
             </div>
             <div class="cell cost-price-cell">
-              <span class="cost-value font-numeric" :class="getCostPriceClass(metal)">
-                {{ formatPrice(getCostPrice(metal.code)) }}
+              <span class="cost-value font-numeric" :class="getCostPriceClass(asset)">
+                {{ formatPrice(getCostPrice(asset.code)) }}
               </span>
             </div>
             <div class="cell amount-cell">
-              <span class="amount-value font-numeric">{{ formatNumber(getTotalAmount(metal.code)) }}</span>
-              <span class="amount-unit">g</span>
+              <span class="amount-value font-numeric">{{ formatNumber(getTotalAmount(asset.code)) }}</span>
+              <span class="amount-unit">{{ asset.unit }}</span>
             </div>
             <div class="cell value-cell">
-              <span class="value-amount font-numeric">{{ formatCurrency(getTotalAmount(metal.code) * metal.price) }}</span>
+              <span class="value-amount font-numeric">{{ formatCurrency(getTotalAmount(asset.code) * asset.price) }}</span>
             </div>
             <div class="cell pnl-cell">
-              <span class="pnl-value font-numeric" :class="getPnLClass(metal)">
-                {{ formatPnL(metal) }}
+              <span class="pnl-value font-numeric" :class="getPnLClass(asset)">
+                {{ formatPnL(asset) }}
               </span>
             </div>
             <div class="cell action-cell">
-              <button class="add-buy-btn" @click.stop="openBuyModal(metal.code)" title="Add Buy Record">
+              <button class="add-buy-btn" @click.stop="openBuyModal(asset.code)" title="Add Buy Record">
                 <i class="fas fa-plus"></i>
               </button>
             </div>
           </div>
           
-          <div v-if="filteredMetals.length === 0 && metals.length > 0" class="no-results-row">
+          <div v-if="filteredAssets.length === 0 && assets.length > 0" class="no-results-row">
             <span>{{ t('noMatchingResults') }}</span>
           </div>
         </div>
 
-        <div class="detail-summary" v-if="metals.length > 0">
+        <div class="detail-summary" v-if="assets.length > 0">
           <div class="summary-row">
             <span class="summary-label">TOTAL VALUE</span>
             <span class="summary-value font-numeric">{{ formatCurrency(filteredTotalValue) }} CNY</span>
-            <span v-if="filterMetal" class="filtered-hint">({{ t('filtered') }})</span>
+            <span v-if="filterAsset" class="filtered-hint">({{ t('filtered') }})</span>
           </div>
           <div class="summary-row summary-pnl">
             <span class="summary-label">TOTAL P&L</span>
@@ -138,7 +138,7 @@
 
       <div class="chart-section">
         <div class="chart-header">
-          <div class="chart-title">{{ currentMetalName }} {{ t('priceChart') }}</div>
+          <div class="chart-title">{{ currentAssetName }} {{ t('priceChart') }}</div>
         </div>
         <div ref="chartRef" class="kline-chart"></div>
         <div class="chart-hint">
@@ -151,7 +151,7 @@
     <div class="buy-modal-overlay" v-if="showBuyModal" @click="closeBuyModal">
       <div class="buy-modal" @click.stop>
         <div class="modal-header">
-          <h3>{{ currentMetalName }} - {{ t('addBuyRecord') || 'ADD BUY RECORD' }}</h3>
+          <h3>{{ currentAssetName }} - {{ t('addBuyRecord') || 'ADD BUY RECORD' }}</h3>
           <button class="modal-close" @click="closeBuyModal">
             <i class="fas fa-times"></i>
           </button>
@@ -160,11 +160,11 @@
           <div class="buy-form">
             <div class="form-row">
               <div class="form-group">
-                <label>AMOUNT (g)</label>
+                <label>AMOUNT ({{ currentAssetUnit }})</label>
                 <input type="text" v-model="buyForm.amount" class="form-input font-numeric" placeholder="0.00">
               </div>
               <div class="form-group">
-                <label>PRICE (CNY/g)</label>
+                <label>PRICE (CNY/{{ currentAssetUnit }})</label>
                 <input type="text" v-model="buyForm.price" class="form-input font-numeric" placeholder="0.00">
               </div>
             </div>
@@ -186,22 +186,22 @@
             </div>
           </div>
           
-          <div class="buy-records" v-if="currentMetalRecords.length > 0">
+          <div class="buy-records" v-if="currentAssetRecords.length > 0">
             <div class="records-header">
               <h4>{{ t('buyRecords') || 'BUY RECORDS' }}</h4>
-              <span class="records-count">{{ currentMetalRecords.length }} {{ t('records') || 'records' }}</span>
+              <span class="records-count">{{ currentAssetRecords.length }} {{ t('records') || 'records' }}</span>
             </div>
             <div class="records-list">
-              <div v-for="(record, idx) in currentMetalRecords" :key="record.id" class="record-item">
+              <div v-for="(record, idx) in currentAssetRecords" :key="record.id" class="record-item">
                 <div class="record-main">
                   <div class="record-amount">
                     <span class="amount-num font-numeric">{{ formatNumber(record.amount) }}</span>
-                    <span class="amount-unit">g</span>
+                    <span class="amount-unit">{{ currentAssetUnit }}</span>
                   </div>
                   <div class="record-price">
                     <span class="price-label">@</span>
                     <span class="price-num font-numeric">{{ formatPrice(record.price) }}</span>
-                    <span class="price-unit">CNY/g</span>
+                    <span class="price-unit">CNY/{{ currentAssetUnit }}</span>
                   </div>
                   <div class="record-fee" v-if="record.fee > 0">
                     <span class="fee-label">+{{ formatCurrency(record.fee) }}</span>
@@ -211,7 +211,7 @@
                   <span class="record-date">{{ record.date }}</span>
                   <span class="record-total font-numeric">= {{ formatCurrency(record.amount * record.price + (record.fee || 0)) }} CNY</span>
                 </div>
-                <button class="record-delete" @click="deleteRecord(buyMetalCode, record.id)">
+                <button class="record-delete" @click="deleteRecord(buyAssetCode, record.id)">
                   <i class="fas fa-trash-alt"></i>
                 </button>
               </div>
@@ -219,11 +219,11 @@
             <div class="records-summary">
               <div class="records-summary-row">
                 <span>TOTAL</span>
-                <span class="font-numeric">{{ formatNumber(getTotalAmount(buyMetalCode)) }}g</span>
+                <span class="font-numeric">{{ formatNumber(getTotalAmount(buyAssetCode)) }}{{ currentAssetUnit }}</span>
               </div>
               <div class="records-summary-row">
                 <span>AVG COST</span>
-                <span class="font-numeric">{{ formatPrice(getCostPrice(buyMetalCode)) }} CNY/g</span>
+                <span class="font-numeric">{{ formatPrice(getCostPrice(buyAssetCode)) }} CNY/{{ currentAssetUnit }}</span>
               </div>
             </div>
           </div>
@@ -246,7 +246,7 @@ const props = defineProps({
     type: Function,
     required: true
   },
-  formatCurrency: {
+  formatAmount: {
     type: Function,
     required: true
   }
@@ -254,11 +254,16 @@ const props = defineProps({
 
 const emit = defineEmits(['update:total']);
 
-const metals = ref([
-  { code: 'gold', name: 'GOLD', color: '#ffd700', price: 0 },
-  { code: 'silver', name: 'SILVER', color: '#a8a8a8', price: 0 },
-  { code: 'copper', name: 'COPPER', color: '#b87333', price: 0 },
-  { code: 'crude', name: 'CRUDE OIL', color: '#2d2d2d', price: 0 }
+const formatCurrency = (value) => {
+  if (!value && value !== 0) return '0.00';
+  return Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const assets = ref([
+  { code: 'crypto', name: 'CRYPTO', color: '#f7931a', price: 50000, unit: 'BTC' },
+  { code: 'nft', name: 'NFT', color: '#e84142', price: 1000, unit: '个' },
+  { code: 'p2p', name: 'P2P LENDING', color: '#00d4aa', price: 1, unit: '份' },
+  { code: 'startup', name: 'STARTUP EQUITY', color: '#ff6b6b', price: 100, unit: '股' }
 ]);
 
 const buyRecords = ref({});
@@ -266,16 +271,16 @@ const buyRecords = ref({});
 const loading = ref(false);
 const lastUpdateTime = ref('--');
 const chartRef = ref(null);
-const chartMetal = ref('gold');
+const chartAsset = ref('crypto');
 let chart = null;
 
 const sortField = ref('name');
 const sortOrder = ref('asc');
-const filterMetal = ref('');
-const showMetalDropdown = ref(false);
+const filterAsset = ref('');
+const showAssetDropdown = ref(false);
 
 const showBuyModal = ref(false);
-const buyMetalCode = ref('');
+const buyAssetCode = ref('');
 const buyForm = ref({
   amount: '',
   price: '',
@@ -283,15 +288,15 @@ const buyForm = ref({
   date: new Date().toISOString().split('T')[0]
 });
 
-const uniqueMetals = computed(() => {
-  return metals.value.map(m => m.name);
+const uniqueAssets = computed(() => {
+  return assets.value.map(a => a.name);
 });
 
-const filteredMetals = computed(() => {
-  let result = [...metals.value];
+const filteredAssets = computed(() => {
+  let result = [...assets.value];
   
-  if (filterMetal.value) {
-    result = result.filter(m => m.name === filterMetal.value);
+  if (filterAsset.value) {
+    result = result.filter(a => a.name === filterAsset.value);
   }
   
   if (sortField.value) {
@@ -326,15 +331,15 @@ const filteredMetals = computed(() => {
 });
 
 const filteredTotalValue = computed(() => {
-  return filteredMetals.value.reduce((sum, m) => sum + getTotalAmount(m.code) * m.price, 0);
+  return filteredAssets.value.reduce((sum, a) => sum + getTotalAmount(a.code) * a.price, 0);
 });
 
 const totalValue = computed(() => {
-  return metals.value.reduce((sum, m) => sum + getTotalAmount(m.code) * m.price, 0);
+  return assets.value.reduce((sum, a) => sum + getTotalAmount(a.code) * a.price, 0);
 });
 
 const totalCost = computed(() => {
-  return metals.value.reduce((sum, m) => sum + getTotalCost(m.code), 0);
+  return assets.value.reduce((sum, a) => sum + getTotalCost(a.code), 0);
 });
 
 const totalPnL = computed(() => {
@@ -346,13 +351,18 @@ const totalPnLPercent = computed(() => {
   return (totalPnL.value / totalCost.value) * 100;
 });
 
-const currentMetalName = computed(() => {
-  const m = metals.value.find(m => m.code === chartMetal.value);
-  return m ? m.name : 'GOLD';
+const currentAssetName = computed(() => {
+  const a = assets.value.find(a => a.code === chartAsset.value);
+  return a ? a.name : 'CRYPTO';
 });
 
-const currentMetalRecords = computed(() => {
-  return buyRecords.value[buyMetalCode.value] || [];
+const currentAssetUnit = computed(() => {
+  const a = assets.value.find(a => a.code === buyAssetCode.value);
+  return a ? a.unit : '份';
+});
+
+const currentAssetRecords = computed(() => {
+  return buyRecords.value[buyAssetCode.value] || [];
 });
 
 const calculateTotalCost = computed(() => {
@@ -384,22 +394,22 @@ const getCostPrice = (code) => {
   return getTotalCost(code) / totalAmount;
 };
 
-const getCostPriceClass = (metal) => {
-  const costPrice = getCostPrice(metal.code);
+const getCostPriceClass = (asset) => {
+  const costPrice = getCostPrice(asset.code);
   if (costPrice === 0) return '';
-  return metal.price >= costPrice ? 'positive' : 'negative';
+  return asset.price >= costPrice ? 'positive' : 'negative';
 };
 
-const getPnLClass = (metal) => {
-  const pnl = getTotalAmount(metal.code) * metal.price - getTotalCost(metal.code);
+const getPnLClass = (asset) => {
+  const pnl = getTotalAmount(asset.code) * asset.price - getTotalCost(asset.code);
   if (pnl === 0) return '';
   return pnl > 0 ? 'positive' : 'negative';
 };
 
-const formatPnL = (metal) => {
-  const totalAmount = getTotalAmount(metal.code);
-  const totalCost = getTotalCost(metal.code);
-  const currentValue = totalAmount * metal.price;
+const formatPnL = (asset) => {
+  const totalAmount = getTotalAmount(asset.code);
+  const totalCost = getTotalCost(asset.code);
+  const currentValue = totalAmount * asset.price;
   const pnl = currentValue - totalCost;
   
   if (totalAmount === 0) return '-';
@@ -432,19 +442,19 @@ const togglePriceSort = () => toggleSort('price');
 const toggleCostSort = () => toggleSort('costPrice');
 const toggleAmountSort = () => toggleSort('totalAmount');
 
-const toggleMetalDropdown = () => {
-  showMetalDropdown.value = !showMetalDropdown.value;
+const toggleAssetDropdown = () => {
+  showAssetDropdown.value = !showAssetDropdown.value;
 };
 
 const selectSort = (field, order) => {
   sortField.value = field;
   sortOrder.value = order;
-  showMetalDropdown.value = false;
+  showAssetDropdown.value = false;
 };
 
-const selectMetalFilter = (metal) => {
-  filterMetal.value = metal;
-  showMetalDropdown.value = false;
+const selectAssetFilter = (asset) => {
+  filterAsset.value = asset;
+  showAssetDropdown.value = false;
 };
 
 const sortIcon = (field) => {
@@ -453,11 +463,11 @@ const sortIcon = (field) => {
 };
 
 const clearFilters = () => {
-  filterMetal.value = '';
+  filterAsset.value = '';
 };
 
 const openBuyModal = (code) => {
-  buyMetalCode.value = code;
+  buyAssetCode.value = code;
   buyForm.value = {
     amount: '',
     price: '',
@@ -469,13 +479,13 @@ const openBuyModal = (code) => {
 
 const closeBuyModal = () => {
   showBuyModal.value = false;
-  buyMetalCode.value = '';
+  buyAssetCode.value = '';
 };
 
 const addBuyRecord = () => {
   if (!canAddRecord.value) return;
   
-  const code = buyMetalCode.value;
+  const code = buyAssetCode.value;
   if (!buyRecords.value[code]) {
     buyRecords.value[code] = [];
   }
@@ -508,34 +518,12 @@ const deleteRecord = (code, id) => {
 const fetchPrices = async () => {
   loading.value = true;
   try {
-    const proxyUrl = 'https://api.allorigins.win/raw?url=';
-    
-    const goldResponse = await fetch(proxyUrl + encodeURIComponent('https://data-asg.goldprice.org/dbXRates/CNY'));
-    const goldData = await goldResponse.json();
-    
-    if (goldData && goldData.items && goldData.items[0]) {
-      const goldMetal = metals.value.find(m => m.code === 'gold');
-      const silverMetal = metals.value.find(m => m.code === 'silver');
-      if (goldMetal) goldMetal.price = goldData.items[0].xauPrice / 31.1035;
-      if (silverMetal) silverMetal.price = goldData.items[0].xagPrice / 31.1035;
-    }
-
-    const copperMetal = metals.value.find(m => m.code === 'copper');
-    const crudeMetal = metals.value.find(m => m.code === 'crude');
-    if (copperMetal) copperMetal.price = 0.076;
-    if (crudeMetal) crudeMetal.price = 0.52;
-    
     lastUpdateTime.value = new Date().toLocaleTimeString();
-    
     if (chart) {
       updateChart();
     }
   } catch (error) {
     console.error('Failed to fetch prices:', error);
-    const goldMetal = metals.value.find(m => m.code === 'gold');
-    const silverMetal = metals.value.find(m => m.code === 'silver');
-    if (goldMetal) goldMetal.price = 1134;
-    if (silverMetal) silverMetal.price = 18;
   } finally {
     loading.value = false;
   }
@@ -549,12 +537,12 @@ const generateKlineData = (basePrice, days = 90) => {
     const date = new Date(now);
     date.setDate(date.getDate() - i);
     
-    const trendFactor = Math.sin(i / 10) * (basePrice * 0.03);
-    const volatility = (Math.random() - 0.5) * (basePrice * 0.02);
+    const trendFactor = Math.sin(i / 10) * (basePrice * 0.05);
+    const volatility = (Math.random() - 0.5) * (basePrice * 0.03);
     const open = basePrice + trendFactor + volatility;
-    const close = open + (Math.random() - 0.5) * (basePrice * 0.01);
-    const high = Math.max(open, close) + Math.random() * (basePrice * 0.005);
-    const low = Math.min(open, close) - Math.random() * (basePrice * 0.005);
+    const close = open + (Math.random() - 0.5) * (basePrice * 0.02);
+    const high = Math.max(open, close) + Math.random() * (basePrice * 0.01);
+    const low = Math.min(open, close) - Math.random() * (basePrice * 0.01);
 
     data.push({
       date: date.toISOString().split('T')[0],
@@ -593,9 +581,9 @@ const initChart = () => {
 const updateChart = () => {
   if (!chart) return;
 
-  const metal = metals.value.find(m => m.code === chartMetal.value);
-  const basePrice = metal ? metal.price : 1134;
-  const klineData = generateKlineData(basePrice || 1134);
+  const asset = assets.value.find(a => a.code === chartAsset.value);
+  const basePrice = asset ? asset.price : 50000;
+  const klineData = generateKlineData(basePrice || 50000);
   const dates = klineData.map(d => {
     const parts = d.date.split('-');
     return `${parts[1]}/${parts[2]}`;
@@ -730,13 +718,13 @@ const updateChart = () => {
 };
 
 const switchChart = (code) => {
-  chartMetal.value = code;
+  chartAsset.value = code;
   updateChart();
 };
 
 const saveData = () => {
   try {
-    localStorage.setItem('metalsBuyRecords', JSON.stringify(buyRecords.value));
+    localStorage.setItem('emergingBuyRecords', JSON.stringify(buyRecords.value));
     emit('update:total', totalValue.value);
   } catch (error) {
     console.error('Save failed:', error);
@@ -745,7 +733,7 @@ const saveData = () => {
 
 const loadData = () => {
   try {
-    const saved = localStorage.getItem('metalsBuyRecords');
+    const saved = localStorage.getItem('emergingBuyRecords');
     if (saved) {
       buyRecords.value = JSON.parse(saved);
     }
@@ -766,7 +754,7 @@ const handleClickOutside = (e) => {
   const isHeaderDropdown = target.closest('.header-dropdown');
   
   if (!isDropdown && !isHeaderDropdown) {
-    showMetalDropdown.value = false;
+    showAssetDropdown.value = false;
   }
 };
 
@@ -856,7 +844,7 @@ onUnmounted(() => {
   opacity: 0.6;
 }
 
-.gold-content {
+.emerging-content {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -1021,7 +1009,7 @@ onUnmounted(() => {
   border-color: var(--accent-red);
 }
 
-.metal-row {
+.asset-row {
   display: flex;
   align-items: center;
   border-bottom: 1px solid var(--border-light);
@@ -1032,15 +1020,15 @@ onUnmounted(() => {
   box-sizing: border-box;
 }
 
-.metal-row:last-of-type {
+.asset-row:last-of-type {
   border-bottom: none;
 }
 
-.metal-row:hover {
+.asset-row:hover {
   background: var(--bg-hover);
 }
 
-.metal-row.active {
+.asset-row.active {
   background: rgba(8, 145, 178, 0.1);
 }
 
@@ -1050,8 +1038,8 @@ onUnmounted(() => {
   align-items: center;
 }
 
-.metal-cell {
-  flex: 0 0 120px;
+.asset-cell {
+  flex: 0 0 140px;
 }
 
 .current-price-cell {
@@ -1082,19 +1070,19 @@ onUnmounted(() => {
   padding-right: 10px;
 }
 
-.metal-info {
+.asset-info {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.metal-dot {
+.asset-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
 }
 
-.metal-name {
+.asset-name {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.5px;

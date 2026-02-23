@@ -31,30 +31,11 @@
         ></div>
       </div>
       
-      <div class="percentage-row">
+      <div class="percentage-row" v-if="asset.idealPercentage > 0">
         <span class="label">{{ t('idealRatio') }}</span>
-        <div 
-          class="ideal-input-wrapper"
-          @mouseenter="showIdealInput = true"
-          @mouseleave="showIdealInput = false"
-        >
-          <span 
-            v-if="!showIdealInput" 
-            class="ideal-value font-numeric"
-          >{{ asset.idealPercentage }}</span>
-          <input 
-            v-else
-            type="text" 
-            :value="assetIdealPercentage"
-            @input="handleIdealInput"
-            @blur="updateIdealPercentage" 
-            class="ideal-input font-numeric"
-            placeholder="0"
-          >
-          <span class="unit">%</span>
-        </div>
+        <span class="value font-numeric">{{ asset.idealPercentage }}%</span>
       </div>
-      <div class="percentage-bar ideal">
+      <div class="percentage-bar ideal" v-if="asset.idealPercentage > 0">
         <div 
           class="bar-fill" 
           :style="{ width: asset.idealPercentage + '%', backgroundColor: getIdealBarColor() }"
@@ -62,7 +43,7 @@
       </div>
     </div>
     
-    <div class="tile-status" v-if="showPercentageDiff">
+    <div class="tile-status" v-if="showPercentageDiff && asset.idealPercentage > 0">
       <div class="status-badge" :class="statusClass">
         <i :class="statusIcon"></i>
         <span class="font-numeric">{{ Math.abs(percentageDiff).toFixed(1) }}%</span>
@@ -73,7 +54,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps({
   asset: {
@@ -98,15 +79,9 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:idealPercentage', 'select']);
+const emit = defineEmits(['select']);
 
-const assetIdealPercentage = ref(Number(props.asset.idealPercentage) || 0);
-const showIdealInput = ref(false);
 const isHovered = ref(false);
-
-watch(() => props.asset.idealPercentage, (newValue) => {
-  assetIdealPercentage.value = Number(newValue) || 0;
-});
 
 const currentPercentage = computed(() => {
   if (props.totalAsset === 0) return 0;
@@ -146,21 +121,6 @@ const getIdealBarColor = () => {
 
 const handleSelect = () => {
   emit('select', props.asset.id);
-};
-
-const handleIdealInput = (e) => {
-  const value = e.target.value.replace(/[^0-9]/g, '');
-  if (value === '') {
-    assetIdealPercentage.value = 0;
-  } else {
-    assetIdealPercentage.value = Math.min(100, parseInt(value) || 0);
-  }
-};
-
-const updateIdealPercentage = () => {
-  const value = Math.max(0, Math.min(100, assetIdealPercentage.value));
-  assetIdealPercentage.value = value;
-  emit('update:idealPercentage', props.asset.id, value);
 };
 </script>
 
@@ -213,8 +173,9 @@ const updateIdealPercentage = () => {
 }
 
 .tile-name {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
   color: var(--text-primary);
 }
 
@@ -248,10 +209,11 @@ const updateIdealPercentage = () => {
 }
 
 .percentage-row .label {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.6px;
+  font-weight: 500;
 }
 
 .percentage-row .value {
@@ -275,44 +237,6 @@ const updateIdealPercentage = () => {
   height: 100%;
   border-radius: 1px;
   transition: width 0.2s ease;
-}
-
-.ideal-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  cursor: pointer;
-  min-width: 50px;
-}
-
-.ideal-value {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-primary);
-  width: 36px;
-  text-align: right;
-}
-
-.ideal-input {
-  width: 36px;
-  padding: 2px 4px;
-  font-size: 12px;
-  font-weight: 500;
-  text-align: right;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 3px;
-  color: var(--text-primary);
-}
-
-.ideal-input:focus {
-  outline: none;
-  border-color: var(--accent-blue);
-}
-
-.unit {
-  font-size: 10px;
-  color: var(--text-muted);
 }
 
 .tile-status {
