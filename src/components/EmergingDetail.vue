@@ -886,6 +886,7 @@ onUnmounted(() => {
   position: relative;
   height: 44px;
   box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .header-cell.action-cell {
@@ -1036,6 +1037,7 @@ onUnmounted(() => {
   padding: 10px 12px;
   display: flex;
   align-items: center;
+  white-space: nowrap;
 }
 
 .asset-cell {

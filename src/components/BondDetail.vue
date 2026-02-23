@@ -1369,6 +1369,7 @@ onUnmounted(() => {
   position: relative;
   height: 44px;
   box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .header-cell.action-cell {
@@ -1407,7 +1408,7 @@ onUnmounted(() => {
 }
 
 .header-cell.current-price-cell {
-  flex: 0 0 100px;
+  flex: 0 0 120px;
   justify-content: flex-end;
   padding-right: 10px;
 }
@@ -1550,6 +1551,7 @@ onUnmounted(() => {
   padding: 10px 12px;
   display: flex;
   align-items: center;
+  white-space: nowrap;
 }
 
 .bond-name-cell {
@@ -1575,7 +1577,7 @@ onUnmounted(() => {
 }
 
 .current-price-cell {
-  flex: 0 0 100px;
+  flex: 0 0 120px;
   justify-content: flex-end;
   padding-right: 10px;
 }
