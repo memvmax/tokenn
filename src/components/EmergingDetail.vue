@@ -141,6 +141,7 @@
           <div class="chart-title">{{ currentAssetName }} {{ currentAssetDisplayPrice }} {{ t('priceChart') }}</div>
         </div>
         <TradingViewChart 
+          :key="chartAsset"
           :symbol="currentAssetTvSymbol" 
           theme="dark"
         />

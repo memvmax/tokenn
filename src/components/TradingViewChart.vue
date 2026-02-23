@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 
 const props = defineProps({
   symbol: {
@@ -23,53 +23,48 @@ const props = defineProps({
 });
 
 const containerRef = ref(null);
-const widgetId = ref('tv_' + Math.random().toString(36).substr(2, 9));
-let widgetInstance = null;
+const widgetId = ref('tv_chart_' + Math.random().toString(36).substr(2, 9));
 
-const loadWidget = async () => {
-  await nextTick();
-  
+const loadWidget = () => {
   if (!containerRef.value) return;
   
-  const widgetDiv = containerRef.value.querySelector('.tradingview-widget-container__widget');
+  const widgetDiv = document.getElementById(widgetId.value);
   if (!widgetDiv) return;
   
   widgetDiv.innerHTML = '';
   
   if (typeof TradingView === 'undefined') {
-    await new Promise((resolve) => {
-      const existingScript = document.querySelector('script[src*="tradingview"]');
-      if (existingScript) {
-        existingScript.onload = resolve;
-      } else {
-        const script = document.createElement('script');
-        script.src = 'https://s3.tradingview.com/tv.js';
-        script.onload = resolve;
-        document.head.appendChild(script);
-      }
-    });
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/tv.js';
+    script.onload = () => createWidget();
+    document.head.appendChild(script);
+  } else {
+    createWidget();
   }
+};
+
+const createWidget = () => {
+  const widgetDiv = document.getElementById(widgetId.value);
+  if (!widgetDiv || typeof TradingView === 'undefined') return;
   
-  if (typeof TradingView !== 'undefined' && TradingView.widget) {
-    widgetInstance = new TradingView.widget({
-      width: '100%',
-      height: '100%',
-      symbol: props.symbol,
-      interval: props.interval,
-      timezone: 'Etc/UTC',
-      theme: props.theme,
-      style: '1',
-      locale: 'en',
-      backgroundColor: props.theme === 'dark' ? 'rgba(0,0,0,1)' : 'rgba(255,255,255,1)',
-      hide_top_toolbar: false,
-      hide_legend: false,
-      allow_symbol_change: true,
-      save_image: false,
-      container_id: widgetId.value,
-      hide_side_toolbar: false,
-      toolbar_bg: props.theme === 'dark' ? '#1e222d' : '#f1f3f6'
-    });
-  }
+  new TradingView.widget({
+    width: '100%',
+    height: '100%',
+    symbol: props.symbol,
+    interval: props.interval,
+    timezone: 'Etc/UTC',
+    theme: props.theme,
+    style: '1',
+    locale: 'en',
+    backgroundColor: props.theme === 'dark' ? '#1e222d' : '#f1f3f6',
+    hide_top_toolbar: false,
+    hide_legend: false,
+    allow_symbol_change: true,
+    save_image: false,
+    container_id: widgetId.value,
+    hide_side_toolbar: false,
+    toolbar_bg: props.theme === 'dark' ? '#1e222d' : '#f1f3f6'
+  });
 };
 
 onMounted(() => {
@@ -77,11 +72,7 @@ onMounted(() => {
 });
 
 watch(() => props.symbol, () => {
-  if (widgetInstance) {
-    widgetInstance.chart().setSymbol(props.symbol);
-  } else {
-    loadWidget();
-  }
+  loadWidget();
 });
 
 watch(() => props.theme, () => {
@@ -89,7 +80,6 @@ watch(() => props.theme, () => {
 });
 
 onBeforeUnmount(() => {
-  widgetInstance = null;
 });
 </script>
 

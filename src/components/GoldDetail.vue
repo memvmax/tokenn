@@ -141,6 +141,7 @@
           <div class="chart-title">{{ currentMetalName }} {{ currentMetalDisplayPrice }} {{ t('priceChart') }}</div>
         </div>
         <TradingViewChart 
+          :key="chartMetal"
           :symbol="currentMetalTvSymbol" 
           theme="dark"
         />
