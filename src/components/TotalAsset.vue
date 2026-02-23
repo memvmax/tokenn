@@ -71,11 +71,39 @@ const getPercentage = (amount) => {
 
 <style scoped>
 .total-asset-container {
-  background: var(--bg-secondary);
+  background: 
+    linear-gradient(135deg, rgba(0, 20, 40, 0.85) 0%, rgba(10, 25, 47, 0.9) 100%),
+    url('https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&q=80') center/cover no-repeat;
   border: 1px solid var(--border-light);
   border-radius: 4px;
   padding: 16px 20px;
   margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.total-asset-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(0, 255, 136, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(0, 191, 255, 0.08) 0%, transparent 40%),
+    linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+  pointer-events: none;
+}
+
+.total-asset-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.5), transparent);
 }
 
 .asset-header {
@@ -83,18 +111,6 @@ const getPercentage = (amount) => {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 16px;
-  position: relative;
-}
-
-.asset-header::before {
-  content: '';
-  position: absolute;
-  top: -8px;
-  left: -8px;
-  right: -8px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
-  opacity: 0.3;
 }
 
 .asset-label {
