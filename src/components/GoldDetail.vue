@@ -140,10 +140,13 @@
         <div class="chart-header">
           <div class="chart-title">{{ currentMetalName }} {{ currentMetalDisplayPrice }} {{ t('priceChart') }}</div>
         </div>
-        <div ref="chartRef" class="kline-chart"></div>
+        <TradingViewChart 
+          :symbol="currentMetalTvSymbol" 
+          theme="dark"
+        />
         <div class="chart-hint">
           <i class="fas fa-hand-pointer"></i>
-          <span>Drag to scroll · Scroll to zoom</span>
+          <span>Powered by TradingView</span>
         </div>
       </div>
     </div>
@@ -240,6 +243,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import * as echarts from 'echarts';
+import TradingViewChart from './TradingViewChart.vue';
 
 const props = defineProps({
   t: {
@@ -255,10 +259,10 @@ const props = defineProps({
 const emit = defineEmits(['update:total']);
 
 const metals = ref([
-  { code: 'gold', name: 'GOLD', color: '#ffd700', price: 0, symbol: 'XAUUSD=X', displayPrice: 0, chartData: [] },
-  { code: 'silver', name: 'SILVER', color: '#a8a8a8', price: 0, symbol: 'XAGUSD=X', displayPrice: 0, chartData: [] },
-  { code: 'copper', name: 'COPPER', color: '#b87333', price: 0, symbol: 'HG=F', displayPrice: 0, chartData: [] },
-  { code: 'crude', name: 'CRUDE OIL', color: '#2d2d2d', price: 0, symbol: 'BZ=F', displayPrice: 0, chartData: [] }
+  { code: 'gold', name: 'GOLD', color: '#ffd700', price: 0, symbol: 'FX:XAUUSD', tvSymbol: 'FX:XAUUSD', displayPrice: 0, chartData: [] },
+  { code: 'silver', name: 'SILVER', color: '#a8a8a8', price: 0, symbol: 'FX:XAGUSD', tvSymbol: 'FX:XAGUSD', displayPrice: 0, chartData: [] },
+  { code: 'copper', name: 'COPPER', color: '#b87333', price: 0, symbol: 'CME:HG1!', tvSymbol: 'CME:HG1!', displayPrice: 0, chartData: [] },
+  { code: 'crude', name: 'CRUDE OIL', color: '#2d2d2d', price: 0, symbol: 'TVC:UKOIL', tvSymbol: 'TVC:UKOIL', displayPrice: 0, chartData: [] }
 ]);
 
 const buyRecords = ref({});
@@ -357,6 +361,11 @@ const currentMetalDisplayPrice = computed(() => {
     return `$${m.displayPrice.toLocaleString()}`;
   }
   return '';
+});
+
+const currentMetalTvSymbol = computed(() => {
+  const m = metals.value.find(m => m.code === chartMetal.value);
+  return m ? m.tvSymbol : 'FX:XAUUSD';
 });
 
 const currentMetalRecords = computed(() => {

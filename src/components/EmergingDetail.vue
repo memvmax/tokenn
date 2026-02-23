@@ -140,10 +140,13 @@
         <div class="chart-header">
           <div class="chart-title">{{ currentAssetName }} {{ currentAssetDisplayPrice }} {{ t('priceChart') }}</div>
         </div>
-        <div ref="chartRef" class="kline-chart"></div>
+        <TradingViewChart 
+          :symbol="currentAssetTvSymbol" 
+          theme="dark"
+        />
         <div class="chart-hint">
           <i class="fas fa-hand-pointer"></i>
-          <span>Drag to scroll · Scroll to zoom</span>
+          <span>Powered by TradingView</span>
         </div>
       </div>
     </div>
@@ -240,6 +243,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import * as echarts from 'echarts';
+import TradingViewChart from './TradingViewChart.vue';
 
 const props = defineProps({
   t: {
@@ -260,7 +264,7 @@ const formatCurrency = (value) => {
 };
 
 const assets = ref([
-  { code: 'btc', name: 'BTC', color: '#f7931a', price: 0, unit: 'BTC', symbol: 'BTC-USD', displayPrice: 0, chartData: [] }
+  { code: 'btc', name: 'BTC', color: '#f7931a', price: 0, unit: 'BTC', symbol: 'BTC-USD', tvSymbol: 'BINANCE:BTCUSDT', displayPrice: 0, chartData: [] }
 ]);
 
 const buyRecords = ref({});
@@ -359,6 +363,11 @@ const currentAssetDisplayPrice = computed(() => {
     return `$${a.displayPrice.toLocaleString()}`;
   }
   return '';
+});
+
+const currentAssetTvSymbol = computed(() => {
+  const a = assets.value.find(a => a.code === chartAsset.value);
+  return a ? a.tvSymbol : 'BINANCE:BTCUSDT';
 });
 
 const currentAssetUnit = computed(() => {
