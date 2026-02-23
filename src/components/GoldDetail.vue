@@ -138,7 +138,7 @@
 
       <div class="chart-section">
         <div class="chart-header">
-          <div class="chart-title">{{ currentMetalName }} {{ t('priceChart') }}</div>
+          <div class="chart-title">{{ currentMetalName }} {{ currentMetalDisplayPrice }} {{ t('priceChart') }}</div>
         </div>
         <div ref="chartRef" class="kline-chart"></div>
         <div class="chart-hint">
@@ -255,10 +255,10 @@ const props = defineProps({
 const emit = defineEmits(['update:total']);
 
 const metals = ref([
-  { code: 'gold', name: 'GOLD', color: '#ffd700', price: 0 },
-  { code: 'silver', name: 'SILVER', color: '#a8a8a8', price: 0 },
-  { code: 'copper', name: 'COPPER', color: '#b87333', price: 0 },
-  { code: 'crude', name: 'CRUDE OIL', color: '#2d2d2d', price: 0 }
+  { code: 'gold', name: 'GOLD', color: '#ffd700', price: 0, symbol: 'XAUUSD=X', displayPrice: 0, chartData: [] },
+  { code: 'silver', name: 'SILVER', color: '#a8a8a8', price: 0, symbol: 'XAGUSD=X', displayPrice: 0, chartData: [] },
+  { code: 'copper', name: 'COPPER', color: '#b87333', price: 0, symbol: 'HG=F', displayPrice: 0, chartData: [] },
+  { code: 'crude', name: 'CRUDE OIL', color: '#2d2d2d', price: 0, symbol: 'BZ=F', displayPrice: 0, chartData: [] }
 ]);
 
 const buyRecords = ref({});
@@ -349,6 +349,14 @@ const totalPnLPercent = computed(() => {
 const currentMetalName = computed(() => {
   const m = metals.value.find(m => m.code === chartMetal.value);
   return m ? m.name : 'GOLD';
+});
+
+const currentMetalDisplayPrice = computed(() => {
+  const m = metals.value.find(m => m.code === chartMetal.value);
+  if (m && m.displayPrice) {
+    return `$${m.displayPrice.toLocaleString()}`;
+  }
+  return '';
 });
 
 const currentMetalRecords = computed(() => {
@@ -521,39 +529,45 @@ const fetchPrices = async () => {
       console.error('Failed to fetch forex rate:', e);
     }
 
-    const metalSymbols = {
-      gold: 'XAUUSD=X',
-      silver: 'XAGUSD=X',
-      copper: 'HG=F',
-      crude: 'BZ=F'
-    };
-
-    for (const [code, symbol] of Object.entries(metalSymbols)) {
+    for (const metal of metals.value) {
       try {
         const response = await fetch(
-          `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=5d`
+          `https://query1.finance.yahoo.com/v8/finance/chart/${metal.symbol}?interval=1d&range=90d`
         );
         const data = await response.json();
         
         if (data.chart && data.chart.result && data.chart.result[0]) {
           const meta = data.chart.result[0].meta;
           const priceUSD = meta.regularMarketPrice || meta.previousClose;
+          const result = data.chart.result[0];
           
-          const metal = metals.value.find(m => m.code === code);
-          if (metal) {
-            let priceCNYPerUnit = priceUSD * usdToCny;
+          metal.displayPrice = priceUSD;
+          
+          if (result.timestamp && result.indicators && result.indicators.quote && result.indicators.quote[0]) {
+            const timestamps = result.timestamp;
+            const quotes = result.indicators.quote[0];
             
-            if (code === 'gold' || code === 'silver') {
-              metal.price = priceCNYPerUnit / 31.1035;
-            } else if (code === 'copper') {
-              metal.price = priceCNYPerUnit * 0.0283495;
-            } else if (code === 'crude') {
-              metal.price = priceCNYPerUnit * 0.1364;
-            }
+            metal.chartData = timestamps.map((ts, idx) => ({
+              date: new Date(ts * 1000).toISOString().split('T')[0],
+              open: quotes.open[idx] || priceUSD,
+              high: quotes.high[idx] || priceUSD,
+              low: quotes.low[idx] || priceUSD,
+              close: quotes.close[idx] || priceUSD
+            }));
+          }
+          
+          let priceCNYPerUnit = priceUSD * usdToCny;
+          
+          if (metal.code === 'gold' || metal.code === 'silver') {
+            metal.price = priceCNYPerUnit / 31.1035;
+          } else if (metal.code === 'copper') {
+            metal.price = priceCNYPerUnit * 0.0283495;
+          } else if (metal.code === 'crude') {
+            metal.price = priceCNYPerUnit * 0.1364;
           }
         }
       } catch (e) {
-        console.error(`Failed to fetch ${code}:`, e);
+        console.error(`Failed to fetch ${metal.code}:`, e);
       }
     }
     
@@ -626,8 +640,10 @@ const updateChart = () => {
   if (!chart) return;
 
   const metal = metals.value.find(m => m.code === chartMetal.value);
-  const basePrice = metal ? metal.price : 1134;
-  const klineData = generateKlineData(basePrice || 1134);
+  let klineData = metal && metal.chartData && metal.chartData.length > 0 
+    ? metal.chartData 
+    : generateKlineData(metal ? metal.displayPrice || 2000 : 2000);
+    
   const dates = klineData.map(d => {
     const parts = d.date.split('-');
     return `${parts[1]}/${parts[2]}`;

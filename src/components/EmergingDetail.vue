@@ -138,7 +138,7 @@
 
       <div class="chart-section">
         <div class="chart-header">
-          <div class="chart-title">{{ currentAssetName }} {{ t('priceChart') }}</div>
+          <div class="chart-title">{{ currentAssetName }} {{ currentAssetDisplayPrice }} {{ t('priceChart') }}</div>
         </div>
         <div ref="chartRef" class="kline-chart"></div>
         <div class="chart-hint">
@@ -260,7 +260,7 @@ const formatCurrency = (value) => {
 };
 
 const assets = ref([
-  { code: 'btc', name: 'BTC', color: '#f7931a', price: 0, unit: 'BTC' }
+  { code: 'btc', name: 'BTC', color: '#f7931a', price: 0, unit: 'BTC', symbol: 'BTC-USD', displayPrice: 0, chartData: [] }
 ]);
 
 const buyRecords = ref({});
@@ -351,6 +351,14 @@ const totalPnLPercent = computed(() => {
 const currentAssetName = computed(() => {
   const a = assets.value.find(a => a.code === chartAsset.value);
   return a ? a.name : 'CRYPTO';
+});
+
+const currentAssetDisplayPrice = computed(() => {
+  const a = assets.value.find(a => a.code === chartAsset.value);
+  if (a && a.displayPrice) {
+    return `$${a.displayPrice.toLocaleString()}`;
+  }
+  return '';
 });
 
 const currentAssetUnit = computed(() => {
@@ -528,23 +536,37 @@ const fetchPrices = async () => {
       console.error('Failed to fetch forex rate:', e);
     }
 
-    try {
-      const response = await fetch(
-        'https://query1.finance.yahoo.com/v8/finance/chart/BTC-USD?interval=1d&range=5d'
-      );
-      const data = await response.json();
-      
-      if (data.chart && data.chart.result && data.chart.result[0]) {
-        const meta = data.chart.result[0].meta;
-        const priceUSD = meta.regularMarketPrice || meta.previousClose;
+    for (const asset of assets.value) {
+      try {
+        const response = await fetch(
+          `https://query1.finance.yahoo.com/v8/finance/chart/${asset.symbol}?interval=1d&range=90d`
+        );
+        const data = await response.json();
         
-        const btcAsset = assets.value.find(a => a.code === 'btc');
-        if (btcAsset) {
-          btcAsset.price = priceUSD * usdToCny;
+        if (data.chart && data.chart.result && data.chart.result[0]) {
+          const meta = data.chart.result[0].meta;
+          const priceUSD = meta.regularMarketPrice || meta.previousClose;
+          const result = data.chart.result[0];
+          
+          asset.displayPrice = priceUSD;
+          asset.price = priceUSD * usdToCny;
+          
+          if (result.timestamp && result.indicators && result.indicators.quote && result.indicators.quote[0]) {
+            const timestamps = result.timestamp;
+            const quotes = result.indicators.quote[0];
+            
+            asset.chartData = timestamps.map((ts, idx) => ({
+              date: new Date(ts * 1000).toISOString().split('T')[0],
+              open: quotes.open[idx] || priceUSD,
+              high: quotes.high[idx] || priceUSD,
+              low: quotes.low[idx] || priceUSD,
+              close: quotes.close[idx] || priceUSD
+            }));
+          }
         }
+      } catch (e) {
+        console.error(`Failed to fetch ${asset.code}:`, e);
       }
-    } catch (e) {
-      console.error('Failed to fetch BTC:', e);
     }
     
     lastUpdateTime.value = new Date().toLocaleTimeString();
@@ -613,8 +635,10 @@ const updateChart = () => {
   if (!chart) return;
 
   const asset = assets.value.find(a => a.code === chartAsset.value);
-  const basePrice = asset ? asset.price : 50000;
-  const klineData = generateKlineData(basePrice || 50000);
+  let klineData = asset && asset.chartData && asset.chartData.length > 0 
+    ? asset.chartData 
+    : generateKlineData(asset ? asset.displayPrice || 50000 : 50000);
+    
   const dates = klineData.map(d => {
     const parts = d.date.split('-');
     return `${parts[1]}/${parts[2]}`;
