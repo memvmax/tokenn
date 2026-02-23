@@ -261,8 +261,8 @@ const emit = defineEmits(['update:total']);
 
 const metals = ref([
   { code: 'gold', name: 'GOLD', color: '#ffd700', price: 0, symbol: 'FX:XAUUSD', tvSymbol: 'XAUUSD', displayPrice: 0, chartData: [] },
-  { code: 'silver', name: 'SILVER', color: '#a8a8a8', price: 0, symbol: 'CAPITALCOM:XAGUSD', tvSymbol: 'CAPITALCOM:XAGUSD', displayPrice: 0, chartData: [] },
-  { code: 'copper', name: 'COPPER', color: '#b87333', price: 0, symbol: 'CAPITALCOM:XCUUSD', tvSymbol: 'CAPITALCOM:XCUUSD', displayPrice: 0, chartData: [] },
+  { code: 'silver', name: 'SILVER', color: '#a8a8a8', price: 0, symbol: 'OANDA:XAGUSD', tvSymbol: 'OANDA:XAGUSD', displayPrice: 0, chartData: [] },
+  { code: 'copper', name: 'COPPER', color: '#b87333', price: 0, symbol: 'OANDA:XCUUSD', tvSymbol: 'OANDA:XCUUSD', displayPrice: 0, chartData: [] },
   { code: 'crude', name: 'CRUDE OIL', color: '#2d2d2d', price: 0, symbol: 'OILUSD', tvSymbol: 'OILUSD', displayPrice: 0, chartData: [] }
 ]);
 
