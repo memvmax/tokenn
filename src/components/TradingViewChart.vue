@@ -84,7 +84,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .tradingview-widget-container {
   width: 100%;
-  height: 280px;
+  aspect-ratio: 16 / 9;
+  min-height: 280px;
 }
 
 .tradingview-widget-container__widget {
