@@ -260,10 +260,7 @@ const formatCurrency = (value) => {
 };
 
 const assets = ref([
-  { code: 'crypto', name: 'CRYPTO', color: '#f7931a', price: 50000, unit: 'BTC' },
-  { code: 'nft', name: 'NFT', color: '#e84142', price: 1000, unit: '个' },
-  { code: 'p2p', name: 'P2P LENDING', color: '#00d4aa', price: 1, unit: '份' },
-  { code: 'startup', name: 'STARTUP EQUITY', color: '#ff6b6b', price: 100, unit: '股' }
+  { code: 'btc', name: 'BTC', color: '#f7931a', price: 0, unit: 'BTC' }
 ]);
 
 const buyRecords = ref({});
@@ -271,7 +268,7 @@ const buyRecords = ref({});
 const loading = ref(false);
 const lastUpdateTime = ref('--');
 const chartRef = ref(null);
-const chartAsset = ref('crypto');
+const chartAsset = ref('btc');
 let chart = null;
 
 const sortField = ref('name');
@@ -518,12 +515,46 @@ const deleteRecord = (code, id) => {
 const fetchPrices = async () => {
   loading.value = true;
   try {
+    let usdToCny = 7.2;
+    try {
+      const forexResponse = await fetch(
+        'https://query1.finance.yahoo.com/v8/finance/chart/USDCNY=X?interval=1d&range=1d'
+      );
+      const forexData = await forexResponse.json();
+      if (forexData.chart && forexData.chart.result && forexData.chart.result[0]) {
+        usdToCny = forexData.chart.result[0].meta.regularMarketPrice || 7.2;
+      }
+    } catch (e) {
+      console.error('Failed to fetch forex rate:', e);
+    }
+
+    try {
+      const response = await fetch(
+        'https://query1.finance.yahoo.com/v8/finance/chart/BTC-USD?interval=1d&range=5d'
+      );
+      const data = await response.json();
+      
+      if (data.chart && data.chart.result && data.chart.result[0]) {
+        const meta = data.chart.result[0].meta;
+        const priceUSD = meta.regularMarketPrice || meta.previousClose;
+        
+        const btcAsset = assets.value.find(a => a.code === 'btc');
+        if (btcAsset) {
+          btcAsset.price = priceUSD * usdToCny;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch BTC:', e);
+    }
+    
     lastUpdateTime.value = new Date().toLocaleTimeString();
     if (chart) {
       updateChart();
     }
   } catch (error) {
     console.error('Failed to fetch prices:', error);
+    const btcAsset = assets.value.find(a => a.code === 'btc');
+    if (btcAsset) btcAsset.price = 500000;
   } finally {
     loading.value = false;
   }

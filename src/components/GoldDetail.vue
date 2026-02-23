@@ -508,22 +508,54 @@ const deleteRecord = (code, id) => {
 const fetchPrices = async () => {
   loading.value = true;
   try {
-    const proxyUrl = 'https://api.allorigins.win/raw?url=';
-    
-    const goldResponse = await fetch(proxyUrl + encodeURIComponent('https://data-asg.goldprice.org/dbXRates/CNY'));
-    const goldData = await goldResponse.json();
-    
-    if (goldData && goldData.items && goldData.items[0]) {
-      const goldMetal = metals.value.find(m => m.code === 'gold');
-      const silverMetal = metals.value.find(m => m.code === 'silver');
-      if (goldMetal) goldMetal.price = goldData.items[0].xauPrice / 31.1035;
-      if (silverMetal) silverMetal.price = goldData.items[0].xagPrice / 31.1035;
+    let usdToCny = 7.2;
+    try {
+      const forexResponse = await fetch(
+        'https://query1.finance.yahoo.com/v8/finance/chart/USDCNY=X?interval=1d&range=1d'
+      );
+      const forexData = await forexResponse.json();
+      if (forexData.chart && forexData.chart.result && forexData.chart.result[0]) {
+        usdToCny = forexData.chart.result[0].meta.regularMarketPrice || 7.2;
+      }
+    } catch (e) {
+      console.error('Failed to fetch forex rate:', e);
     }
 
-    const copperMetal = metals.value.find(m => m.code === 'copper');
-    const crudeMetal = metals.value.find(m => m.code === 'crude');
-    if (copperMetal) copperMetal.price = 0.076;
-    if (crudeMetal) crudeMetal.price = 0.52;
+    const metalSymbols = {
+      gold: 'XAUUSD=X',
+      silver: 'XAGUSD=X',
+      copper: 'HG=F',
+      crude: 'BZ=F'
+    };
+
+    for (const [code, symbol] of Object.entries(metalSymbols)) {
+      try {
+        const response = await fetch(
+          `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=5d`
+        );
+        const data = await response.json();
+        
+        if (data.chart && data.chart.result && data.chart.result[0]) {
+          const meta = data.chart.result[0].meta;
+          const priceUSD = meta.regularMarketPrice || meta.previousClose;
+          
+          const metal = metals.value.find(m => m.code === code);
+          if (metal) {
+            let priceCNYPerUnit = priceUSD * usdToCny;
+            
+            if (code === 'gold' || code === 'silver') {
+              metal.price = priceCNYPerUnit / 31.1035;
+            } else if (code === 'copper') {
+              metal.price = priceCNYPerUnit * 0.0283495;
+            } else if (code === 'crude') {
+              metal.price = priceCNYPerUnit * 0.1364;
+            }
+          }
+        }
+      } catch (e) {
+        console.error(`Failed to fetch ${code}:`, e);
+      }
+    }
     
     lastUpdateTime.value = new Date().toLocaleTimeString();
     
