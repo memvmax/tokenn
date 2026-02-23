@@ -7,6 +7,7 @@
           @switchAccount="handleSwitchAccount"
           @openThemes="handleOpenThemes"
           @presetChange="handlePresetChange"
+          :currentThemeName="t(currentThemeInfo.nameKey)"
         />
 
         <TotalAsset 
@@ -191,6 +192,7 @@ const loadFromLocalStorage = () => {
 const saveToLocalStorage = () => {
   try {
     localStorage.setItem('wealthAssets', JSON.stringify(assets.value));
+    localStorage.setItem('theme', currentTheme.value);
   } catch (error) {
     console.error('Save failed:', error);
   }
@@ -257,13 +259,33 @@ const handleSwitchAccount = () => {
   console.log('Switch account clicked');
 };
 
+const currentTheme = ref('default');
+
+const themes = [
+  { id: 'default', name: 'Default', nameKey: 'themeDefault' },
+  { id: 'ai-wallpaper', name: 'AI Wallpaper', nameKey: 'themeAI' }
+];
+
+const currentThemeInfo = computed(() => themes.find(t => t.id === currentTheme.value) || themes[0]);
+
+const switchTheme = () => {
+  const currentIndex = themes.findIndex(t => t.id === currentTheme.value);
+  const nextIndex = (currentIndex + 1) % themes.length;
+  currentTheme.value = themes[nextIndex].id;
+  document.documentElement.setAttribute('data-theme', currentTheme.value);
+  saveToLocalStorage();
+};
+
 const handleOpenThemes = () => {
-  console.log('Open themes clicked');
+  switchTheme();
 };
 
 onMounted(() => {
   initLocale();
   loadFromLocalStorage();
+  const savedTheme = localStorage.getItem('theme') || 'default';
+  currentTheme.value = savedTheme;
+  document.documentElement.setAttribute('data-theme', savedTheme);
 });
 </script>
 

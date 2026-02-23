@@ -86,7 +86,7 @@
                   {{ t('themes') }}
                 </div>
                 <button class="menu-item" @click="openThemes">
-                  <span>{{ t('browseThemes') }}</span>
+                  <span>{{ currentThemeName }}</span>
                   <i class="fas fa-chevron-right"></i>
                 </button>
               </div>
@@ -233,6 +233,13 @@ const editForm = ref({
   name: '',
   modules: [],
   percentages: {}
+})
+
+const props = defineProps({
+  currentThemeName: {
+    type: String,
+    default: 'Default'
+  }
 })
 
 const emit = defineEmits(['logout', 'switchAccount', 'openThemes', 'presetChange'])

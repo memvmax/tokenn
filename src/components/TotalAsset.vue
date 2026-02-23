@@ -71,9 +71,7 @@ const getPercentage = (amount) => {
 
 <style scoped>
 .total-asset-container {
-  background: 
-    linear-gradient(135deg, rgba(0, 20, 40, 0.85) 0%, rgba(10, 25, 47, 0.9) 100%),
-    url('https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&q=80') center/cover no-repeat;
+  background: var(--total-asset-bg), var(--total-asset-image) center/cover no-repeat;
   border: 1px solid var(--border-light);
   border-radius: 4px;
   padding: 16px 20px;
