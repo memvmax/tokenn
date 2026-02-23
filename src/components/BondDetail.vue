@@ -1675,11 +1675,11 @@ onUnmounted(() => {
 }
 
 .cost-value.positive {
-  color: #26a69a;
+  color: var(--accent-green);
 }
 
 .cost-value.negative {
-  color: #ef5350;
+  color: var(--accent-red);
 }
 
 .amount-value {
@@ -1704,11 +1704,11 @@ onUnmounted(() => {
 }
 
 .pnl-value.positive {
-  color: #26a69a;
+  color: var(--accent-green);
 }
 
 .pnl-value.negative {
-  color: #ef5350;
+  color: var(--accent-red);
 }
 
 .add-buy-btn {
@@ -1776,11 +1776,11 @@ onUnmounted(() => {
 }
 
 .summary-pnl-value.positive {
-  color: #26a69a;
+  color: var(--accent-green);
 }
 
 .summary-pnl-value.negative {
-  color: #ef5350;
+  color: var(--accent-red);
 }
 
 .pnl-percent {

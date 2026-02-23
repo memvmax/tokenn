@@ -271,6 +271,9 @@ onMounted(() => {
 .app-container {
   min-height: 100vh;
   background: var(--bg-primary);
+  background-image: 
+    radial-gradient(ellipse at top, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
 }
 
 .main-content {

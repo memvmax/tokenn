@@ -295,7 +295,7 @@ const handleClickOutside = (e) => {
 
 .dropdown-item.active {
   background: rgba(8, 145, 178, 0.15);
-  color: #0891b2;
+  color: var(--accent-cyan);
 }
 
 .dropdown-item i {

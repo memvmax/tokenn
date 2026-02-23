@@ -6,22 +6,22 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #131722;
-  --bg-secondary: #1e222d;
-  --bg-tertiary: #2a2e39;
-  --bg-card: #1e222d;
-  --bg-hover: #2a2e39;
-  --border-color: #363a45;
-  --border-light: #2a2e39;
-  --text-primary: #d1d4dc;
-  --text-secondary: #787b86;
-  --text-muted: #5d606b;
-  --accent-green: #26a69a;
-  --accent-red: #ef5350;
-  --accent-blue: #2962ff;
-  --accent-yellow: #ffeb3b;
-  --accent-purple: #ab47bc;
-  --accent-orange: #ff9800;
+  --bg-primary: #0a0e17;
+  --bg-secondary: #111827;
+  --bg-tertiary: #1e293b;
+  --bg-card: #111827;
+  --bg-hover: #1e293b;
+  --border-color: #334155;
+  --border-light: #1e293b;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-green: #22d3ee;
+  --accent-red: #f87171;
+  --accent-blue: #3b82f6;
+  --accent-cyan: #06b6d4;
+  --nvidia-green: #76b900;
+  --ai-glow: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
 }
 
 @layer base {
@@ -38,6 +38,7 @@
     margin: 0;
     font-size: 14px;
     line-height: 1.5;
+    overflow-y: scroll;
   }
 
   h1, h2, h3, h4, h5, h6 {

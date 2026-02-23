@@ -606,8 +606,8 @@ const updateChart = () => {
   const ma10 = calculateMA(klineData, 10);
   const ma20 = calculateMA(klineData, 20);
 
-  const upColor = '#26a69a';
-  const downColor = '#ef5350';
+  const upColor = 'var(--accent-green)';
+  const downColor = 'var(--accent-red)';
 
   const option = {
     backgroundColor: 'transparent',
@@ -1112,11 +1112,11 @@ onUnmounted(() => {
 }
 
 .cost-value.positive {
-  color: #26a69a;
+  color: var(--accent-green);
 }
 
 .cost-value.negative {
-  color: #ef5350;
+  color: var(--accent-red);
 }
 
 .amount-value {
@@ -1141,11 +1141,11 @@ onUnmounted(() => {
 }
 
 .pnl-value.positive {
-  color: #26a69a;
+  color: var(--accent-green);
 }
 
 .pnl-value.negative {
-  color: #ef5350;
+  color: var(--accent-red);
 }
 
 .add-buy-btn {
@@ -1213,11 +1213,11 @@ onUnmounted(() => {
 }
 
 .summary-pnl-value.positive {
-  color: #26a69a;
+  color: var(--accent-green);
 }
 
 .summary-pnl-value.negative {
-  color: #ef5350;
+  color: var(--accent-red);
 }
 
 .pnl-percent {
