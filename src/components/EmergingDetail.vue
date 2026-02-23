@@ -265,7 +265,9 @@ const formatCurrency = (value) => {
 };
 
 const assets = ref([
-  { code: 'btc', name: 'BTC', color: '#f7931a', price: 0, unit: 'BTC', symbol: 'BTC-USD', tvSymbol: 'BINANCE:BTCUSDT', displayPrice: 0, chartData: [] }
+  { code: 'btc', name: 'BTC', color: '#f7931a', price: 0, unit: 'BTC', symbol: 'BTC-USD', tvSymbol: 'BINANCE:BTCUSDT', displayPrice: 0, chartData: [] },
+  { code: 'bnb', name: 'BNB', color: '#f3ba2f', price: 0, unit: 'BNB', symbol: 'BNB-USD', tvSymbol: 'BINANCE:BNBUSDT', displayPrice: 0, chartData: [] },
+  { code: 'sui', name: 'SUI', color: '#00ff99', price: 0, unit: 'SUI', symbol: 'SUI-USD', tvSymbol: 'BINANCE:SUIUSDT', displayPrice: 0, chartData: [] }
 ]);
 
 const buyRecords = ref({});
