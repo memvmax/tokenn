@@ -303,19 +303,19 @@
       <div v-if="filteredAccounts.length === 0 && accounts.length > 0" class="no-results-row">
         <span>{{ t('noMatchingResults') }}</span>
       </div>
+
+      <div class="detail-summary" v-if="accounts.length > 0">
+        <div class="summary-row">
+          <span class="summary-label">{{ t('totalCash') }}</span>
+          <span class="summary-value font-numeric">{{ formatAmount(filteredTotalCNY) }} CNY</span>
+          <span v-if="filterBank || filterCurrency" class="filtered-hint">({{ t('filtered') }})</span>
+        </div>
+      </div>
     </div>
 
     <div class="empty-state" v-if="accounts.length === 0">
       <i class="fas fa-university"></i>
       <p>{{ t('noAccounts') }}</p>
-    </div>
-
-    <div class="detail-summary" v-if="accounts.length > 0">
-      <div class="summary-row">
-        <span class="summary-label">{{ t('totalCash') }}</span>
-        <span class="summary-value font-numeric">{{ formatAmount(filteredTotalCNY) }} CNY</span>
-        <span v-if="filterBank || filterCurrency" class="filtered-hint">({{ t('filtered') }})</span>
-      </div>
     </div>
   </div>
 </template>
@@ -749,9 +749,9 @@ onUnmounted(() => {
 }
 
 .edit-toggle-btn.is-editing {
-  border-color: #0891b2;
-  color: #0891b2;
-  background: rgba(8, 145, 178, 0.1);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+  background: rgba(41, 98, 255, 0.1);
 }
 
 .transfer-btn {
@@ -938,7 +938,7 @@ onUnmounted(() => {
 
 .confirm-btn {
   padding: 8px 16px;
-  background: #0891b2;
+  background: var(--accent-blue);
   border: none;
   border-radius: 4px;
   color: #fff;
@@ -1074,8 +1074,8 @@ onUnmounted(() => {
 }
 
 .dropdown-item.active {
-  background: rgba(8, 145, 178, 0.15);
-  color: #0891b2;
+  background: rgba(41, 98, 255, 0.15);
+  color: var(--accent-blue);
 }
 
 .dropdown-item i {
@@ -1130,7 +1130,31 @@ onUnmounted(() => {
 }
 
 .account-row.is-editing {
-  background: var(--bg-secondary);
+  background: var(--bg-tertiary);
+}
+
+.field-input {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.field-input::placeholder {
+  color: var(--text-muted);
+}
+
+.field-input.font-numeric {
+  font-family: 'Space Grotesk', 'SF Mono', monospace;
+  text-align: right;
 }
 
 .cell {
@@ -1175,7 +1199,7 @@ onUnmounted(() => {
 
 .field-input:focus {
   outline: none;
-  border-color: #0891b2;
+  border-color: var(--accent-blue);
 }
 
 .field-input::placeholder {
@@ -1194,13 +1218,13 @@ onUnmounted(() => {
   border: 1px solid var(--border-color);
   border-radius: 3px;
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
 }
 
 .field-select:focus {
   outline: none;
-  border-color: #0891b2;
+  border-color: var(--accent-blue);
 }
 
 .field-display {
@@ -1254,8 +1278,11 @@ onUnmounted(() => {
 }
 
 .detail-summary {
-  padding-top: 12px;
-  border-top: 1px solid var(--border-light);
+  padding: 12px 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
 }
 
 .summary-row {
