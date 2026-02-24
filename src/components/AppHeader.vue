@@ -110,7 +110,9 @@
               <template v-if="user">
                 <div class="menu-section user-info">
                   <i class="fas fa-user-circle"></i>
-                  <span>{{ user.email }}</span>
+                  <div class="user-email-wrapper">
+                    <span class="user-email" :class="{ 'scrolling': isEmailLong }">{{ user.email }}</span>
+                  </div>
                 </div>
                 
                 <button class="menu-item" @click="switchAccount">
@@ -504,6 +506,10 @@ const login = () => {
   closeMenu()
 }
 
+const isEmailLong = computed(() => {
+  return props.user?.email && props.user.email.length > 25
+})
+
 const handleResize = () => {
   if (showPresetMenu.value) {
     updatePresetButtonRect()
@@ -806,11 +812,40 @@ onUnmounted(() => {
   color: var(--text-secondary);
   border-bottom: 1px solid var(--border-light);
   margin-bottom: 8px;
+  overflow: hidden;
 }
 
 .user-info i {
   font-size: 16px;
   color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.user-email-wrapper {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.user-email {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-email.scrolling {
+  text-overflow: clip;
+  animation: scroll-email 8s linear infinite;
+}
+
+@keyframes scroll-email {
+  0%, 20% {
+    transform: translateX(0);
+  }
+  80%, 100% {
+    transform: translateX(calc(-100% + 180px));
+  }
 }
 
 .menu-overlay {
