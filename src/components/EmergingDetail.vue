@@ -144,7 +144,7 @@
         </div>
       </div>
 
-      <div class="chart-section">
+      <div class="chart-section" v-show="false">
         <div class="chart-header">
           <div class="chart-title">{{ currentAssetName }} {{ currentAssetDisplayPrice }} {{ t('priceChart') }}</div>
         </div>
