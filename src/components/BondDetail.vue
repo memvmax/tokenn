@@ -224,6 +224,30 @@
                 <span class="bond-dot" :style="{ background: bond.color }"></span>
                 <span class="bond-name">{{ bond.name }}</span>
               </div>
+              <div class="mobile-holdings">
+                <span class="holdings-value font-numeric">{{ formatNumber(bond.holdings || 0) }}</span>
+                <span class="holdings-unit">份</span>
+              </div>
+            </div>
+            <div class="cell price-cell">
+              <div class="price-row">
+                <span class="price-label">现价</span>
+                <span class="price-value font-numeric">{{ formatPrice(bond.price) }}</span>
+              </div>
+              <div class="price-row cost">
+                <span class="price-label">成本</span>
+                <span class="cost-value font-numeric">{{ formatPrice(bond.costPrice || 0) }}</span>
+              </div>
+            </div>
+            <div class="cell value-cell">
+              <div class="value-row">
+                <span class="value-label">市值</span>
+                <span class="value-amount font-numeric">{{ formatCurrency((bond.holdings || 0) * bond.price) }}</span>
+              </div>
+              <div class="value-row pnl">
+                <span class="value-label">盈亏</span>
+                <span class="pnl-value font-numeric" :class="getPnLClassNew(bond)">{{ formatPnLNew(bond) }}</span>
+              </div>
             </div>
             <div class="cell holdings-cell">
               <input 
@@ -2205,6 +2229,138 @@ onUnmounted(() => {
   .menu-item {
     padding: 8px 12px;
     font-size: 12px;
+  }
+
+  .accounts-header {
+    display: none;
+  }
+
+  .holdings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: none;
+    overflow-x: visible;
+  }
+
+  .bond-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    height: auto;
+    min-width: auto;
+    padding: 0;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .bond-row .cell {
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 70px;
+  }
+
+  .bond-row .bond-name-cell {
+    background: var(--bg-tertiary);
+    gap: 6px;
+  }
+
+  .bond-row .bond-info {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .bond-row .bond-name {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .bond-row .mobile-holdings {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .bond-row .mobile-holdings .holdings-value {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .bond-row .mobile-holdings .holdings-unit {
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+
+  .bond-row .price-cell {
+    background: var(--bg-secondary);
+    gap: 6px;
+  }
+
+  .bond-row .price-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+  }
+
+  .bond-row .price-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .bond-row .price-value {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .bond-row .price-row.cost .cost-value {
+    font-size: 12px;
+  }
+
+  .bond-row .value-cell {
+    background: var(--bg-tertiary);
+    gap: 6px;
+  }
+
+  .bond-row .value-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+  }
+
+  .bond-row .value-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .bond-row .value-amount {
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .bond-row .value-row.pnl .pnl-value {
+    font-size: 11px;
+  }
+
+  .bond-row .holdings-cell,
+  .bond-row .cost-price-cell,
+  .bond-row .cost-value-cell,
+  .bond-row .current-price-cell,
+  .bond-row .current-value-cell,
+  .bond-row .pnl-cell,
+  .bond-row .action-cell {
+    display: none;
   }
 }
 </style>

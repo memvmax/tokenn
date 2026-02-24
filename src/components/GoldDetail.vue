@@ -92,6 +92,34 @@
                 <span class="metal-dot" :style="{ background: metal.color }"></span>
                 <span class="metal-name">{{ metal.name }}</span>
               </div>
+              <div class="mobile-amount">
+                <span class="amount-value font-numeric">{{ formatNumber(getTotalAmount(metal.code)) }}</span>
+                <span class="amount-unit">g</span>
+              </div>
+            </div>
+            <div class="cell price-cell">
+              <div class="price-row">
+                <span class="price-label">现价</span>
+                <span class="price-value font-numeric">{{ formatPrice(metal.price) }}</span>
+              </div>
+              <div class="price-row cost">
+                <span class="price-label">成本</span>
+                <span class="cost-value font-numeric" :class="getCostPriceClass(metal)">
+                  {{ formatPrice(getCostPrice(metal.code)) }}
+                </span>
+              </div>
+            </div>
+            <div class="cell value-cell">
+              <div class="value-row">
+                <span class="value-label">市值</span>
+                <span class="value-amount font-numeric">{{ formatCurrency(getTotalAmount(metal.code) * metal.price) }}</span>
+              </div>
+              <div class="value-row pnl">
+                <span class="value-label">盈亏</span>
+                <span class="pnl-value font-numeric" :class="getPnLClass(metal)">
+                  {{ formatPnL(metal) }}
+                </span>
+              </div>
             </div>
             <div class="cell current-price-cell">
               <span class="price-value font-numeric">{{ formatPrice(metal.price) }}</span>
@@ -1750,6 +1778,136 @@ onUnmounted(() => {
   .menu-item {
     padding: 8px 12px;
     font-size: 12px;
+  }
+
+  .accounts-header {
+    display: none;
+  }
+
+  .holdings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: none;
+    overflow-x: visible;
+  }
+
+  .metal-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    height: auto;
+    min-width: auto;
+    padding: 0;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .metal-row .cell {
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 70px;
+  }
+
+  .metal-row .metal-cell {
+    background: var(--bg-tertiary);
+    gap: 6px;
+  }
+
+  .metal-row .metal-info {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .metal-row .metal-name {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .metal-row .mobile-amount {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .metal-row .mobile-amount .amount-value {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .metal-row .mobile-amount .amount-unit {
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+
+  .metal-row .price-cell {
+    background: var(--bg-secondary);
+    gap: 6px;
+  }
+
+  .metal-row .price-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+  }
+
+  .metal-row .price-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .metal-row .price-value {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .metal-row .price-row.cost .cost-value {
+    font-size: 12px;
+  }
+
+  .metal-row .value-cell {
+    background: var(--bg-tertiary);
+    gap: 6px;
+  }
+
+  .metal-row .value-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+  }
+
+  .metal-row .value-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .metal-row .value-amount {
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .metal-row .value-row.pnl .pnl-value {
+    font-size: 11px;
+  }
+
+  .metal-row .current-price-cell,
+  .metal-row .cost-price-cell,
+  .metal-row .amount-cell,
+  .metal-row .pnl-cell,
+  .metal-row .action-cell {
+    display: none;
   }
 }
 </style>

@@ -1594,5 +1594,82 @@ onUnmounted(() => {
     padding: 8px 12px;
     font-size: 12px;
   }
+
+  .accounts-header {
+    display: none;
+  }
+
+  .accounts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: none;
+    overflow-x: visible;
+  }
+
+  .account-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    height: auto;
+    min-width: auto;
+    padding: 0;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .account-row .cell {
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid var(--border-light);
+    min-height: 50px;
+  }
+
+  .account-row .cell:last-child {
+    border-right: none;
+  }
+
+  .account-row .bank-cell {
+    background: var(--bg-tertiary);
+  }
+
+  .account-row .bank-cell .field-display,
+  .account-row .bank-cell .field-input {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+  }
+
+  .account-row .currency-cell {
+    background: var(--bg-secondary);
+  }
+
+  .account-row .currency-cell .field-display,
+  .account-row .currency-cell .field-input {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+
+  .account-row .amount-cell {
+    background: var(--bg-tertiary);
+  }
+
+  .account-row .amount-cell .field-display,
+  .account-row .amount-cell .field-input {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-green);
+  }
+
+  .account-row .comments-cell,
+  .account-row .action-cell {
+    display: none;
+  }
 }
 </style>

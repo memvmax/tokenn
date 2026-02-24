@@ -90,31 +90,34 @@
                 <span class="asset-dot" :style="{ background: asset.color }"></span>
                 <span class="asset-name">{{ asset.name }}</span>
               </div>
+              <div class="mobile-amount">
+                <span class="amount-value font-numeric">{{ formatNumber(getTotalAmount(asset.code)) }}</span>
+                <span class="amount-unit">{{ asset.unit }}</span>
+              </div>
             </div>
-            <div class="cell current-price-cell">
-              <span class="price-value font-numeric">{{ formatPrice(asset.price) }}</span>
-            </div>
-            <div class="cell cost-price-cell">
-              <span class="cost-value font-numeric" :class="getCostPriceClass(asset)">
-                {{ formatPrice(getCostPrice(asset.code)) }}
-              </span>
-            </div>
-            <div class="cell amount-cell">
-              <span class="amount-value font-numeric">{{ formatNumber(getTotalAmount(asset.code)) }}</span>
-              <span class="amount-unit">{{ asset.unit }}</span>
+            <div class="cell price-cell">
+              <div class="price-row">
+                <span class="price-label">现价</span>
+                <span class="price-value font-numeric">{{ formatPrice(asset.price) }}</span>
+              </div>
+              <div class="price-row cost">
+                <span class="price-label">成本</span>
+                <span class="cost-value font-numeric" :class="getCostPriceClass(asset)">
+                  {{ formatPrice(getCostPrice(asset.code)) }}
+                </span>
+              </div>
             </div>
             <div class="cell value-cell">
-              <span class="value-amount font-numeric">{{ formatCurrency(getTotalAmount(asset.code) * asset.price) }}</span>
-            </div>
-            <div class="cell pnl-cell">
-              <span class="pnl-value font-numeric" :class="getPnLClass(asset)">
-                {{ formatPnL(asset) }}
-              </span>
-            </div>
-            <div class="cell action-cell">
-              <button class="add-buy-btn" @click.stop="openBuyModal(asset.code)" title="Add Buy Record">
-                <i class="fas fa-plus"></i>
-              </button>
+              <div class="value-row">
+                <span class="value-label">市值</span>
+                <span class="value-amount font-numeric">{{ formatCurrency(getTotalAmount(asset.code) * asset.price) }}</span>
+              </div>
+              <div class="value-row pnl">
+                <span class="value-label">盈亏</span>
+                <span class="pnl-value font-numeric" :class="getPnLClass(asset)">
+                  {{ formatPnL(asset) }}
+                </span>
+              </div>
             </div>
           </div>
           
@@ -1412,6 +1415,140 @@ onUnmounted(() => {
   .menu-item {
     padding: 8px 12px;
     font-size: 12px;
+  }
+
+  .accounts-header {
+    display: none;
+  }
+
+  .holdings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: none;
+    overflow-x: visible;
+  }
+
+  .asset-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    height: auto;
+    min-width: auto;
+    padding: 0;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: default;
+  }
+
+  .asset-row .cell {
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 70px;
+  }
+
+  .asset-row .asset-cell {
+    background: var(--bg-tertiary);
+    gap: 6px;
+  }
+
+  .asset-row .asset-info {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .asset-row .asset-name {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .asset-row .mobile-amount {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .asset-row .mobile-amount .amount-value {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .asset-row .mobile-amount .amount-unit {
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+
+  .asset-row .price-cell {
+    background: var(--bg-secondary);
+    gap: 6px;
+  }
+
+  .asset-row .price-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+  }
+
+  .asset-row .price-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .asset-row .price-value {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .asset-row .price-row.cost .cost-value {
+    font-size: 12px;
+  }
+
+  .asset-row .value-cell {
+    background: var(--bg-tertiary);
+    gap: 6px;
+  }
+
+  .asset-row .value-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+  }
+
+  .asset-row .value-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .asset-row .value-amount {
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .asset-row .value-row.pnl .pnl-value {
+    font-size: 11px;
+  }
+
+  .asset-row .action-cell {
+    display: none;
+  }
+
+  .asset-row .current-price-cell,
+  .asset-row .cost-price-cell,
+  .asset-row .amount-cell,
+  .asset-row .pnl-cell {
+    display: none;
   }
 }
 </style>
