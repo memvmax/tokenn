@@ -6,9 +6,17 @@
         <span>{{ t('goldDetail') }}</span>
       </div>
       <div class="header-actions">
-        <button class="refresh-btn" @click="fetchPrices" :disabled="loading">
-          <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
-        </button>
+        <div class="action-menu-wrapper">
+          <button class="action-menu-btn" @click.stop="showActionMenu = !showActionMenu">
+            <i class="fas fa-ellipsis-h"></i>
+          </button>
+          <div class="action-menu-dropdown" v-if="showActionMenu" @click.stop>
+            <button class="menu-item" @click="fetchPrices(); showActionMenu = false">
+              <i class="fas fa-sync-alt"></i>
+              <span>{{ t('refresh') || 'Refresh' }}</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -258,6 +266,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:total']);
+
+const showActionMenu = ref(false);
 
 const metals = ref([
   { code: 'gold', name: 'GOLD', color: '#ffd700', price: 0, symbol: 'FX:XAUUSD', tvSymbol: 'XAUUSD', displayPrice: 0, chartData: [] },
@@ -822,9 +832,13 @@ const handleClickOutside = (e) => {
   const target = e.target;
   const isDropdown = target.closest('.dropdown-menu');
   const isHeaderDropdown = target.closest('.header-dropdown');
+  const isActionMenu = target.closest('.action-menu-wrapper');
   
   if (!isDropdown && !isHeaderDropdown) {
     showMetalDropdown.value = false;
+  }
+  if (!isActionMenu) {
+    showActionMenu.value = false;
   }
 };
 
@@ -931,7 +945,8 @@ onUnmounted(() => {
   flex-direction: column;
   border: 1px solid var(--border-light);
   border-radius: 4px;
-  overflow: visible;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .accounts-header {
@@ -939,6 +954,7 @@ onUnmounted(() => {
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-light);
   position: relative;
+  min-width: max-content;
 }
 
 .header-cell {
@@ -1089,6 +1105,7 @@ onUnmounted(() => {
   transition: background 0.15s ease;
   height: 44px;
   box-sizing: border-box;
+  min-width: max-content;
 }
 
 .metal-row:last-of-type {
@@ -1653,5 +1670,86 @@ onUnmounted(() => {
 .confirm-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.action-menu-wrapper {
+  position: relative;
+}
+
+.action-menu-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.action-menu-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.action-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 140px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.menu-item {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-primary);
+  text-align: left;
+  transition: background 0.2s ease;
+}
+
+.menu-item:hover {
+  background: var(--bg-hover);
+}
+
+.menu-item i {
+  width: 16px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 480px) {
+  .action-menu-btn {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .action-menu-dropdown {
+    min-width: 120px;
+  }
+  
+  .menu-item {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
 }
 </style>

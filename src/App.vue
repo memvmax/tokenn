@@ -22,50 +22,49 @@
         <WarningAlert :total-ideal-percentage="totalIdealPercentage" :t="t" />
 
         <div class="assets-grid">
-          <AssetCard 
-            v-for="asset in visibleAssets" 
-            :key="asset.id" 
-            :asset="asset" 
-            :total-asset="totalAsset" 
-            :t="t"
-            :format-amount="formatAmount"
-            :selected="selectedAssetId === asset.id"
-            @select="handleAssetSelect" 
-          />
-        </div>
-
-        <div class="detail-section" v-if="selectedAssetId && selectedAssetId !== 'overview'">
-          <CashDetail 
-            v-if="selectedAssetId === 'cash'"
-            :t="t"
-            :format-amount="formatAmount"
-            @update:total="updateCashTotal"
-            @transfer="handleTransfer"
-          />
-          <GoldDetail 
-            v-else-if="selectedAssetId === 'gold'"
-            :t="t"
-            :format-currency="formatCurrency"
-            @update:total="updateGoldTotal"
-          />
-          <BondDetail 
-            v-else-if="selectedAssetId === 'bond'"
-            :t="t"
-            :format-amount="formatAmount"
-            @update:total="updateBondTotal"
-            @transfer="handleTransfer"
-          />
-          <EmergingDetail 
-            v-else-if="selectedAssetId === 'emerging'"
-            :t="t"
-            :format-amount="formatAmount"
-            @update:total="updateEmergingTotal"
-            @transfer="handleTransfer"
-          />
-          <div v-else class="detail-placeholder">
-            <i class="fas fa-tools"></i>
-            <p>{{ t('detailComingSoon') }}</p>
-          </div>
+          <template v-for="asset in visibleAssets" :key="asset.id">
+            <AssetCard 
+              :asset="asset" 
+              :total-asset="totalAsset" 
+              :t="t"
+              :format-amount="formatAmount"
+              :selected="selectedAssetId === asset.id"
+              @select="handleAssetSelect" 
+            />
+            <div class="detail-inline" v-if="selectedAssetId === asset.id">
+              <CashDetail 
+                v-if="asset.id === 'cash'"
+                :t="t"
+                :format-amount="formatAmount"
+                @update:total="updateCashTotal"
+                @transfer="handleTransfer"
+              />
+              <GoldDetail 
+                v-else-if="asset.id === 'gold'"
+                :t="t"
+                :format-currency="formatCurrency"
+                @update:total="updateGoldTotal"
+              />
+              <BondDetail 
+                v-else-if="asset.id === 'bond'"
+                :t="t"
+                :format-amount="formatAmount"
+                @update:total="updateBondTotal"
+                @transfer="handleTransfer"
+              />
+              <EmergingDetail 
+                v-else-if="asset.id === 'emerging'"
+                :t="t"
+                :format-amount="formatAmount"
+                @update:total="updateEmergingTotal"
+                @transfer="handleTransfer"
+              />
+              <div v-else class="detail-placeholder">
+                <i class="fas fa-tools"></i>
+                <p>{{ t('detailComingSoon') }}</p>
+              </div>
+            </div>
+          </template>
         </div>
 
         <NewsFeed :t="t" />
@@ -333,6 +332,22 @@ onMounted(() => {
   .assets-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.detail-inline {
+  grid-column: 1 / -1;
+  margin-bottom: 12px;
+  overflow-x: hidden;
+}
+
+.detail-inline :deep(.detail-section) {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.detail-inline :deep(.accounts-list),
+.detail-inline :deep(.holdings-list) {
+  max-width: 100%;
 }
 
 .detail-section {

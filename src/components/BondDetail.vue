@@ -6,30 +6,34 @@
         <span>{{ t('bondDetail') }}</span>
       </div>
       <div class="header-actions">
-        <button class="edit-toggle-btn" @click="toggleEditMode" :class="{ 'is-editing': isEditMode }">
-          <i :class="isEditMode ? 'fas fa-save' : 'fas fa-edit'"></i>
-        </button>
-        <button class="transfer-btn" @click="showTransferModal = true">
-          <i class="fas fa-exchange-alt"></i>
-        </button>
-        <button class="help-btn" @click="showHelpModal = true">
-          <i class="fas fa-info-circle"></i>
-        </button>
-        <label class="import-btn">
-          <i class="fas fa-file-import"></i>
-          <span>{{ t('importFile') }}</span>
-          <input 
-            type="file" 
-            ref="fileInput"
-            accept=".csv,.xlsx,.xls"
-            @change="handleFileImport"
-            style="display: none"
-          >
-        </label>
-        <button class="add-btn" @click="addBond">
-          <i class="fas fa-plus"></i>
-          <span>ADD BOND</span>
-        </button>
+        <div class="action-menu-wrapper">
+          <button class="action-menu-btn" @click.stop="showActionMenu = !showActionMenu">
+            <i class="fas fa-ellipsis-h"></i>
+          </button>
+          <div class="action-menu-dropdown" v-if="showActionMenu" @click.stop>
+            <button class="menu-item" @click="toggleEditMode(); showActionMenu = false">
+              <i :class="isEditMode ? 'fas fa-save' : 'fas fa-edit'"></i>
+              <span>{{ isEditMode ? (t('save') || 'Save') : (t('edit') || 'Edit') }}</span>
+            </button>
+            <button class="menu-item" @click="showTransferModal = true; showActionMenu = false">
+              <i class="fas fa-exchange-alt"></i>
+              <span>{{ t('transferFunds') || 'Transfer' }}</span>
+            </button>
+            <button class="menu-item" @click="showHelpModal = true; showActionMenu = false">
+              <i class="fas fa-info-circle"></i>
+              <span>{{ t('help') || 'Help' }}</span>
+            </button>
+            <label class="menu-item menu-label">
+              <i class="fas fa-file-import"></i>
+              <span>{{ t('importFile') || 'Import' }}</span>
+              <input type="file" accept=".csv,.xlsx,.xls" @change="handleFileImport" style="display:none">
+            </label>
+            <button class="menu-item" @click="addBond(); showActionMenu = false">
+              <i class="fas fa-plus"></i>
+              <span>{{ t('addBond') || 'Add Bond' }}</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -402,6 +406,7 @@ const emit = defineEmits(['update:total', 'transfer']);
 
 const sectionRef = ref(null);
 const fileInput = ref(null);
+const showActionMenu = ref(false);
 const showHelpModal = ref(false);
 const showTransferModal = ref(false);
 const isEditMode = ref(false);
@@ -875,9 +880,13 @@ const handleClickOutside = (e) => {
   const target = e.target;
   const isDropdown = target.closest('.dropdown-menu');
   const isHeaderDropdown = target.closest('.header-dropdown');
+  const isActionMenu = target.closest('.action-menu-wrapper');
   
   if (!isDropdown && !isHeaderDropdown) {
     showBondDropdown.value = false;
+  }
+  if (!isActionMenu) {
+    showActionMenu.value = false;
   }
 };
 
@@ -1344,7 +1353,8 @@ onUnmounted(() => {
   flex-direction: column;
   border: 1px solid var(--border-light);
   border-radius: 4px;
-  overflow: visible;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .accounts-header {
@@ -1352,6 +1362,7 @@ onUnmounted(() => {
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-light);
   position: relative;
+  min-width: max-content;
 }
 
 .header-cell {
@@ -1537,6 +1548,7 @@ onUnmounted(() => {
   transition: background 0.15s ease;
   height: 44px;
   box-sizing: border-box;
+  min-width: max-content;
 }
 
 .bond-row:last-of-type {
@@ -2109,5 +2121,90 @@ onUnmounted(() => {
 .confirm-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.action-menu-wrapper {
+  position: relative;
+}
+
+.action-menu-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.action-menu-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.action-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 140px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.menu-item {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-primary);
+  text-align: left;
+  transition: background 0.2s ease;
+}
+
+.menu-item:hover {
+  background: var(--bg-hover);
+}
+
+.menu-item i {
+  width: 16px;
+  color: var(--text-secondary);
+}
+
+.menu-label {
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .action-menu-btn {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .action-menu-dropdown {
+    min-width: 120px;
+  }
+  
+  .menu-item {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
 }
 </style>
