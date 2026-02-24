@@ -86,9 +86,14 @@ const RSS_FEEDS = [
     source: 'Investing.com'
   },
   {
-    url: 'https://q.futunn.com/profile/34125173/post/original',
-    source: 'Futu User',
-    type: 'web'
+    url: '/api/news?source=sina',
+    source: '新浪财经 7x24',
+    type: 'api'
+  },
+  {
+    url: '/api/news?source=eastmoney',
+    source: '东方财富快讯',
+    type: 'api'
   }
 ];
 
@@ -101,6 +106,34 @@ const fetchNews = async () => {
   try {
     const activeFeed = RSS_FEEDS.find(f => f.source === activeSource.value);
     if (!activeFeed) {
+      loading.value = false;
+      return;
+    }
+
+    if (activeFeed.type === 'api') {
+      try {
+        const response = await fetch(activeFeed.url);
+        const data = await response.json();
+        
+        if (data.success && data.posts.length > 0) {
+          news.value = data.posts;
+        } else {
+          news.value = [{
+            title: data.message || 'Unable to fetch news',
+            link: '#',
+            pubDate: new Date().toISOString(),
+            source: activeFeed.source
+          }];
+        }
+      } catch (apiError) {
+        console.error('API error:', apiError);
+        news.value = [{
+          title: 'Failed to load news. Please try again.',
+          link: '#',
+          pubDate: new Date().toISOString(),
+          source: activeFeed.source
+        }];
+      }
       loading.value = false;
       return;
     }
