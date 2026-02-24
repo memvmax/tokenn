@@ -5,6 +5,17 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  overscroll-behavior: none;
+  touch-action: pan-y;
+}
+
 :root {
   --bg-primary: #131722;
   --bg-secondary: #1e222d;
