@@ -23,7 +23,56 @@
 
         <WarningAlert :total-ideal-percentage="totalIdealPercentage" :t="t" />
 
-        <div class="assets-grid">
+        <!-- Desktop: Cards grid + Detail below all cards -->
+        <div class="assets-grid desktop-view">
+          <AssetCard 
+            v-for="asset in visibleAssets" 
+            :key="asset.id" 
+            :asset="asset" 
+            :total-asset="totalAsset" 
+            :t="t"
+            :format-amount="formatAmount"
+            :selected="selectedAssetId === asset.id"
+            @select="handleAssetSelect" 
+          />
+        </div>
+
+        <div class="detail-section desktop-view" v-if="selectedAssetId">
+          <CashDetail 
+            v-if="selectedAssetId === 'cash'"
+            :t="t"
+            :format-amount="formatAmount"
+            @update:total="updateCashTotal"
+            @transfer="handleTransfer"
+          />
+          <GoldDetail 
+            v-else-if="selectedAssetId === 'gold'"
+            :t="t"
+            :format-currency="formatCurrency"
+            @update:total="updateGoldTotal"
+          />
+          <BondDetail 
+            v-else-if="selectedAssetId === 'bond'"
+            :t="t"
+            :format-amount="formatAmount"
+            @update:total="updateBondTotal"
+            @transfer="handleTransfer"
+          />
+          <EmergingDetail 
+            v-else-if="selectedAssetId === 'emerging'"
+            :t="t"
+            :format-amount="formatAmount"
+            @update:total="updateEmergingTotal"
+            @transfer="handleTransfer"
+          />
+          <div v-else class="detail-placeholder">
+            <i class="fas fa-tools"></i>
+            <p>{{ t('detailComingSoon') }}</p>
+          </div>
+        </div>
+
+        <!-- Mobile: Cards with inline detail -->
+        <div class="assets-grid mobile-view">
           <template v-for="asset in visibleAssets" :key="asset.id">
             <AssetCard 
               :asset="asset" 
@@ -69,7 +118,7 @@
           </template>
         </div>
 
-        <NewsFeed :t="t" />
+        <NewsFeed :t="t" v-show="false" />
       </main>
 
       <footer class="app-footer">
@@ -382,6 +431,10 @@ onUnmounted(() => {
   margin-bottom: 16px;
 }
 
+.assets-grid.mobile-view {
+  display: none;
+}
+
 @media (max-width: 1280px) {
   .assets-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -392,6 +445,14 @@ onUnmounted(() => {
   .assets-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  
+  .assets-grid.desktop-view {
+    display: none;
+  }
+  
+  .assets-grid.mobile-view {
+    display: grid;
+  }
 }
 
 @media (max-width: 480px) {
@@ -400,10 +461,31 @@ onUnmounted(() => {
   }
 }
 
+.detail-section {
+  margin-bottom: 16px;
+}
+
+.detail-section.mobile-view {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .detail-section.desktop-view {
+    display: none;
+  }
+}
+
 .detail-inline {
-  grid-column: 1 / -1;
+  display: none;
   margin-bottom: 12px;
   overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  .detail-inline {
+    display: block;
+    grid-column: 1 / -1;
+  }
 }
 
 .detail-inline :deep(.detail-section) {
