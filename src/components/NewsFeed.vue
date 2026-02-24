@@ -106,13 +106,31 @@ const fetchNews = async () => {
     }
 
     if (activeFeed.type === 'web') {
-      news.value = [{
-        title: 'Futu User Feed',
-        link: activeFeed.url,
-        pubDate: new Date().toISOString(),
-        source: activeFeed.source,
-        isLink: true
-      }];
+      try {
+        const response = await fetch('/api/futu');
+        const data = await response.json();
+        
+        if (data.success && data.posts.length > 0) {
+          news.value = data.posts;
+        } else {
+          news.value = [{
+            title: data.message || 'Unable to fetch posts. Click to visit directly.',
+            link: activeFeed.url,
+            pubDate: new Date().toISOString(),
+            source: activeFeed.source,
+            isLink: true
+          }];
+        }
+      } catch (apiError) {
+        console.error('API error:', apiError);
+        news.value = [{
+          title: 'Futu User Feed - Click to visit',
+          link: activeFeed.url,
+          pubDate: new Date().toISOString(),
+          source: activeFeed.source,
+          isLink: true
+        }];
+      }
       loading.value = false;
       return;
     }
