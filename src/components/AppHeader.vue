@@ -107,15 +107,29 @@
 
               <div class="menu-divider"></div>
 
-              <button class="menu-item" @click="switchAccount">
-                <i class="fas fa-exchange-alt"></i>
-                <span>{{ t('switchAccount') }}</span>
-              </button>
+              <template v-if="user">
+                <div class="menu-section user-info">
+                  <i class="fas fa-user-circle"></i>
+                  <span>{{ user.email }}</span>
+                </div>
+                
+                <button class="menu-item" @click="switchAccount">
+                  <i class="fas fa-exchange-alt"></i>
+                  <span>{{ t('switchAccount') }}</span>
+                </button>
 
-              <button class="menu-item logout" @click="logout">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>{{ t('logout') }}</span>
-              </button>
+                <button class="menu-item logout" @click="logout">
+                  <i class="fas fa-sign-out-alt"></i>
+                  <span>{{ t('logout') }}</span>
+                </button>
+              </template>
+              
+              <template v-else>
+                <button class="menu-item login" @click="login">
+                  <i class="fas fa-sign-in-alt"></i>
+                  <span>{{ t('login') }}</span>
+                </button>
+              </template>
             </div>
           </Transition>
           
@@ -261,10 +275,14 @@ const props = defineProps({
   currentThemeId: {
     type: String,
     default: 'default'
+  },
+  user: {
+    type: Object,
+    default: null
   }
 })
 
-const emit = defineEmits(['logout', 'switchAccount', 'openThemes', 'presetChange', 'themeChange'])
+const emit = defineEmits(['logout', 'switchAccount', 'openThemes', 'presetChange', 'themeChange', 'login'])
 
 const showThemeDropdown = ref(false)
 
@@ -478,6 +496,11 @@ const switchAccount = () => {
 
 const logout = () => {
   emit('logout')
+  closeMenu()
+}
+
+const login = () => {
+  emit('login')
   closeMenu()
 }
 
@@ -763,6 +786,31 @@ onUnmounted(() => {
 .menu-item.logout:hover {
   background: rgba(239, 83, 80, 0.1);
   color: var(--accent-red);
+}
+
+.menu-item.login {
+  color: var(--accent-blue);
+}
+
+.menu-item.login:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent-blue);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 8px;
+}
+
+.user-info i {
+  font-size: 16px;
+  color: var(--text-muted);
 }
 
 .menu-overlay {

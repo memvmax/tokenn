@@ -11,6 +11,8 @@
           :currentThemeName="t(currentThemeInfo.nameKey)"
           :themes="themes"
           :currentThemeId="currentTheme"
+          :user="user"
+          @login="showAuthModal = true"
         />
 
         <TotalAsset 
@@ -74,11 +76,18 @@
         <p>{{ t('copyright') }}</p>
       </footer>
     </div>
+
+    <AuthModal 
+      :isVisible="showAuthModal"
+      :t="t"
+      @close="showAuthModal = false"
+      @success="handleAuthSuccess"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import AppHeader from './components/AppHeader.vue';
 import TotalAsset from './components/TotalAsset.vue';
 import AssetCard from './components/AssetCard.vue';
@@ -88,10 +97,17 @@ import GoldDetail from './components/GoldDetail.vue';
 import BondDetail from './components/BondDetail.vue';
 import EmergingDetail from './components/EmergingDetail.vue';
 import NewsFeed from './components/NewsFeed.vue';
+import AuthModal from './components/AuthModal.vue';
 import { useLocale } from './composables/useLocale';
+import { useSupabase } from './lib/supabase';
+import { useDataStorage } from './composables/useDataStorage';
 
 const { t, initLocale, formatAmount, formatCurrency } = useLocale();
+const { getUser, signOut, onAuthStateChange, isConfigured } = useSupabase();
+const { setUserId, saveData, loadData, saveAllData, loadAllData } = useDataStorage();
 
+const user = ref(null);
+const showAuthModal = ref(false);
 const selectedAssetId = ref(null);
 const visibleModules = ref(['cash', 'stock', 'bond', 'gold', 'emerging']);
 const idealPercentages = ref({
@@ -169,35 +185,54 @@ const defaultColors = {
   emerging: '#0e7490'
 };
 
-const loadFromLocalStorage = () => {
+const loadFromStorage = async () => {
   try {
-    const savedAssets = localStorage.getItem('wealthAssets');
+    const savedAssets = await loadData('wealthAssets');
     if (savedAssets) {
-      const parsed = JSON.parse(savedAssets);
-      if (Array.isArray(parsed) && parsed.length === 5) {
-        parsed.forEach((saved, index) => {
+      if (Array.isArray(savedAssets) && savedAssets.length === 5) {
+        savedAssets.forEach((saved, index) => {
           if (assets.value[index]) {
             assets.value[index].amount = saved.amount || 0;
             assets.value[index].color = defaultColors[saved.id] || assets.value[index].color;
           }
         });
-      } else {
-        localStorage.removeItem('wealthAssets');
       }
+    }
+    
+    const savedModules = await loadData('visibleModules');
+    if (savedModules) {
+      visibleModules.value = savedModules;
+    }
+    
+    const savedPercentages = await loadData('idealPercentages');
+    if (savedPercentages) {
+      idealPercentages.value = savedPercentages;
     }
   } catch (error) {
     console.error('Load failed:', error);
-    localStorage.removeItem('wealthAssets');
   }
 };
 
-const saveToLocalStorage = () => {
+const saveToStorage = async () => {
   try {
-    localStorage.setItem('wealthAssets', JSON.stringify(assets.value));
+    await saveAllData({
+      wealthAssets: assets.value,
+      visibleModules: visibleModules.value,
+      idealPercentages: idealPercentages.value
+    });
     localStorage.setItem('theme', currentTheme.value);
   } catch (error) {
     console.error('Save failed:', error);
   }
+};
+
+const handleAuthSuccess = async (session) => {
+  if (session?.user) {
+    user.value = session.user;
+    setUserId(session.user.id);
+    await loadFromStorage();
+  }
+  showAuthModal.value = false;
 };
 
 const handlePresetChange = (preset) => {
@@ -216,7 +251,7 @@ const updateCashTotal = (total) => {
   const cashIndex = assets.value.findIndex(asset => asset.id === 'cash');
   if (cashIndex !== -1) {
     assets.value[cashIndex].amount = total;
-    saveToLocalStorage();
+    saveToStorage();
   }
 };
 
@@ -224,7 +259,7 @@ const updateGoldTotal = (total) => {
   const goldIndex = assets.value.findIndex(asset => asset.id === 'gold');
   if (goldIndex !== -1) {
     assets.value[goldIndex].amount = total;
-    saveToLocalStorage();
+    saveToStorage();
   }
 };
 
@@ -232,7 +267,7 @@ const updateBondTotal = (total) => {
   const bondIndex = assets.value.findIndex(asset => asset.id === 'bond');
   if (bondIndex !== -1) {
     assets.value[bondIndex].amount = total;
-    saveToLocalStorage();
+    saveToStorage();
   }
 };
 
@@ -240,7 +275,7 @@ const updateEmergingTotal = (total) => {
   const emergingIndex = assets.value.findIndex(asset => asset.id === 'emerging');
   if (emergingIndex !== -1) {
     assets.value[emergingIndex].amount = total;
-    saveToLocalStorage();
+    saveToStorage();
   }
 };
 
@@ -249,16 +284,18 @@ const handleTransfer = ({ amount, currency, toAsset }) => {
   if (targetIndex !== -1) {
     const rate = currency === 'CNY' ? 1 : currency === 'USD' ? 7.24 : 0.93;
     assets.value[targetIndex].amount += amount * rate;
-    saveToLocalStorage();
+    saveToStorage();
   }
 };
 
-const handleLogout = () => {
-  console.log('Logout clicked');
+const handleLogout = async () => {
+  await signOut();
+  user.value = null;
+  setUserId(null);
 };
 
 const handleSwitchAccount = () => {
-  console.log('Switch account clicked');
+  showAuthModal.value = true;
 };
 
 const currentTheme = ref('default');
@@ -285,15 +322,44 @@ const handleOpenThemes = () => {
 const handleThemeChange = (themeId) => {
   currentTheme.value = themeId;
   document.documentElement.setAttribute('data-theme', themeId);
-  saveToLocalStorage();
+  saveToStorage();
 };
 
-onMounted(() => {
+let authSubscription = null;
+
+onMounted(async () => {
   initLocale();
-  loadFromLocalStorage();
+  
   const savedTheme = localStorage.getItem('theme') || 'default';
   currentTheme.value = savedTheme;
   document.documentElement.setAttribute('data-theme', savedTheme);
+  
+  if (isConfigured) {
+    const { user: authUser } = await getUser();
+    if (authUser) {
+      user.value = authUser;
+      setUserId(authUser.id);
+    }
+    
+    authSubscription = onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        user.value = session.user;
+        setUserId(session.user.id);
+        loadFromStorage();
+      } else if (event === 'SIGNED_OUT') {
+        user.value = null;
+        setUserId(null);
+      }
+    });
+  }
+  
+  await loadFromStorage();
+});
+
+onUnmounted(() => {
+  if (authSubscription) {
+    authSubscription.data.subscription.unsubscribe();
+  }
 });
 </script>
 
