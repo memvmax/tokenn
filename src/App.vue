@@ -45,6 +45,12 @@
             @update:total="updateCashTotal"
             @transfer="handleTransfer"
           />
+          <StockDetail 
+            v-else-if="selectedAssetId === 'stock'"
+            :t="t"
+            :format-amount="formatAmount"
+            @update:total="updateStockTotal"
+          />
           <GoldDetail 
             v-else-if="selectedAssetId === 'gold'"
             :t="t"
@@ -89,6 +95,12 @@
                 :format-amount="formatAmount"
                 @update:total="updateCashTotal"
                 @transfer="handleTransfer"
+              />
+              <StockDetail 
+                v-else-if="asset.id === 'stock'"
+                :t="t"
+                :format-amount="formatAmount"
+                @update:total="updateStockTotal"
               />
               <GoldDetail 
                 v-else-if="asset.id === 'gold'"
@@ -142,6 +154,7 @@ import TotalAsset from './components/TotalAsset.vue';
 import AssetCard from './components/AssetCard.vue';
 import WarningAlert from './components/WarningAlert.vue';
 import CashDetail from './components/CashDetail.vue';
+import StockDetail from './components/StockDetail.vue';
 import GoldDetail from './components/GoldDetail.vue';
 import BondDetail from './components/BondDetail.vue';
 import EmergingDetail from './components/EmergingDetail.vue';
@@ -308,6 +321,14 @@ const updateGoldTotal = (total) => {
   const goldIndex = assets.value.findIndex(asset => asset.id === 'gold');
   if (goldIndex !== -1) {
     assets.value[goldIndex].amount = total;
+    saveToStorage();
+  }
+};
+
+const updateStockTotal = (total) => {
+  const stockIndex = assets.value.findIndex(asset => asset.id === 'stock');
+  if (stockIndex !== -1) {
+    assets.value[stockIndex].amount = total;
     saveToStorage();
   }
 };
