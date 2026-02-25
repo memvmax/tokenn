@@ -684,149 +684,13 @@ onUnmounted(() => {
 .negative {
   color: var(--accent-red);
 }
-  padding: 6px 12px;
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: left;
-}
 
-.dropdown-item:hover {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.dropdown-item.active {
-  background: rgba(8, 145, 178, 0.15);
-  color: #0891b2;
-}
-
-.dropdown-item i {
-  font-size: 10px;
-  width: 14px;
-}
-
-.sort-icon {
-  font-size: 8px;
-  opacity: 0.4;
-}
-
-.clear-filter-btn {
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 3px;
+.no-results-row {
+  padding: 24px 14px;
+  text-align: center;
   color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-size: 10px;
-}
-
-.clear-filter-btn:hover {
-  color: var(--accent-red);
-  border-color: var(--accent-red);
-}
-
-.asset-row {
-  display: flex;
-  align-items: center;
+  font-size: 12px;
   border-bottom: 1px solid var(--border-light);
-  background: var(--bg-secondary);
-  transition: background 0.15s ease;
-  height: 44px;
-  box-sizing: border-box;
-  min-width: max-content;
-}
-
-.asset-row:last-of-type {
-  border-bottom: none;
-}
-
-.asset-row:hover {
-  background: var(--bg-hover);
-}
-
-.cell {
-  padding: 10px 12px;
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-}
-
-.asset-cell {
-  flex: 0 0 140px;
-}
-
-.current-price-cell {
-  flex: 0 0 120px;
-}
-
-.cost-price-cell {
-  flex: 0 0 120px;
-}
-
-.amount-cell {
-  flex: 0 0 110px;
-}
-
-.value-cell {
-  flex: 0 0 130px;
-}
-
-.pnl-cell {
-  flex: 1;
-  min-width: 150px;
-}
-
-.action-cell {
-  flex: 0 0 50px;
-  display: flex;
-  justify-content: flex-end;
-  padding-right: 10px;
-}
-
-.asset-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.asset-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.asset-name {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: var(--text-primary);
-}
-
-.price-value {
-  font-size: 13px;
-  color: var(--text-primary);
-}
-
-.cost-value {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.cost-value.positive {
-  color: var(--accent-green);
-}
-
-.cost-value.negative {
-  color: var(--accent-red);
 }
 
 .amount-value {
@@ -876,14 +740,6 @@ onUnmounted(() => {
 .add-buy-btn:hover {
   color: #0891b2;
   border-color: #0891b2;
-}
-
-.no-results-row {
-  padding: 24px 14px;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 12px;
-  border-bottom: 1px solid var(--border-light);
 }
 
 .detail-summary {
@@ -1370,30 +1226,6 @@ onUnmounted(() => {
 
   .asset-row .cell-text {
     font-size: 11px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .asset-row .separator {
-    display: none;
-  }
-
-  .asset-row .cell.col-1 .cell-text {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-  }
-
-  .asset-row .cell.col-2 .cell-text {
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-  }
-
-  .asset-row .cell.col-3 .cell-text {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
   }
 }
 </style>

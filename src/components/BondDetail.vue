@@ -2160,30 +2160,6 @@ onUnmounted(() => {
 
   .bond-row .cell-text {
     font-size: 11px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .bond-row .separator {
-    display: none;
-  }
-
-  .bond-row .cell.col-1 .cell-text {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-  }
-
-  .bond-row .cell.col-2 .cell-text {
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-  }
-
-  .bond-row .cell.col-3 .cell-text {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
   }
 }
 </style>

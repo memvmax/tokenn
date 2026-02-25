@@ -1565,20 +1565,6 @@ onUnmounted(() => {
 }
 
 @media (max-width: 480px) {
-  .action-menu-btn {
-    width: 28px;
-    height: 28px;
-  }
-  
-  .action-menu-dropdown {
-    min-width: 120px;
-  }
-  
-  .menu-item {
-    padding: 8px 12px;
-    font-size: 12px;
-  }
-
   .holdings-list {
     border-radius: 6px;
   }
@@ -1618,30 +1604,6 @@ onUnmounted(() => {
 
   .metal-row .cell-text {
     font-size: 11px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .metal-row .separator {
-    display: none;
-  }
-
-  .metal-row .cell.col-1 .cell-text {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-  }
-
-  .metal-row .cell.col-2 .cell-text {
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-  }
-
-  .metal-row .cell.col-3 .cell-text {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
   }
 }
 </style>
