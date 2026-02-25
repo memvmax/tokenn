@@ -6,34 +6,6 @@
         <span>{{ t('bondDetail') }}</span>
       </div>
       <div class="header-actions">
-        <div class="action-menu-wrapper">
-          <button class="action-menu-btn" @click.stop="showActionMenu = !showActionMenu">
-            <i class="fas fa-ellipsis-h"></i>
-          </button>
-          <div class="action-menu-dropdown" v-if="showActionMenu" @click.stop>
-            <button class="menu-item" @click="toggleEditMode(); showActionMenu = false">
-              <i :class="isEditMode ? 'fas fa-save' : 'fas fa-edit'"></i>
-              <span>{{ isEditMode ? (t('save') || 'Save') : (t('edit') || 'Edit') }}</span>
-            </button>
-            <button class="menu-item" @click="showTransferModal = true; showActionMenu = false">
-              <i class="fas fa-exchange-alt"></i>
-              <span>{{ t('transferFunds') || 'Transfer' }}</span>
-            </button>
-            <button class="menu-item" @click="showHelpModal = true; showActionMenu = false">
-              <i class="fas fa-info-circle"></i>
-              <span>{{ t('help') || 'Help' }}</span>
-            </button>
-            <label class="menu-item menu-label">
-              <i class="fas fa-file-import"></i>
-              <span>{{ t('importFile') || 'Import' }}</span>
-              <input type="file" accept=".csv,.xlsx,.xls" @change="handleFileImport" style="display:none">
-            </label>
-            <button class="menu-item" @click="addBond(); showActionMenu = false">
-              <i class="fas fa-plus"></i>
-              <span>{{ t('addBond') || 'Add Bond' }}</span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -173,38 +145,9 @@
       <div class="holdings-table-section">
         <div class="holdings-list" v-if="bonds.length > 0">
           <div class="accounts-header">
-            <div class="header-cell bond-name-cell" @click="toggleNameSort">
-              <span class="header-text">BOND NAME</span>
-              <i v-if="sortField === 'name'" :class="sortIcon('name')"></i>
-              <i v-else class="fas fa-sort sort-icon"></i>
-            </div>
-            <div class="header-cell holdings-cell" @click="toggleHoldingsSort">
-              <span class="header-text">#</span>
-              <i v-if="sortField === 'holdings'" :class="sortIcon('holdings')"></i>
-              <i v-else class="fas fa-sort sort-icon"></i>
-            </div>
-            <div class="header-cell cost-price-cell" @click="toggleCostPriceSort">
-              <span class="header-text">COST PRICE</span>
-              <i v-if="sortField === 'costPrice'" :class="sortIcon('costPrice')"></i>
-              <i v-else class="fas fa-sort sort-icon"></i>
-            </div>
-            <div class="header-cell cost-value-cell">COST VALUE</div>
-            <div class="header-cell current-price-cell" @click="togglePriceSort">
-              <span class="header-text">CURRENT PRICE</span>
-              <i v-if="sortField === 'price'" :class="sortIcon('price')"></i>
-              <i v-else class="fas fa-sort sort-icon"></i>
-            </div>
-            <div class="header-cell current-value-cell">CURRENT VALUE</div>
-            <div class="header-cell pnl-cell" @click="togglePnLSort">
-              <span class="header-text">P&L</span>
-              <i v-if="sortField === 'pnl'" :class="sortIcon('pnl')"></i>
-              <i v-else class="fas fa-sort sort-icon"></i>
-            </div>
-            <div class="header-cell action-cell">
-              <button v-if="sortField || filterBond" class="clear-filter-btn" @click="clearFilters">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
+            <div class="header-cell col-1">NAME / SHARES</div>
+            <div class="header-cell col-2">PRICE / COST</div>
+            <div class="header-cell col-3">VALUE / P&L</div>
           </div>
           <div 
             v-for="(bond, index) in filteredBonds" 
@@ -212,91 +155,17 @@
             class="bond-row"
             :class="{ 'is-editing': isEditMode }"
           >
-            <div class="cell bond-name-cell">
-              <input 
-                v-if="isEditMode"
-                type="text" 
-                v-model="bond.name" 
-                class="field-input"
-                placeholder="Bond name"
-              >
-              <div v-else class="bond-info">
+            <div class="cell col-1">
+              <span class="cell-text">
                 <span class="bond-dot" :style="{ background: bond.color }"></span>
-                <span class="bond-name">{{ bond.name }}</span>
-              </div>
-              <div class="mobile-holdings">
-                <span class="holdings-value font-numeric">{{ formatNumber(bond.holdings || 0) }}</span>
-                <span class="holdings-unit">份</span>
-              </div>
+                {{ bond.name }} <span class="separator">/</span> <span class="font-numeric">{{ formatNumber(bond.holdings) }}</span>
+              </span>
             </div>
-            <div class="cell price-cell">
-              <div class="price-row">
-                <span class="price-label">现价</span>
-                <span class="price-value font-numeric">{{ formatPrice(bond.price) }}</span>
-              </div>
-              <div class="price-row cost">
-                <span class="price-label">成本</span>
-                <span class="cost-value font-numeric">{{ formatPrice(bond.costPrice || 0) }}</span>
-              </div>
+            <div class="cell col-2">
+              <span class="cell-text font-numeric">{{ formatPrice(bond.price) }} <span class="separator">/</span> <span :class="getCostPriceClass(bond)">{{ formatPrice(bond.costPrice) }}</span></span>
             </div>
-            <div class="cell value-cell">
-              <div class="value-row">
-                <span class="value-label">市值</span>
-                <span class="value-amount font-numeric">{{ formatCurrency((bond.holdings || 0) * bond.price) }}</span>
-              </div>
-              <div class="value-row pnl">
-                <span class="value-label">盈亏</span>
-                <span class="pnl-value font-numeric" :class="getPnLClassNew(bond)">{{ formatPnLNew(bond) }}</span>
-              </div>
-            </div>
-            <div class="cell holdings-cell">
-              <input 
-                v-if="isEditMode"
-                type="text" 
-                v-model.number="bond.holdings" 
-                class="field-input font-numeric"
-                placeholder="0"
-              >
-              <span v-else class="font-numeric">{{ formatNumber(bond.holdings || 0) }}</span>
-            </div>
-            <div class="cell cost-price-cell">
-              <input 
-                v-if="isEditMode"
-                type="text" 
-                v-model.number="bond.costPrice" 
-                class="field-input font-numeric"
-                placeholder="0.00"
-              >
-              <span v-else class="font-numeric">{{ formatPrice(bond.costPrice || 0) }}</span>
-            </div>
-            <div class="cell cost-value-cell">
-              <span class="font-numeric">{{ formatCurrency((bond.holdings || 0) * (bond.costPrice || 0)) }}</span>
-            </div>
-            <div class="cell current-price-cell">
-              <input 
-                v-if="isEditMode"
-                type="text" 
-                v-model.number="bond.price" 
-                class="field-input font-numeric"
-                placeholder="0.00"
-              >
-              <span v-else class="font-numeric">{{ formatPrice(bond.price) }}</span>
-            </div>
-            <div class="cell current-value-cell">
-              <span class="font-numeric">{{ formatCurrency((bond.holdings || 0) * bond.price) }}</span>
-            </div>
-            <div class="cell pnl-cell">
-              <span class="font-numeric" :class="getPnLClassNew(bond)">{{ formatPnLNew(bond) }}</span>
-            </div>
-            <div class="cell action-cell" v-if="!isEditMode">
-              <button class="add-buy-btn" @click.stop="openBuyModal(bond.code)" title="Add Buy Record">
-                <i class="fas fa-plus"></i>
-              </button>
-            </div>
-            <div class="cell action-cell" v-else>
-              <button class="delete-btn" @click.stop="removeBond(bond.code)" title="Remove Bond">
-                <i class="fas fa-trash-alt"></i>
-              </button>
+            <div class="cell col-3">
+              <span class="cell-text font-numeric">{{ formatCurrency(bond.holdings * bond.price) }} <span class="separator">/</span> <span :class="getPnLClass(bond)">{{ formatPnLShort(bond) }}</span></span>
             </div>
           </div>
           
@@ -609,6 +478,21 @@ const formatPnLNew = (bond) => {
   const pnlPercent = costValue > 0 ? (pnl / costValue * 100) : 0;
   const sign = pnl >= 0 ? '+' : '';
   return `${sign}${formatCurrency(pnl)} (${sign}${pnlPercent.toFixed(2)}%)`;
+};
+
+const formatPnLShort = (bond) => {
+  const holdings = bond.holdings || 0;
+  const costPrice = bond.costPrice || 0;
+  const currentPrice = bond.price || 0;
+  const costValue = holdings * costPrice;
+  const currentValue = holdings * currentPrice;
+  const pnl = currentValue - costValue;
+  
+  if (holdings === 0 || costPrice === 0) return '-';
+  
+  const pnlPercent = costValue > 0 ? (pnl / costValue * 100) : 0;
+  const sign = pnl >= 0 ? '+' : '-';
+  return `${sign}${formatCurrency(Math.abs(pnl))} / ${sign}${pnlPercent.toFixed(1)}%`;
 };
 
 const getPnLClass = (bond) => {
@@ -1382,11 +1266,10 @@ onUnmounted(() => {
 }
 
 .accounts-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-light);
-  position: relative;
-  min-width: max-content;
 }
 
 .header-cell {
@@ -1395,69 +1278,90 @@ onUnmounted(() => {
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  cursor: pointer;
+  letter-spacing: 0.5px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  transition: color 0.15s ease;
-  position: relative;
   height: 44px;
   box-sizing: border-box;
-  white-space: nowrap;
 }
 
-.header-cell.action-cell {
+.header-cell.col-1 {
+  justify-content: flex-start;
+}
+
+.header-cell.col-2 {
+  justify-content: center;
+}
+
+.header-cell.col-3 {
+  justify-content: flex-end;
+}
+
+.bond-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.bond-row:last-of-type {
+  border-bottom: none;
+}
+
+.bond-row:hover {
+  background: var(--bg-hover);
+}
+
+.cell {
+  padding: 10px 12px;
   display: flex;
   align-items: center;
+}
+
+.cell.col-1 {
+  justify-content: flex-start;
+}
+
+.cell.col-2 {
+  justify-content: center;
+}
+
+.cell.col-3 {
   justify-content: flex-end;
-  padding: 10px 10px;
-  cursor: default;
 }
 
-.header-cell:hover {
-  color: var(--text-secondary);
+.cell-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.header-cell.bond-name-cell {
-  flex: 0 0 140px;
+.separator {
+  color: var(--text-muted);
+  margin: 0 2px;
 }
 
-.header-cell.holdings-cell {
-  flex: 0 0 80px;
-  justify-content: flex-end;
-  padding-right: 10px;
+.bond-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
-.header-cell.cost-price-cell {
-  flex: 0 0 100px;
-  justify-content: flex-end;
-  padding-right: 10px;
+.positive {
+  color: var(--accent-green);
 }
 
-.header-cell.cost-value-cell {
-  flex: 0 0 120px;
-  justify-content: flex-end;
-  padding-right: 10px;
-  cursor: default;
+.negative {
+  color: var(--accent-red);
 }
-
-.header-cell.current-price-cell {
-  flex: 0 0 120px;
-  justify-content: flex-end;
-  padding-right: 10px;
-}
-
-.header-cell.current-value-cell {
-  flex: 0 0 120px;
-  justify-content: flex-end;
-  padding-right: 10px;
-  cursor: default;
-}
-
-.header-text {
-  text-decoration: underline;
-  text-decoration-color: var(--border-color);
   text-underline-offset: 3px;
 }
 
@@ -2217,150 +2121,69 @@ onUnmounted(() => {
 }
 
 @media (max-width: 480px) {
-  .action-menu-btn {
-    width: 28px;
-    height: 28px;
-  }
-  
-  .action-menu-dropdown {
-    min-width: 120px;
-  }
-  
-  .menu-item {
-    padding: 8px 12px;
-    font-size: 12px;
+  .holdings-list {
+    border-radius: 6px;
   }
 
   .accounts-header {
-    display: none;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
   }
 
-  .holdings-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border: none;
-    overflow-x: visible;
+  .header-cell {
+    padding: 8px 6px;
+    font-size: 8px;
+    height: 36px;
   }
 
   .bond-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0;
-    height: auto;
-    min-width: auto;
-    padding: 0;
-    border: 1px solid var(--border-light);
-    border-radius: 6px;
-    overflow: hidden;
+    min-height: 50px;
   }
 
   .bond-row .cell {
-    padding: 8px 4px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    padding: 8px 6px;
+  }
+
+  .bond-row .cell.col-1 {
+    justify-content: flex-start;
+  }
+
+  .bond-row .cell.col-2 {
     justify-content: center;
-    gap: 4px;
-    min-height: 70px;
   }
 
-  .bond-row .bond-name-cell {
-    background: var(--bg-tertiary);
-    gap: 6px;
+  .bond-row .cell.col-3 {
+    justify-content: flex-end;
   }
 
-  .bond-row .bond-info {
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .bond-row .bond-name {
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .bond-row .mobile-holdings {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-  }
-
-  .bond-row .mobile-holdings .holdings-value {
-    font-size: 12px;
-    color: var(--text-secondary);
-  }
-
-  .bond-row .mobile-holdings .holdings-unit {
-    font-size: 9px;
-    color: var(--text-muted);
-  }
-
-  .bond-row .price-cell {
-    background: var(--bg-secondary);
-    gap: 6px;
-  }
-
-  .bond-row .price-row {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    width: 100%;
-  }
-
-  .bond-row .price-label {
-    font-size: 9px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-  }
-
-  .bond-row .price-value {
-    font-size: 13px;
-    font-weight: 500;
-  }
-
-  .bond-row .price-row.cost .cost-value {
-    font-size: 12px;
-  }
-
-  .bond-row .value-cell {
-    background: var(--bg-tertiary);
-    gap: 6px;
-  }
-
-  .bond-row .value-row {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    width: 100%;
-  }
-
-  .bond-row .value-label {
-    font-size: 9px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-  }
-
-  .bond-row .value-amount {
-    font-size: 12px;
-    font-weight: 500;
-  }
-
-  .bond-row .value-row.pnl .pnl-value {
+  .bond-row .cell-text {
     font-size: 11px;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
-  .bond-row .holdings-cell,
-  .bond-row .cost-price-cell,
-  .bond-row .cost-value-cell,
-  .bond-row .current-price-cell,
-  .bond-row .current-value-cell,
-  .bond-row .pnl-cell,
-  .bond-row .action-cell {
+  .bond-row .separator {
     display: none;
+  }
+
+  .bond-row .cell.col-1 .cell-text {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .bond-row .cell.col-2 .cell-text {
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .bond-row .cell.col-3 .cell-text {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
   }
 }
 </style>

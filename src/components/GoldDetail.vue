@@ -1,22 +1,11 @@
 <template>
-  <div class="detail-section">
+  <div class="detail-section" ref="sectionRef">
     <div class="detail-header">
       <div class="detail-title">
         <i class="fas fa-coins"></i>
         <span>{{ t('goldDetail') }}</span>
       </div>
       <div class="header-actions">
-        <div class="action-menu-wrapper">
-          <button class="action-menu-btn" @click.stop="showActionMenu = !showActionMenu">
-            <i class="fas fa-ellipsis-h"></i>
-          </button>
-          <div class="action-menu-dropdown" v-if="showActionMenu" @click.stop>
-            <button class="menu-item" @click="fetchPrices(); showActionMenu = false">
-              <i class="fas fa-sync-alt"></i>
-              <span>{{ t('refresh') || 'Refresh' }}</span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -24,61 +13,9 @@
       <div class="holdings-table-section">
         <div class="holdings-list" v-if="metals.length > 0">
           <div class="accounts-header">
-            <div class="header-cell metal-cell">
-              <div class="header-dropdown" @click.stop="toggleMetalDropdown">
-                <span class="header-text">METAL</span>
-                <i class="fas fa-chevron-down dropdown-icon" :class="{ 'rotated': showMetalDropdown }"></i>
-              </div>
-              <div class="dropdown-menu" v-if="showMetalDropdown" @click.stop>
-                <div class="dropdown-section">
-                  <div class="dropdown-label">{{ t('sortBy') }}</div>
-                  <button class="dropdown-item" :class="{ 'active': sortField === 'name' && sortOrder === 'asc' }" @click="selectSort('name', 'asc')">
-                    <i class="fas fa-sort-alpha-down"></i>
-                    <span>A → Z</span>
-                  </button>
-                  <button class="dropdown-item" :class="{ 'active': sortField === 'name' && sortOrder === 'desc' }" @click="selectSort('name', 'desc')">
-                    <i class="fas fa-sort-alpha-up"></i>
-                    <span>Z → A</span>
-                  </button>
-                </div>
-                <div class="dropdown-divider"></div>
-                <div class="dropdown-section">
-                  <div class="dropdown-label">{{ t('filterBy') }}</div>
-                  <button class="dropdown-item" :class="{ 'active': !filterMetal }" @click="selectMetalFilter('')">
-                    <span>{{ t('all') }}</span>
-                  </button>
-                  <button v-for="m in uniqueMetals" :key="m" class="dropdown-item" :class="{ 'active': filterMetal === m }" @click="selectMetalFilter(m)">
-                    <span>{{ m }}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div class="header-cell current-price-cell" @click="togglePriceSort">
-              <span class="header-text">CURRENT PRICE</span>
-              <i v-if="sortField === 'price'" :class="sortIcon('price')"></i>
-              <i v-else class="fas fa-sort sort-icon"></i>
-            </div>
-            <div class="header-cell cost-price-cell" @click="toggleCostSort">
-              <span class="header-text">COST PRICE</span>
-              <i v-if="sortField === 'costPrice'" :class="sortIcon('costPrice')"></i>
-              <i v-else class="fas fa-sort sort-icon"></i>
-            </div>
-            <div class="header-cell amount-cell" @click="toggleAmountSort">
-              <span class="header-text">HOLDINGS</span>
-              <i v-if="sortField === 'totalAmount'" :class="sortIcon('totalAmount')"></i>
-              <i v-else class="fas fa-sort sort-icon"></i>
-            </div>
-            <div class="header-cell value-cell">
-              <span class="header-text">VALUE (CNY)</span>
-            </div>
-            <div class="header-cell pnl-cell">
-              <span class="header-text">P&L</span>
-            </div>
-            <div class="header-cell action-cell">
-              <button v-if="filterMetal" class="clear-filter-btn" @click="clearFilters">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
+            <div class="header-cell col-1">NAME / SHARE</div>
+            <div class="header-cell col-2">PRICE / COST</div>
+            <div class="header-cell col-3">VALUE / P&L</div>
           </div>
           <div 
             v-for="(metal, index) in filteredMetals" 
@@ -87,64 +24,17 @@
             :class="{ 'active': chartMetal === metal.code }"
             @click="switchChart(metal.code)"
           >
-            <div class="cell metal-cell">
-              <div class="metal-info">
+            <div class="cell col-1">
+              <span class="cell-text">
                 <span class="metal-dot" :style="{ background: metal.color }"></span>
-                <span class="metal-name">{{ metal.name }}</span>
-              </div>
-              <div class="mobile-amount">
-                <span class="amount-value font-numeric">{{ formatNumber(getTotalAmount(metal.code)) }}</span>
-                <span class="amount-unit">g</span>
-              </div>
-            </div>
-            <div class="cell price-cell">
-              <div class="price-row">
-                <span class="price-label">现价</span>
-                <span class="price-value font-numeric">{{ formatPrice(metal.price) }}</span>
-              </div>
-              <div class="price-row cost">
-                <span class="price-label">成本</span>
-                <span class="cost-value font-numeric" :class="getCostPriceClass(metal)">
-                  {{ formatPrice(getCostPrice(metal.code)) }}
-                </span>
-              </div>
-            </div>
-            <div class="cell value-cell">
-              <div class="value-row">
-                <span class="value-label">市值</span>
-                <span class="value-amount font-numeric">{{ formatCurrency(getTotalAmount(metal.code) * metal.price) }}</span>
-              </div>
-              <div class="value-row pnl">
-                <span class="value-label">盈亏</span>
-                <span class="pnl-value font-numeric" :class="getPnLClass(metal)">
-                  {{ formatPnL(metal) }}
-                </span>
-              </div>
-            </div>
-            <div class="cell current-price-cell">
-              <span class="price-value font-numeric">{{ formatPrice(metal.price) }}</span>
-            </div>
-            <div class="cell cost-price-cell">
-              <span class="cost-value font-numeric" :class="getCostPriceClass(metal)">
-                {{ formatPrice(getCostPrice(metal.code)) }}
+                {{ metal.name }} <span class="separator">/</span> <span class="font-numeric">{{ formatNumber(getTotalAmount(metal.code)) }}g</span>
               </span>
             </div>
-            <div class="cell amount-cell">
-              <span class="amount-value font-numeric">{{ formatNumber(getTotalAmount(metal.code)) }}</span>
-              <span class="amount-unit">g</span>
+            <div class="cell col-2">
+              <span class="cell-text font-numeric">{{ formatPrice(metal.price) }} <span class="separator">/</span> <span :class="getCostPriceClass(metal)">{{ formatPrice(getCostPrice(metal.code)) }}</span></span>
             </div>
-            <div class="cell value-cell">
-              <span class="value-amount font-numeric">{{ formatCurrency(getTotalAmount(metal.code) * metal.price) }}</span>
-            </div>
-            <div class="cell pnl-cell">
-              <span class="pnl-value font-numeric" :class="getPnLClass(metal)">
-                {{ formatPnL(metal) }}
-              </span>
-            </div>
-            <div class="cell action-cell">
-              <button class="add-buy-btn" @click.stop="openBuyModal(metal.code)" title="Add Buy Record">
-                <i class="fas fa-plus"></i>
-              </button>
+            <div class="cell col-3">
+              <span class="cell-text font-numeric">{{ formatCurrency(getTotalAmount(metal.code) * metal.price) }} <span class="separator">/</span> <span :class="getPnLClass(metal)">{{ formatPnLShort(metal) }}</span></span>
             </div>
           </div>
           
@@ -295,8 +185,6 @@ const props = defineProps({
 
 const emit = defineEmits(['update:total']);
 
-const showActionMenu = ref(false);
-
 const metals = ref([
   { code: 'gold', name: 'GOLD', color: '#ffd700', price: 0, symbol: 'FX:XAUUSD', tvSymbol: 'XAUUSD', displayPrice: 0, chartData: [] },
   { code: 'silver', name: 'SILVER', color: '#a8a8a8', price: 0, symbol: 'OANDA:XAGUSD', tvSymbol: 'OANDA:XAGUSD', displayPrice: 0, chartData: [] },
@@ -309,7 +197,7 @@ const buyRecords = ref({});
 const loading = ref(false);
 const lastUpdateTime = ref('--');
 const chartRef = ref(null);
-const chartMetal = ref('gold');
+const chartMetal = ref('');
 let chart = null;
 
 const sortField = ref('name');
@@ -465,6 +353,19 @@ const formatPnL = (metal) => {
   return `${sign}${formatCurrency(Math.abs(pnl))} (${sign}${pnlPercent.toFixed(2)}%)`;
 };
 
+const formatPnLShort = (metal) => {
+  const totalAmount = getTotalAmount(metal.code);
+  const totalCost = getTotalCost(metal.code);
+  const currentValue = totalAmount * metal.price;
+  const pnl = currentValue - totalCost;
+  
+  if (totalAmount === 0) return '-';
+  
+  const pnlPercent = totalCost > 0 ? (pnl / totalCost * 100) : 0;
+  const sign = pnl >= 0 ? '+' : '-';
+  return `${sign}${formatCurrency(Math.abs(pnl))} / ${sign}${pnlPercent.toFixed(1)}%`;
+};
+
 const formatPrice = (value) => {
   if (!value) return '0.00';
   return Number(value).toFixed(2);
@@ -510,6 +411,14 @@ const sortIcon = (field) => {
 
 const clearFilters = () => {
   filterMetal.value = '';
+};
+
+const openAddOrderModal = () => {
+  if (chartMetal.value) {
+    openBuyModal(chartMetal.value);
+  } else if (filteredMetals.value.length > 0) {
+    openBuyModal(filteredMetals.value[0].code);
+  }
 };
 
 const openBuyModal = (code) => {
@@ -826,7 +735,11 @@ const updateChart = () => {
 };
 
 const switchChart = (code) => {
-  chartMetal.value = code;
+  if (chartMetal.value === code) {
+    chartMetal.value = '';
+  } else {
+    chartMetal.value = code;
+  }
   updateChart();
 };
 
@@ -860,13 +773,9 @@ const handleClickOutside = (e) => {
   const target = e.target;
   const isDropdown = target.closest('.dropdown-menu');
   const isHeaderDropdown = target.closest('.header-dropdown');
-  const isActionMenu = target.closest('.action-menu-wrapper');
   
   if (!isDropdown && !isHeaderDropdown) {
     showMetalDropdown.value = false;
-  }
-  if (!isActionMenu) {
-    showActionMenu.value = false;
   }
 };
 
@@ -978,11 +887,10 @@ onUnmounted(() => {
 }
 
 .accounts-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-light);
-  position: relative;
-  min-width: max-content;
 }
 
 .header-cell {
@@ -991,149 +899,34 @@ onUnmounted(() => {
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  cursor: pointer;
+  letter-spacing: 0.5px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  transition: color 0.15s ease;
-  position: relative;
   height: 44px;
   box-sizing: border-box;
-  white-space: nowrap;
 }
 
-.header-cell.action-cell {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 10px 10px;
-  cursor: default;
+.header-cell.col-1 {
+  justify-content: flex-start;
 }
 
-.header-cell:hover {
-  color: var(--text-secondary);
-}
-
-.header-text {
-  text-decoration: underline;
-  text-decoration-color: var(--border-color);
-  text-underline-offset: 3px;
-}
-
-.header-dropdown {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.dropdown-icon {
-  font-size: 8px;
-  opacity: 0.6;
-  transition: transform 0.15s ease;
-}
-
-.dropdown-icon.rotated {
-  transform: rotate(180deg);
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 4px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 100;
-  min-width: 140px;
-  overflow: hidden;
-}
-
-.dropdown-section {
-  padding: 8px 0;
-}
-
-.dropdown-label {
-  padding: 4px 12px;
-  font-size: 8px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-}
-
-.dropdown-divider {
-  height: 1px;
-  background: var(--border-light);
-}
-
-.dropdown-item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: left;
-}
-
-.dropdown-item:hover {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.dropdown-item.active {
-  background: rgba(8, 145, 178, 0.15);
-  color: #0891b2;
-}
-
-.dropdown-item i {
-  font-size: 10px;
-  width: 14px;
-}
-
-.sort-icon {
-  font-size: 8px;
-  opacity: 0.4;
-}
-
-.clear-filter-btn {
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
+.header-cell.col-2 {
   justify-content: center;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 3px;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-size: 10px;
 }
 
-.clear-filter-btn:hover {
-  color: var(--accent-red);
-  border-color: var(--accent-red);
+.header-cell.col-3 {
+  justify-content: flex-end;
 }
 
 .metal-row {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   border-bottom: 1px solid var(--border-light);
   background: var(--bg-secondary);
   cursor: pointer;
   transition: background 0.15s ease;
-  height: 44px;
+  min-height: 44px;
   box-sizing: border-box;
-  min-width: max-content;
 }
 
 .metal-row:last-of-type {
@@ -1145,61 +938,58 @@ onUnmounted(() => {
 }
 
 .metal-row.active {
-  background: rgba(8, 145, 178, 0.1);
+  background: rgba(8, 145, 178, 0.15);
+  border-left: 3px solid #0891b2;
 }
 
 .cell {
   padding: 10px 12px;
   display: flex;
   align-items: center;
-  white-space: nowrap;
 }
 
-.metal-cell {
-  flex: 0 0 120px;
+.cell.col-1 {
+  justify-content: flex-start;
 }
 
-.current-price-cell {
-  flex: 0 0 120px;
+.cell.col-2 {
+  justify-content: center;
 }
 
-.cost-price-cell {
-  flex: 0 0 120px;
-}
-
-.amount-cell {
-  flex: 0 0 110px;
-}
-
-.value-cell {
-  flex: 0 0 130px;
-}
-
-.pnl-cell {
-  flex: 1;
-  min-width: 150px;
-}
-
-.action-cell {
-  flex: 0 0 50px;
-  display: flex;
+.cell.col-3 {
   justify-content: flex-end;
-  padding-right: 10px;
 }
 
-.metal-info {
+.cell-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+}
+
+.separator {
+  color: var(--text-muted);
+  margin: 0 2px;
 }
 
 .metal-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
-.metal-name {
+.positive {
+  color: var(--accent-green);
+}
+
+.negative {
+  color: var(--accent-red);
+}
+
+.no-results-row {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -1765,6 +1555,15 @@ onUnmounted(() => {
   color: var(--text-secondary);
 }
 
+.menu-item:hover {
+  background: var(--bg-hover);
+}
+
+.menu-item i {
+  width: 16px;
+  color: var(--text-secondary);
+}
+
 @media (max-width: 480px) {
   .action-menu-btn {
     width: 28px;
@@ -1780,134 +1579,69 @@ onUnmounted(() => {
     font-size: 12px;
   }
 
-  .accounts-header {
-    display: none;
+  .holdings-list {
+    border-radius: 6px;
   }
 
-  .holdings-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border: none;
-    overflow-x: visible;
+  .accounts-header {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .header-cell {
+    padding: 8px 6px;
+    font-size: 8px;
+    height: 36px;
   }
 
   .metal-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0;
-    height: auto;
-    min-width: auto;
-    padding: 0;
-    border: 1px solid var(--border-light);
-    border-radius: 6px;
-    overflow: hidden;
+    min-height: 50px;
   }
 
   .metal-row .cell {
-    padding: 8px 4px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    padding: 8px 6px;
+  }
+
+  .metal-row .cell.col-1 {
+    justify-content: flex-start;
+  }
+
+  .metal-row .cell.col-2 {
     justify-content: center;
-    gap: 4px;
-    min-height: 70px;
   }
 
-  .metal-row .metal-cell {
-    background: var(--bg-tertiary);
-    gap: 6px;
+  .metal-row .cell.col-3 {
+    justify-content: flex-end;
   }
 
-  .metal-row .metal-info {
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .metal-row .metal-name {
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .metal-row .mobile-amount {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-  }
-
-  .metal-row .mobile-amount .amount-value {
-    font-size: 12px;
-    color: var(--text-secondary);
-  }
-
-  .metal-row .mobile-amount .amount-unit {
-    font-size: 9px;
-    color: var(--text-muted);
-  }
-
-  .metal-row .price-cell {
-    background: var(--bg-secondary);
-    gap: 6px;
-  }
-
-  .metal-row .price-row {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    width: 100%;
-  }
-
-  .metal-row .price-label {
-    font-size: 9px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-  }
-
-  .metal-row .price-value {
-    font-size: 13px;
-    font-weight: 500;
-  }
-
-  .metal-row .price-row.cost .cost-value {
-    font-size: 12px;
-  }
-
-  .metal-row .value-cell {
-    background: var(--bg-tertiary);
-    gap: 6px;
-  }
-
-  .metal-row .value-row {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    width: 100%;
-  }
-
-  .metal-row .value-label {
-    font-size: 9px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-  }
-
-  .metal-row .value-amount {
-    font-size: 12px;
-    font-weight: 500;
-  }
-
-  .metal-row .value-row.pnl .pnl-value {
+  .metal-row .cell-text {
     font-size: 11px;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
-  .metal-row .current-price-cell,
-  .metal-row .cost-price-cell,
-  .metal-row .amount-cell,
-  .metal-row .pnl-cell,
-  .metal-row .action-cell {
+  .metal-row .separator {
     display: none;
+  }
+
+  .metal-row .cell.col-1 .cell-text {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .metal-row .cell.col-2 .cell-text {
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .metal-row .cell.col-3 .cell-text {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
   }
 }
 </style>
