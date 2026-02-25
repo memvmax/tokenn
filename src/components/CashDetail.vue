@@ -1143,8 +1143,13 @@ onUnmounted(() => {
   border-bottom: none;
 }
 
-.account-row.is-editing {
-  background: var(--bg-tertiary);
+.account-row:hover {
+  background: var(--bg-hover);
+}
+
+.account-row.active {
+  background: rgba(8, 145, 178, 0.15);
+  border-left: 3px solid #0891b2;
 }
 
 .field-input {

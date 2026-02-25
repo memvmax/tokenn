@@ -1316,6 +1316,11 @@ onUnmounted(() => {
   background: var(--bg-hover);
 }
 
+.bond-row.active {
+  background: rgba(8, 145, 178, 0.15);
+  border-left: 3px solid #0891b2;
+}
+
 .cell {
   padding: 10px 12px;
   display: flex;
@@ -1801,10 +1806,6 @@ onUnmounted(() => {
 .delete-btn:hover {
   color: var(--accent-red);
   border-color: var(--accent-red);
-}
-
-.bond-row.is-editing {
-  background: var(--bg-tertiary);
 }
 
 .price-value {

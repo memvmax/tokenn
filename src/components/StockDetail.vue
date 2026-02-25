@@ -638,6 +638,11 @@ onUnmounted(() => {
   background: var(--bg-hover);
 }
 
+.asset-row.active {
+  background: rgba(8, 145, 178, 0.15);
+  border-left: 3px solid #0891b2;
+}
+
 .cell {
   padding: 10px 12px;
   display: flex;

@@ -13,7 +13,7 @@
       <div class="holdings-table-section">
         <div class="holdings-list" v-if="metals.length > 0">
           <div class="accounts-header">
-            <div class="header-cell col-1">NAME / SHARE</div>
+            <div class="header-cell col-1">NAME / SHARES</div>
             <div class="header-cell col-2">PRICE / COST</div>
             <div class="header-cell col-3">VALUE / P&L</div>
           </div>
