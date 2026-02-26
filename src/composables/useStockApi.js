@@ -20,7 +20,11 @@ export function useStockApi() {
     }
     
     if (market === '港股') {
-      return `${code}.HK`
+      let hkCode = code.replace(/^0+/, '') || '0'
+      if (hkCode.length < 4) {
+        hkCode = hkCode.padStart(4, '0')
+      }
+      return `${hkCode}.HK`
     }
     
     if (market === '美股') {
