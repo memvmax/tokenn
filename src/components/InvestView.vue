@@ -2247,6 +2247,16 @@ defineExpose({
     gap: 2px;
   }
   
+  .position-row .td {
+    flex-direction: row;
+    align-items: center;
+  }
+  
+  .position-row .td.col-percent,
+  .position-row .td.col-diff {
+    justify-content: flex-end;
+  }
+  
   .col-code .td,
   .col-code {
     align-items: flex-start;
@@ -2352,15 +2362,6 @@ defineExpose({
   
   .position-header .th.col-percent,
   .position-header .th.col-diff {
-    justify-content: flex-end;
-  }
-  
-  .position-row .td {
-    justify-content: flex-start;
-  }
-  
-  .position-row .td.col-percent,
-  .position-row .td.col-diff {
     justify-content: flex-end;
   }
   
