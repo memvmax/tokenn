@@ -282,11 +282,12 @@ const newOrder = ref({
   quantity: '',
   commission: '',
   tax: '',
-  category1: '',
-  category2: ''
+  date: new Date().toISOString().split('T')[0]
 })
 
 const editingTransaction = ref(null)
+const editingStock = ref(null)
+const showEditStockModal = ref(false)
 
 const category1Options = [
   { id: 'consumption', name: '消费', nameEn: 'Consumption' },
@@ -317,6 +318,7 @@ const submitOrder = async () => {
         trans.price = parseFloat(newOrder.value.price) || 0
         trans.quantity = parseInt(newOrder.value.quantity) || 0
         trans.commission = parseFloat(newOrder.value.commission) || 0
+        trans.date = newOrder.value.date
         recalculateStock(stock)
       }
     }
@@ -331,6 +333,7 @@ const submitOrder = async () => {
     const price = parseFloat(newOrder.value.price) || 0
     const quantity = parseInt(newOrder.value.quantity) || 0
     const commission = parseFloat(newOrder.value.commission) || 0
+    const date = newOrder.value.date || new Date().toISOString().split('T')[0]
     
     let market = '美股'
     if (code.match(/^(6|60|68)\d+$/) || code.startsWith('60') || code.startsWith('68')) {
@@ -364,7 +367,9 @@ const submitOrder = async () => {
         shares: 0,
         profit: 0,
         profitPercent: 0,
-        transactions: []
+        transactions: [],
+        category1: '',
+        category2: ''
       }
       profitData.value.unshift(existingStock)
     }
@@ -373,7 +378,7 @@ const submitOrder = async () => {
       type: newOrder.value.tradeType,
       price,
       quantity,
-      date: new Date().toISOString().split('T')[0],
+      date,
       commission
     })
     
@@ -388,8 +393,7 @@ const submitOrder = async () => {
     quantity: '',
     commission: '',
     tax: '',
-    category1: '',
-    category2: ''
+    date: new Date().toISOString().split('T')[0]
   }
 }
 
@@ -410,14 +414,33 @@ const editTransaction = () => {
           quantity: trans.quantity.toString(),
           commission: trans.commission.toString(),
           tax: '0',
-          category1: '',
-          category2: ''
+          date: trans.date || new Date().toISOString().split('T')[0]
         }
         showAddModal.value = true
       }
     }
   }
   closeContextMenu()
+}
+
+const editStock = () => {
+  if (contextMenuType.value === 'stock' && contextMenuData.value) {
+    editingStock.value = { ...contextMenuData.value }
+    showEditStockModal.value = true
+  }
+  closeContextMenu()
+}
+
+const saveStockEdit = () => {
+  if (editingStock.value) {
+    const stock = profitData.value.find(item => item.code === editingStock.value.code)
+    if (stock) {
+      stock.category1 = editingStock.value.category1 || ''
+      stock.category2 = editingStock.value.category2 || ''
+    }
+  }
+  showEditStockModal.value = false
+  editingStock.value = null
 }
 
 const toggleHistory = () => {
@@ -769,6 +792,8 @@ const labels = {
   quantity: { 'zh-CN': '数量', 'en-US': 'QUANTITY' },
   commission: { 'zh-CN': '佣金', 'en-US': 'COMMISSION' },
   tax: { 'zh-CN': '税费', 'en-US': 'TAX' },
+  tradeDate: { 'zh-CN': '交易日期', 'en-US': 'TRADE DATE' },
+  editStockTitle: { 'zh-CN': '编辑股票', 'en-US': 'EDIT STOCK' },
   category1: { 'zh-CN': '行业分类', 'en-US': 'INDUSTRY' },
   category2: { 'zh-CN': '投资风格', 'en-US': 'STYLE' },
   confirm: { 'zh-CN': '确认', 'en-US': 'CONFIRM' },
@@ -1136,23 +1161,8 @@ defineExpose({
             </div>
 
             <div class="form-group">
-              <label class="form-label">{{ getLabel('category1') }}</label>
-              <select class="form-select" v-model="newOrder.category1">
-                <option value="">{{ getLabel('select') }}</option>
-                <option v-for="opt in category1Options" :key="opt.id" :value="opt.id">
-                  {{ getCategoryLabel(category1Options, opt.id) }}
-                </option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">{{ getLabel('category2') }}</label>
-              <select class="form-select" v-model="newOrder.category2">
-                <option value="">{{ getLabel('select') }}</option>
-                <option v-for="opt in category2Options" :key="opt.id" :value="opt.id">
-                  {{ getCategoryLabel(category2Options, opt.id) }}
-                </option>
-              </select>
+              <label class="form-label">{{ getLabel('tradeDate') }}</label>
+              <input type="date" class="form-input" v-model="newOrder.date">
             </div>
           </div>
           <div class="modal-footer">
@@ -1170,6 +1180,10 @@ defineExpose({
           :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
           @click.stop
         >
+          <button v-if="contextMenuType === 'stock'" class="context-menu-item" @click="editStock">
+            <i class="fas fa-edit"></i>
+            <span>{{ getLabel('edit') }}</span>
+          </button>
           <button v-if="contextMenuType === 'transaction'" class="context-menu-item" @click="editTransaction">
             <i class="fas fa-edit"></i>
             <span>{{ getLabel('edit') }}</span>
@@ -1178,6 +1192,47 @@ defineExpose({
             <i class="fas fa-trash"></i>
             <span>{{ getLabel('delete') }}</span>
           </button>
+        </div>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="showEditStockModal" class="modal-overlay" @click="showEditStockModal = false">
+        <div class="modal-container" @click.stop>
+          <div class="modal-header">
+            <span class="modal-title">{{ getLabel('editStockTitle') }}</span>
+            <button class="modal-close" @click="showEditStockModal = false">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="stock-info">
+              <span class="stock-code">{{ editingStock?.code }}</span>
+              <span class="stock-name">{{ editingStock?.name }}</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">{{ getLabel('category1') }}</label>
+              <select class="form-select" v-model="editingStock.category1">
+                <option value="">{{ getLabel('select') }}</option>
+                <option v-for="opt in category1Options" :key="opt.id" :value="opt.id">
+                  {{ getCategoryLabel(category1Options, opt.id) }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">{{ getLabel('category2') }}</label>
+              <select class="form-select" v-model="editingStock.category2">
+                <option value="">{{ getLabel('select') }}</option>
+                <option v-for="opt in category2Options" :key="opt.id" :value="opt.id">
+                  {{ getCategoryLabel(category2Options, opt.id) }}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-cancel" @click="showEditStockModal = false">{{ getLabel('cancel') }}</button>
+            <button class="btn-confirm" @click="saveStockEdit">{{ getLabel('confirm') }}</button>
+          </div>
         </div>
       </div>
     </Teleport>
@@ -2039,5 +2094,25 @@ defineExpose({
 
 .refresh-btn.loading {
   pointer-events: none;
+}
+
+.stock-info {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.stock-code {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stock-name {
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 </style>
