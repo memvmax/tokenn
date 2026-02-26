@@ -2346,6 +2346,24 @@ defineExpose({
     grid-template-columns: 1fr 90px 90px 90px;
   }
   
+  .position-header .th {
+    justify-content: flex-start;
+  }
+  
+  .position-header .th.col-percent,
+  .position-header .th.col-diff {
+    justify-content: flex-end;
+  }
+  
+  .position-row .td {
+    justify-content: flex-start;
+  }
+  
+  .position-row .td.col-percent,
+  .position-row .td.col-diff {
+    justify-content: flex-end;
+  }
+  
   .trans-row.stock-row {
     grid-template-columns: 90px 1fr 90px;
   }
