@@ -89,9 +89,18 @@ export function useStockApi() {
   const fetchMultipleStockPrices = async (stocks) => {
     if (!stocks || stocks.length === 0) return []
     
-    const symbols = stocks
-      .map(s => convertSymbol(s.code, s.market))
-      .filter(Boolean)
+    const symbolMap = new Map()
+    stocks.forEach(s => {
+      const yahooSymbol = convertSymbol(s.code, s.market)
+      if (yahooSymbol) {
+        symbolMap.set(yahooSymbol, s.code)
+      }
+    })
+    
+    const symbols = Array.from(symbolMap.keys())
+    
+    console.log('Fetching prices for symbols:', symbols)
+    console.log('Symbol map:', Object.fromEntries(symbolMap))
     
     if (symbols.length === 0) return []
 
@@ -109,6 +118,7 @@ export function useStockApi() {
 
     try {
       const apiUrl = `/api/stock?symbols=${symbolsToFetch.join(',')}`
+      console.log('API URL:', apiUrl)
       
       const response = await fetch(apiUrl)
       
@@ -117,12 +127,12 @@ export function useStockApi() {
       }
 
       const data = await response.json()
+      console.log('API response:', data)
       
       if (data.quoteResponse && data.quoteResponse.result) {
         const results = data.quoteResponse.result.map(quote => {
-          const originalCode = stocks.find(s => 
-            convertSymbol(s.code, s.market) === quote.symbol
-          )?.code || quote.symbol
+          const originalCode = symbolMap.get(quote.symbol) || quote.symbol
+          console.log(`Mapping ${quote.symbol} -> ${originalCode}, price: ${quote.regularMarketPrice}`)
           
           return {
             symbol: originalCode,
@@ -134,11 +144,13 @@ export function useStockApi() {
         })
 
         results.forEach(result => {
-          const symbol = symbols.find(s => s.includes(result.symbol)) || result.symbol
-          cache.set(symbol, {
-            data: result,
-            timestamp: Date.now()
-          })
+          const yahooSymbol = symbols.find(s => symbolMap.get(s) === result.symbol)
+          if (yahooSymbol) {
+            cache.set(yahooSymbol, {
+              data: result,
+              timestamp: Date.now()
+            })
+          }
         })
 
         return results

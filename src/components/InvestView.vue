@@ -562,16 +562,22 @@ const refreshPrices = async () => {
       market: item.market
     }))
     
+    console.log('Refreshing prices for stocks:', stocks)
+    
     const prices = await fetchMultipleStockPrices(stocks)
+    
+    console.log('Received prices:', prices)
     
     prices.forEach(priceData => {
       const stock = profitData.value.find(s => s.code === priceData.symbol)
+      console.log(`Looking for stock ${priceData.symbol}, found:`, stock ? stock.code : 'not found')
       if (stock) {
         stock.currentPrice = priceData.price
         stock.profit = (priceData.price - stock.buyPrice) * stock.shares
         stock.profitPercent = stock.buyPrice > 0 
           ? ((priceData.price - stock.buyPrice) / stock.buyPrice * 100) 
           : 0
+        console.log(`Updated ${stock.code}: currentPrice=${stock.currentPrice}`)
       }
     })
   } catch (e) {
