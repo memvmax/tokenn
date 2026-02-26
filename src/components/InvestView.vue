@@ -920,10 +920,10 @@ defineExpose({
         <div class="data-table">
           <div class="table-header">
             <div class="th col-code">{{ getLabel('code') }}</div>
-            <div class="th col-name">{{ getLabel('name') }}</div>
+            <div class="th col-name desktop-only">{{ getLabel('name') }}</div>
             <div class="th col-price">{{ getLabel('buyPrice') }}</div>
-            <div class="th col-price">{{ getLabel('currentPrice') }}</div>
-            <div class="th col-shares">{{ getLabel('shares') }}</div>
+            <div class="th col-price desktop-only">{{ getLabel('currentPrice') }}</div>
+            <div class="th col-shares desktop-only">{{ getLabel('shares') }}</div>
             <div class="th col-value sortable" :class="getSortClass('value')" @click="toggleSort('value')">{{ getLabel('marketValue') }} (CNY)</div>
             <div class="th col-profit sortable" :class="getSortClass('profit')" @click="toggleSort('profit')">{{ getLabel('profit') }} (CNY)</div>
             <div class="th col-percent sortable" :class="getSortClass('change')" @click="toggleSort('change')">{{ getLabel('changePercent') }}</div>
@@ -941,16 +941,30 @@ defineExpose({
                 @mouseup="endLongPress"
                 @mouseleave="endLongPress"
               >
-                <div class="td col-code">{{ item.code }}</div>
-                <div class="td col-name">{{ item.name }}</div>
-                <div class="td col-price font-numeric">{{ formatNumber(item.buyPrice) }}</div>
-                <div class="td col-price font-numeric">{{ formatNumber(item.currentPrice) }}</div>
-                <div class="td col-shares font-numeric">{{ item.shares }}</div>
-                <div class="td col-value font-numeric">{{ formatNumber(convertToCNY(item.currentPrice * item.shares, item.market)) }}</div>
-                <div class="td col-profit font-numeric" :class="getProfitClass(item.profit)">
-                  {{ item.profit >= 0 ? '+' : '' }}{{ formatNumber(convertToCNY(item.profit, item.market)) }}
+                <div class="td col-code">
+                  <span class="mobile-label desktop-only">{{ getLabel('code') }}</span>
+                  <span class="cell-top">{{ item.code }}</span>
+                  <span class="cell-bottom">{{ item.name }}</span>
                 </div>
-                <div class="td col-percent font-numeric" :class="getProfitClass(item.profit)">
+                <div class="td col-name desktop-only">{{ item.name }}</div>
+                <div class="td col-price font-numeric">
+                  <span class="mobile-label desktop-only">{{ getLabel('buyPrice') }}</span>
+                  <span class="cell-top">{{ formatNumber(item.currentPrice) }}</span>
+                  <span class="cell-bottom">{{ formatNumber(item.buyPrice) }}</span>
+                </div>
+                <div class="td col-price font-numeric desktop-only">{{ formatNumber(item.currentPrice) }}</div>
+                <div class="td col-shares font-numeric desktop-only">{{ item.shares }}</div>
+                <div class="td col-value font-numeric">
+                  <span class="mobile-label desktop-only">{{ getLabel('marketValue') }}</span>
+                  <span class="cell-top">{{ item.shares }}</span>
+                  <span class="cell-bottom">{{ formatNumber(convertToCNY(item.currentPrice * item.shares, item.market)) }}</span>
+                </div>
+                <div class="td col-profit font-numeric" :class="getProfitClass(item.profit)">
+                  <span class="mobile-label desktop-only">{{ getLabel('profit') }}</span>
+                  <span class="cell-top">{{ item.profit >= 0 ? '+' : '' }}{{ formatNumber(convertToCNY(item.profit, item.market)) }}</span>
+                  <span class="cell-bottom" :class="getProfitClass(item.profit)">{{ item.profitPercent >= 0 ? '+' : '' }}{{ item.profitPercent.toFixed(1) }}%</span>
+                </div>
+                <div class="td col-percent font-numeric desktop-only" :class="getProfitClass(item.profit)">
                   {{ item.profitPercent >= 0 ? '+' : '' }}{{ item.profitPercent.toFixed(1) }}%
                 </div>
               </div>
@@ -961,8 +975,8 @@ defineExpose({
                     <div class="trans-col date">{{ getLabel('tradeDate') }}</div>
                     <div class="trans-col type">{{ getLabel('tradeType') }}</div>
                     <div class="trans-col price">{{ getLabel('price') }}</div>
-                    <div class="trans-col qty">{{ getLabel('shares') }}</div>
-                    <div class="trans-col comm">{{ getLabel('commissionLabel') }}</div>
+                    <div class="trans-col qty desktop-only">{{ getLabel('shares') }}</div>
+                    <div class="trans-col comm desktop-only">{{ getLabel('commissionLabel') }}</div>
                     <div class="trans-col amount">{{ getLabel('total') }}</div>
                   </div>
                   <div class="trans-row profit-trans" v-for="(trans, idx) in item.transactions" :key="idx"
@@ -973,14 +987,23 @@ defineExpose({
                     @mouseup="endLongPress"
                     @mouseleave="endLongPress"
                   >
-                    <div class="trans-col date">{{ trans.date }}</div>
-                    <div class="trans-col type" :class="trans.type === 'buy' ? 'buy' : 'sell'">
-                      {{ trans.type === 'buy' ? getLabel('buy') : getLabel('sell') }}
+                    <div class="trans-col date">
+                      <span class="cell-top" :class="trans.type === 'buy' ? 'buy' : 'sell'">{{ trans.type.toUpperCase() }}</span>
+                      <span class="cell-bottom">{{ trans.date }}</span>
                     </div>
-                    <div class="trans-col price font-numeric">{{ formatNumber(trans.price) }}</div>
-                    <div class="trans-col qty font-numeric">{{ trans.quantity }}</div>
-                    <div class="trans-col comm font-numeric">{{ trans.commission }}</div>
-                    <div class="trans-col amount font-numeric">{{ formatNumber(trans.price * trans.quantity + trans.commission) }}</div>
+                    <div class="trans-col type desktop-only" :class="trans.type === 'buy' ? 'buy' : 'sell'">
+                      {{ trans.type.toUpperCase() }}
+                    </div>
+                    <div class="trans-col price font-numeric">
+                      <span class="cell-top">{{ formatNumber(trans.price) }}</span>
+                      <span class="cell-bottom">{{ formatNumber(trans.commission) }}</span>
+                    </div>
+                    <div class="trans-col qty font-numeric desktop-only">{{ trans.quantity }}</div>
+                    <div class="trans-col comm font-numeric desktop-only">{{ formatNumber(trans.commission) }}</div>
+                    <div class="trans-col amount font-numeric">
+                      <span class="cell-top">{{ trans.quantity }}</span>
+                      <span class="cell-bottom">{{ formatNumber(trans.price * trans.quantity) }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2109,5 +2132,126 @@ defineExpose({
 .stock-name {
   font-size: 14px;
   color: var(--text-secondary);
+}
+
+.desktop-only {
+  display: flex;
+}
+
+.cell-top,
+.cell-bottom {
+  display: block;
+}
+
+@media (min-width: 769px) {
+  .cell-top,
+  .cell-bottom {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  
+  .table-header,
+  .table-row {
+    grid-template-columns: 1fr 80px 80px 80px;
+  }
+  
+  .th {
+    font-size: 8px;
+    padding: 8px 6px;
+  }
+  
+  .td {
+    padding: 8px 6px;
+    font-size: 11px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  
+  .col-code .td,
+  .col-code {
+    align-items: flex-start;
+  }
+  
+  .col-price .td,
+  .col-price,
+  .col-value .td,
+  .col-value,
+  .col-profit .td,
+  .col-profit {
+    align-items: flex-end;
+    text-align: right;
+  }
+  
+  .cell-top {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+  
+  .cell-bottom {
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 1.3;
+  }
+  
+  .col-profit .cell-top {
+    font-weight: 600;
+  }
+  
+  .col-profit .cell-bottom.positive {
+    color: var(--accent-green);
+  }
+  
+  .col-profit .cell-bottom.negative {
+    color: var(--accent-red);
+  }
+  
+  .trans-row.profit-trans {
+    grid-template-columns: 1fr 80px 80px;
+  }
+  
+  .trans-col.date,
+  .trans-col.price,
+  .trans-col.amount {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 6px;
+    font-size: 11px;
+  }
+  
+  .trans-col.date {
+    align-items: flex-start;
+  }
+  
+  .trans-col.price,
+  .trans-col.amount {
+    align-items: flex-end;
+    text-align: right;
+  }
+  
+  .trans-col.date .cell-top,
+  .trans-col.date .cell-bottom,
+  .trans-col.price .cell-top,
+  .trans-col.price .cell-bottom,
+  .trans-col.amount .cell-top,
+  .trans-col.amount .cell-bottom {
+    display: block;
+  }
+  
+  .trans-col.date .cell-top.buy {
+    color: var(--accent-green);
+  }
+  
+  .trans-col.date .cell-top.sell{
+    color: var(--accent-red);
+  }
 }
 </style>
