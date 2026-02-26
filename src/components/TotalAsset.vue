@@ -37,7 +37,7 @@ const totalAmount = computed(() => {
 })
 
 const showInvestMode = computed(() => {
-  return props.investTab === 'profit'
+  return props.investTab === 'profit' || props.investTab === 'position'
 })
 
 const totalInvestValue = computed(() => {

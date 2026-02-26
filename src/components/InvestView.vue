@@ -915,15 +915,6 @@ defineExpose({
       <div v-if="activeTab === 'profit'" class="profit-section">
         <div class="section-header">
           <span class="section-title">{{ getLabel('profitMonitor') }}</span>
-          <div class="section-summary">
-            <span class="summary-label">{{ getLabel('totalProfit') }}</span>
-            <span class="summary-value" :class="getProfitClass(totalProfit)">
-              {{ totalProfit >= 0 ? '+' : '' }}{{ formatNumber(totalProfit) }} CNY
-            </span>
-            <span class="summary-percent" :class="getProfitClass(totalProfit)">
-              ({{ totalProfitPercent >= 0 ? '+' : '' }}{{ totalProfitPercent.toFixed(2) }}%)
-            </span>
-          </div>
         </div>
         
         <div class="data-table">
@@ -1005,10 +996,6 @@ defineExpose({
             {{ positionViewType === 'industry' ? getLabel('industry') : getLabel('style') }}
             <i class="fas fa-exchange-alt"></i>
           </button>
-          <div class="section-summary">
-            <span class="summary-label">{{ getLabel('totalValue') }}</span>
-            <span class="summary-value">{{ formatNumber(positionSummaryData.reduce((s, i) => s + i.currentValue, 0)) }} CNY</span>
-          </div>
         </div>
         
         <div class="data-table">
