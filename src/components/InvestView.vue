@@ -2225,6 +2225,20 @@ defineExpose({
     gap: 2px;
   }
   
+  .position-header .th {
+    flex-direction: row;
+    align-items: center;
+  }
+  
+  .position-header .th.col-category {
+    justify-content: flex-start;
+  }
+  
+  .position-header .th.col-percent,
+  .position-header .th.col-diff {
+    justify-content: flex-end;
+  }
+  
   .header-top {
     font-size: 9px;
     font-weight: 600;
@@ -2354,15 +2368,6 @@ defineExpose({
   .table-header.position-header,
   .table-row.position-row {
     grid-template-columns: 1fr 90px 90px 90px;
-  }
-  
-  .position-header .th {
-    justify-content: flex-start;
-  }
-  
-  .position-header .th.col-percent,
-  .position-header .th.col-diff {
-    justify-content: flex-end;
   }
   
   .trans-row.stock-row {
