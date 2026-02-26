@@ -39,6 +39,32 @@
           <div v-if="showPresetMenu" class="menu-overlay" @click="closePresetMenu"></div>
         </Teleport>
       </div>
+
+      <div class="view-selector" ref="viewRef">
+        <button class="view-btn" @click="toggleViewMenu" :class="{ 'active': showViewMenu }">
+          <span class="view-name">{{ currentViewName }}</span>
+          <i class="fas fa-chevron-down view-icon" :class="{ 'rotated': showViewMenu }"></i>
+        </button>
+        
+        <Teleport to="body">
+          <Transition name="fade">
+            <div v-if="showViewMenu" class="view-menu" :style="viewMenuStyle" @click.stop>
+              <button 
+                v-for="option in viewOptions" 
+                :key="option.id"
+                class="view-item"
+                :class="{ 'active': option.id === currentView }"
+                @click="selectView(option.id)"
+              >
+                <span class="view-item-name">{{ currentLocale === 'zh-CN' ? option.name : option.nameEn }}</span>
+                <i v-if="option.id === currentView" class="fas fa-check"></i>
+              </button>
+            </div>
+          </Transition>
+          
+          <div v-if="showViewMenu" class="menu-overlay" @click="closeViewMenu"></div>
+        </Teleport>
+      </div>
     </div>
     <div class="header-right">
       <div class="settings-container" ref="containerRef">
@@ -219,8 +245,47 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useLocale } from '../composables/useLocale'
+import { useViewState } from '../composables/useViewState'
 
 const { currentLocale, setLocale, t } = useLocale()
+const { currentView, viewOptions, setView, getView } = useViewState()
+
+const showViewMenu = ref(false)
+const viewRef = ref(null)
+const viewMenuStyle = ref({})
+
+const currentViewName = computed(() => {
+  const option = viewOptions.find(o => o.id === currentView.value)
+  return currentLocale.value === 'zh-CN' ? option?.name : option?.nameEn
+})
+
+const toggleViewMenu = () => {
+  showViewMenu.value = !showViewMenu.value
+  if (showViewMenu.value) {
+    updateViewMenuPosition()
+  }
+}
+
+const closeViewMenu = () => {
+  showViewMenu.value = false
+}
+
+const selectView = (viewId) => {
+  setView(viewId)
+  closeViewMenu()
+}
+
+const updateViewMenuPosition = () => {
+  if (viewRef.value) {
+    const rect = viewRef.value.getBoundingClientRect()
+    viewMenuStyle.value = {
+      position: 'fixed',
+      top: `${rect.bottom + 8}px`,
+      left: `${rect.left}px`,
+      zIndex: 9999
+    }
+  }
+}
 
 const availableModules = [
   { id: 'cash', name: 'CASH' },
@@ -590,6 +655,90 @@ onUnmounted(() => {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   z-index: 9999;
   overflow: hidden;
+}
+
+.view-selector {
+  position: relative;
+  margin-left: 12px;
+}
+
+.view-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.view-btn:hover {
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.view-btn.active {
+  border-color: #0891b2;
+  color: #0891b2;
+  background: rgba(8, 145, 178, 0.1);
+}
+
+.view-name {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.view-icon {
+  font-size: 10px;
+  transition: transform 0.15s ease;
+}
+
+.view-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.view-menu {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+  overflow: hidden;
+  min-width: 120px;
+}
+
+.view-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.view-item:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.view-item.active {
+  background: rgba(8, 145, 178, 0.15);
+  color: #0891b2;
+}
+
+.view-item i {
+  font-size: 10px;
 }
 
 .preset-list {

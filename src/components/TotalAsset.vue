@@ -23,16 +23,25 @@ const totalAmount = computed(() => {
 
 <template>
   <div class="total-asset-container">
-    <div class="asset-header">
-      <span class="asset-label">{{ t('totalAsset') }}</span>
+    <div class="asset-main">
+      <div class="asset-label">CNY</div>
+      <div class="asset-value">
+        <span class="amount font-numeric">{{ formatCurrency(totalAmount) }}</span>
+      </div>
+      <div class="asset-change">
+        <span class="change-value positive">+0.00%</span>
+        <span class="change-period">this month</span>
+      </div>
     </div>
-    <div class="asset-value">
-      <span class="currency">¥</span>
-      <span class="amount font-numeric">{{ formatCurrency(totalAmount) }}</span>
-    </div>
-    <div class="asset-change">
-      <span class="change-value positive">+0.00%</span>
-      <span class="change-period">this month</span>
+    <div class="asset-health">
+      <div class="health-label">HEALTH PTS</div>
+      <div class="health-score">
+        <span class="score-value font-numeric">85</span>
+      </div>
+      <div class="health-change">
+        <span class="health-delta negative">-2 pts</span>
+        <span class="health-period">vs yesterday</span>
+      </div>
     </div>
   </div>
 </template>
@@ -43,10 +52,13 @@ const totalAmount = computed(() => {
   background-image: var(--total-asset-overlay);
   border: 1px solid var(--border-light);
   border-radius: 4px;
-  padding: 16px 20px;
+  padding: 24px 20px;
   margin-bottom: 16px;
   position: relative;
   overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .total-asset-container::after {
@@ -60,39 +72,31 @@ const totalAmount = computed(() => {
   pointer-events: none;
 }
 
-.asset-header {
+.asset-main {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
+  flex-direction: column;
 }
 
 .asset-label {
-  color: var(--text-muted);
   font-size: 10px;
   font-weight: 600;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.8px;
+  margin-bottom: 2px;
 }
 
 .asset-value {
   display: flex;
   align-items: baseline;
-  gap: 4px;
-  margin-bottom: 8px;
-}
-
-.asset-value .currency {
-  font-size: 20px;
-  font-weight: 500;
-  color: var(--text-secondary);
+  margin-bottom: 0;
 }
 
 .asset-value .amount {
-  font-size: 32px;
+  font-size: 42px;
   font-weight: 600;
   color: var(--text-primary);
-  letter-spacing: -0.5px;
+  letter-spacing: -1px;
 }
 
 .asset-change {
@@ -102,7 +106,7 @@ const totalAmount = computed(() => {
 }
 
 .change-value {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
 }
 
@@ -115,7 +119,57 @@ const totalAmount = computed(() => {
 }
 
 .change-period {
-  font-size: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.asset-health {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.health-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 2px;
+}
+
+.health-score {
+  margin-bottom: 0;
+}
+
+.score-value {
+  font-size: 42px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -1px;
+}
+
+.health-change {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.health-delta {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.health-delta.positive {
+  color: var(--accent-green);
+}
+
+.health-delta.negative {
+  color: var(--accent-red);
+}
+
+.health-period {
+  font-size: 13px;
   color: var(--text-muted);
 }
 </style>

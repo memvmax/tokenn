@@ -21,66 +21,14 @@
           :format-currency="formatCurrency"
         />
 
-        <WarningAlert :total-ideal-percentage="totalIdealPercentage" :t="t" />
+        <template v-if="currentView === 'wallet'">
+          <WarningAlert :total-ideal-percentage="totalIdealPercentage" :t="t" />
 
-        <!-- Desktop: Cards grid + Detail below all cards -->
-        <div class="assets-grid desktop-view">
-          <AssetCard 
-            v-for="asset in visibleAssets" 
-            :key="asset.id" 
-            :asset="asset" 
-            :total-asset="totalAsset" 
-            :t="t"
-            :format-amount="formatAmount"
-            :selected="selectedAssetId === asset.id"
-            @select="handleAssetSelect" 
-          />
-        </div>
-
-        <div class="detail-section desktop-view" v-if="selectedAssetId">
-          <CashDetail 
-            v-if="selectedAssetId === 'cash'"
-            :t="t"
-            :format-amount="formatAmount"
-            @update:total="updateCashTotal"
-            @transfer="handleTransfer"
-          />
-          <StockDetail 
-            v-else-if="selectedAssetId === 'stock'"
-            :t="t"
-            :format-amount="formatAmount"
-            @update:total="updateStockTotal"
-          />
-          <GoldDetail 
-            v-else-if="selectedAssetId === 'gold'"
-            :t="t"
-            :format-currency="formatCurrency"
-            @update:total="updateGoldTotal"
-          />
-          <BondDetail 
-            v-else-if="selectedAssetId === 'bond'"
-            :t="t"
-            :format-amount="formatAmount"
-            @update:total="updateBondTotal"
-            @transfer="handleTransfer"
-          />
-          <EmergingDetail 
-            v-else-if="selectedAssetId === 'emerging'"
-            :t="t"
-            :format-amount="formatAmount"
-            @update:total="updateEmergingTotal"
-            @transfer="handleTransfer"
-          />
-          <div v-else class="detail-placeholder">
-            <i class="fas fa-tools"></i>
-            <p>{{ t('detailComingSoon') }}</p>
-          </div>
-        </div>
-
-        <!-- Mobile: Cards with inline detail -->
-        <div class="assets-grid mobile-view">
-          <template v-for="asset in visibleAssets" :key="asset.id">
+          <!-- Desktop: Cards grid + Detail below all cards -->
+          <div class="assets-grid desktop-view">
             <AssetCard 
+              v-for="asset in visibleAssets" 
+              :key="asset.id" 
               :asset="asset" 
               :total-asset="totalAsset" 
               :t="t"
@@ -88,16 +36,69 @@
               :selected="selectedAssetId === asset.id"
               @select="handleAssetSelect" 
             />
-            <div class="detail-inline" v-if="selectedAssetId === asset.id">
-              <CashDetail 
-                v-if="asset.id === 'cash'"
+          </div>
+
+          <div class="detail-section desktop-view" v-if="selectedAssetId">
+            <CashDetail 
+              v-if="selectedAssetId === 'cash'"
+              :t="t"
+              :format-amount="formatAmount"
+              @update:total="updateCashTotal"
+              @transfer="handleTransfer"
+            />
+            <StockDetail 
+              v-else-if="selectedAssetId === 'stock'"
+              :t="t"
+              :format-amount="formatAmount"
+              @update:total="updateStockTotal"
+            />
+            <GoldDetail 
+              v-else-if="selectedAssetId === 'gold'"
+              :t="t"
+              :format-currency="formatCurrency"
+              @update:total="updateGoldTotal"
+            />
+            <BondDetail 
+              v-else-if="selectedAssetId === 'bond'"
+              :t="t"
+              :format-amount="formatAmount"
+              @update:total="updateBondTotal"
+              @transfer="handleTransfer"
+            />
+            <EmergingDetail 
+              v-else-if="selectedAssetId === 'emerging'"
+              :t="t"
+              :format-amount="formatAmount"
+              @update:total="updateEmergingTotal"
+              @transfer="handleTransfer"
+            />
+            <div v-else class="detail-placeholder">
+              <i class="fas fa-tools"></i>
+              <p>{{ t('detailComingSoon') }}</p>
+            </div>
+          </div>
+
+          <!-- Mobile: Cards with inline detail -->
+          <div class="assets-grid mobile-view">
+            <template v-for="asset in visibleAssets" :key="asset.id">
+              <AssetCard 
+                :asset="asset" 
+                :total-asset="totalAsset" 
                 :t="t"
                 :format-amount="formatAmount"
-                @update:total="updateCashTotal"
-                @transfer="handleTransfer"
+                :selected="selectedAssetId === asset.id"
+                @select="handleAssetSelect" 
               />
-              <StockDetail 
-                v-else-if="asset.id === 'stock'"
+              <div class="detail-inline" v-if="selectedAssetId === asset.id">
+                <CashDetail 
+                  v-if="asset.id === 'cash'"
+                  :t="t"
+                  :format-amount="formatAmount"
+                  @update:total="updateCashTotal"
+                  @transfer="handleTransfer"
+                />
+                <StockDetail 
+                  v-else-if="asset.id === 'stock'"
                 :t="t"
                 :format-amount="formatAmount"
                 @update:total="updateStockTotal"
@@ -129,6 +130,15 @@
             </div>
           </template>
         </div>
+        </template>
+
+        <template v-else-if="currentView === 'invest'">
+          <InvestView :t="t" :format-amount="formatAmount" />
+        </template>
+
+        <template v-else-if="currentView === 'notes'">
+          <NotesView :t="t" />
+        </template>
 
         <NewsFeed :t="t" v-show="false" />
       </main>
@@ -160,13 +170,19 @@ import BondDetail from './components/BondDetail.vue';
 import EmergingDetail from './components/EmergingDetail.vue';
 import NewsFeed from './components/NewsFeed.vue';
 import AuthModal from './components/AuthModal.vue';
+import InvestView from './components/InvestView.vue';
+import NotesView from './components/NotesView.vue';
 import { useLocale } from './composables/useLocale';
 import { useSupabase } from './lib/supabase';
 import { useDataStorage } from './composables/useDataStorage';
+import { useViewState } from './composables/useViewState';
 
 const { t, initLocale, formatAmount, formatCurrency } = useLocale();
 const { getUser, signOut, onAuthStateChange, isConfigured } = useSupabase();
 const { setUserId, saveData, loadData, saveAllData, loadAllData } = useDataStorage();
+const { currentView, getView } = useViewState();
+
+getView();
 
 const user = ref(null);
 const showAuthModal = ref(false);
