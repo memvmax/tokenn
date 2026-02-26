@@ -919,14 +919,38 @@ defineExpose({
         
         <div class="data-table">
           <div class="table-header">
-            <div class="th col-code">{{ getLabel('code') }}</div>
+            <div class="th col-code">
+              <span class="desktop-only">{{ getLabel('code') }}</span>
+              <span class="mobile-header">
+                <span class="header-top">{{ getLabel('code') }}</span>
+                <span class="header-bottom">{{ getLabel('name') }}</span>
+              </span>
+            </div>
             <div class="th col-name desktop-only">{{ getLabel('name') }}</div>
-            <div class="th col-price">{{ getLabel('buyPrice') }}</div>
+            <div class="th col-price">
+              <span class="desktop-only">{{ getLabel('buyPrice') }}</span>
+              <span class="mobile-header">
+                <span class="header-top">{{ getLabel('currentPrice') }}</span>
+                <span class="header-bottom">{{ getLabel('buyPrice') }}</span>
+              </span>
+            </div>
             <div class="th col-price desktop-only">{{ getLabel('currentPrice') }}</div>
             <div class="th col-shares desktop-only">{{ getLabel('shares') }}</div>
-            <div class="th col-value sortable" :class="getSortClass('value')" @click="toggleSort('value')">{{ getLabel('marketValue') }} (CNY)</div>
-            <div class="th col-profit sortable" :class="getSortClass('profit')" @click="toggleSort('profit')">{{ getLabel('profit') }} (CNY)</div>
-            <div class="th col-percent sortable" :class="getSortClass('change')" @click="toggleSort('change')">{{ getLabel('changePercent') }}</div>
+            <div class="th col-value sortable" :class="getSortClass('value')" @click="toggleSort('value')">
+              <span class="desktop-only">{{ getLabel('marketValue') }} (CNY)</span>
+              <span class="mobile-header">
+                <span class="header-top">{{ getLabel('shares') }}</span>
+                <span class="header-bottom">{{ getLabel('marketValue') }}</span>
+              </span>
+            </div>
+            <div class="th col-profit sortable" :class="getSortClass('profit')" @click="toggleSort('profit')">
+              <span class="desktop-only">{{ getLabel('profit') }} (CNY)</span>
+              <span class="mobile-header">
+                <span class="header-top">{{ getLabel('profit') }}</span>
+                <span class="header-bottom">{{ getLabel('changePercent') }}</span>
+              </span>
+            </div>
+            <div class="th col-percent sortable desktop-only" :class="getSortClass('change')" @click="toggleSort('change')">{{ getLabel('changePercent') }}</div>
           </div>
           <div class="table-body">
             <template v-for="item in filteredProfitData" :key="item.code">
@@ -972,12 +996,30 @@ defineExpose({
               <div v-if="selectedStockCode === item.code && item.transactions" class="transaction-detail">
                 <div class="transaction-table">
                   <div class="trans-row trans-header profit-trans">
-                    <div class="trans-col date">{{ getLabel('tradeDate') }}</div>
-                    <div class="trans-col type">{{ getLabel('tradeType') }}</div>
-                    <div class="trans-col price">{{ getLabel('price') }}</div>
+                    <div class="trans-col date">
+                      <span class="desktop-only">{{ getLabel('tradeDate') }}</span>
+                      <span class="mobile-header">
+                        <span class="header-top">{{ getLabel('tradeType') }}</span>
+                        <span class="header-bottom">{{ getLabel('tradeDate') }}</span>
+                      </span>
+                    </div>
+                    <div class="trans-col type desktop-only">{{ getLabel('tradeType') }}</div>
+                    <div class="trans-col price">
+                      <span class="desktop-only">{{ getLabel('price') }}</span>
+                      <span class="mobile-header">
+                        <span class="header-top">{{ getLabel('price') }}</span>
+                        <span class="header-bottom">{{ getLabel('commissionLabel') }}</span>
+                      </span>
+                    </div>
                     <div class="trans-col qty desktop-only">{{ getLabel('shares') }}</div>
                     <div class="trans-col comm desktop-only">{{ getLabel('commissionLabel') }}</div>
-                    <div class="trans-col amount">{{ getLabel('total') }}</div>
+                    <div class="trans-col amount">
+                      <span class="desktop-only">{{ getLabel('total') }}</span>
+                      <span class="mobile-header">
+                        <span class="header-top">{{ getLabel('shares') }}</span>
+                        <span class="header-bottom">{{ getLabel('total') }}</span>
+                      </span>
+                    </div>
                   </div>
                   <div class="trans-row profit-trans" v-for="(trans, idx) in item.transactions" :key="idx"
                     @touchstart="startLongPress($event, 'transaction', { stockCode: item.code, transIndex: idx })"
@@ -2138,6 +2180,17 @@ defineExpose({
   display: flex;
 }
 
+.mobile-header {
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.header-top,
+.header-bottom {
+  display: block;
+}
+
 .cell-top,
 .cell-bottom {
   display: block;
@@ -2145,7 +2198,8 @@ defineExpose({
 
 @media (min-width: 769px) {
   .cell-top,
-  .cell-bottom {
+  .cell-bottom,
+  .mobile-header {
     display: none;
   }
 }
@@ -2153,6 +2207,10 @@ defineExpose({
 @media (max-width: 768px) {
   .desktop-only {
     display: none !important;
+  }
+  
+  .mobile-header {
+    display: flex;
   }
   
   .table-header,
@@ -2163,6 +2221,22 @@ defineExpose({
   .th {
     font-size: 8px;
     padding: 8px 6px;
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .header-top {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-muted);
+    line-height: 1.2;
+  }
+  
+  .header-bottom {
+    font-size: 8px;
+    color: var(--text-muted);
+    opacity: 0.7;
+    line-height: 1.2;
   }
   
   .td {
@@ -2186,6 +2260,19 @@ defineExpose({
   .col-profit {
     align-items: flex-end;
     text-align: right;
+  }
+  
+  .col-code .mobile-header,
+  .col-price .mobile-header,
+  .col-value .mobile-header,
+  .col-profit .mobile-header {
+    align-items: flex-start;
+  }
+  
+  .col-price .mobile-header,
+  .col-value .mobile-header,
+  .col-profit .mobile-header {
+    align-items: flex-end;
   }
   
   .cell-top {
@@ -2231,27 +2318,36 @@ defineExpose({
     align-items: flex-start;
   }
   
+  .trans-col.date .mobile-header {
+    align-items: flex-start;
+  }
+  
   .trans-col.price,
   .trans-col.amount {
     align-items: flex-end;
     text-align: right;
   }
   
-  .trans-col.date .cell-top,
-  .trans-col.date .cell-bottom,
-  .trans-col.price .cell-top,
-  .trans-col.price .cell-bottom,
-  .trans-col.amount .cell-top,
-  .trans-col.amount .cell-bottom {
-    display: block;
+  .trans-col.price .mobile-header,
+  .trans-col.amount .mobile-header {
+    align-items: flex-end;
   }
   
   .trans-col.date .cell-top.buy {
     color: var(--accent-green);
   }
   
-  .trans-col.date .cell-top.sell{
+  .trans-col.date .cell-top.sell {
     color: var(--accent-red);
+  }
+  
+  .table-header.position-header,
+  .table-row.position-row {
+    grid-template-columns: 1fr 90px 90px 90px;
+  }
+  
+  .trans-row.stock-row {
+    grid-template-columns: 90px 1fr 90px;
   }
 }
 </style>
