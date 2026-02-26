@@ -123,7 +123,9 @@ export function useStockApi() {
       const response = await fetch(apiUrl)
       
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
+        const errorData = await response.json().catch(() => ({}))
+        console.error('API error response:', errorData)
+        throw new Error(`API error: ${response.status} - ${errorData.message || errorData.error || 'Unknown error'}`)
       }
 
       const data = await response.json()
