@@ -260,6 +260,7 @@ const manualAdd = () => {
 
 const closeAddModal = () => {
   showAddModal.value = false
+  editingTransaction.value = null
 }
 
 const newOrder = ref({
@@ -272,6 +273,8 @@ const newOrder = ref({
   category1: '',
   category2: ''
 })
+
+const editingTransaction = ref(null)
 
 const category1Options = [
   { id: 'consumption', name: '消费', nameEn: 'Consumption' },
@@ -293,7 +296,21 @@ const category2Options = [
 ]
 
 const submitOrder = () => {
-  console.log('New order:', newOrder.value)
+  if (editingTransaction.value) {
+    const stock = profitData.value.find(item => item.code === editingTransaction.value.stockCode)
+    if (stock && stock.transactions) {
+      const trans = stock.transactions[editingTransaction.value.transIndex]
+      if (trans) {
+        trans.type = newOrder.value.tradeType
+        trans.price = parseFloat(newOrder.value.price) || 0
+        trans.quantity = parseInt(newOrder.value.quantity) || 0
+        trans.commission = parseFloat(newOrder.value.commission) || 0
+        recalculateStock(stock)
+      }
+    }
+  } else {
+    console.log('New order:', newOrder.value)
+  }
   closeAddModal()
   newOrder.value = {
     stockInput: '',
@@ -305,6 +322,33 @@ const submitOrder = () => {
     category1: '',
     category2: ''
   }
+}
+
+const editTransaction = () => {
+  if (contextMenuType.value === 'transaction' && contextMenuData.value) {
+    const stock = profitData.value.find(item => item.code === contextMenuData.value.stockCode)
+    if (stock && stock.transactions) {
+      const trans = stock.transactions[contextMenuData.value.transIndex]
+      if (trans) {
+        editingTransaction.value = {
+          stockCode: contextMenuData.value.stockCode,
+          transIndex: contextMenuData.value.transIndex
+        }
+        newOrder.value = {
+          stockInput: `${stock.code} ${stock.name}`,
+          tradeType: trans.type,
+          price: trans.price.toString(),
+          quantity: trans.quantity.toString(),
+          commission: trans.commission.toString(),
+          tax: '0',
+          category1: '',
+          category2: ''
+        }
+        showAddModal.value = true
+      }
+    }
+  }
+  closeContextMenu()
 }
 
 const toggleHistory = () => {
@@ -570,6 +614,7 @@ const labels = {
   history: { 'zh-CN': '历史记录', 'en-US': 'HISTORY' },
   cleared: { 'zh-CN': '已清仓', 'en-US': 'CLEARED' },
   addOrderTitle: { 'zh-CN': '添加订单', 'en-US': 'ADD ORDER' },
+  editOrderTitle: { 'zh-CN': '修改订单', 'en-US': 'EDIT ORDER' },
   stockCode: { 'zh-CN': '股票代码/名称', 'en-US': 'STOCK CODE/NAME' },
   stockCodePlaceholder: { 'zh-CN': '输入股票代码或名称', 'en-US': 'Enter stock code or name' },
   tradeType: { 'zh-CN': '交易类型', 'en-US': 'TRADE TYPE' },
@@ -868,7 +913,7 @@ defineExpose({
       <div v-if="showAddModal" class="modal-overlay" @click="closeAddModal">
         <div class="modal-container" @click.stop>
           <div class="modal-header">
-            <span class="modal-title">{{ getLabel('addOrderTitle') }}</span>
+            <span class="modal-title">{{ editingTransaction ? getLabel('editOrderTitle') : getLabel('addOrderTitle') }}</span>
             <button class="modal-close" @click="closeAddModal">
               <i class="fas fa-times"></i>
             </button>
@@ -961,7 +1006,7 @@ defineExpose({
           :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
           @click.stop
         >
-          <button class="context-menu-item" @click="closeContextMenu">
+          <button class="context-menu-item" @click="editTransaction">
             <i class="fas fa-edit"></i>
             <span>{{ getLabel('edit') }}</span>
           </button>
