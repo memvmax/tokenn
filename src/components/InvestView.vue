@@ -307,7 +307,7 @@ const category2Options = [
   { id: 'bluechip', name: '蓝筹', nameEn: 'Blue Chip' },
 ]
 
-const submitOrder = () => {
+const submitOrder = async () => {
   if (editingTransaction.value) {
     const stock = profitData.value.find(item => item.code === editingTransaction.value.stockCode)
     if (stock && stock.transactions) {
@@ -321,8 +321,65 @@ const submitOrder = () => {
       }
     }
   } else {
-    console.log('New order:', newOrder.value)
+    const input = newOrder.value.stockInput.trim()
+    if (!input) return
+    
+    const parts = input.split(/\s+/)
+    const code = parts[0]
+    const name = parts.slice(1).join(' ') || code
+    
+    const price = parseFloat(newOrder.value.price) || 0
+    const quantity = parseInt(newOrder.value.quantity) || 0
+    const commission = parseFloat(newOrder.value.commission) || 0
+    
+    let market = '美股'
+    if (code.match(/^(6|60|68)\d+$/) || code.startsWith('60') || code.startsWith('68')) {
+      market = 'A股'
+    } else if (code.match(/^(0|00|30)\d+$/) || code.startsWith('00') || code.startsWith('30')) {
+      market = 'A股'
+    } else if (code.match(/^0\d{4}$/) || code.match(/^\d{5}$/)) {
+      market = '港股'
+    }
+    
+    let existingStock = profitData.value.find(item => item.code === code)
+    
+    if (!existingStock) {
+      let currentPrice = price
+      
+      try {
+        const priceData = await fetchStockPrice(code, market)
+        if (priceData) {
+          currentPrice = priceData.price
+        }
+      } catch (e) {
+        console.log('Could not fetch current price, using buy price')
+      }
+      
+      existingStock = {
+        code,
+        name,
+        market,
+        buyPrice: price,
+        currentPrice,
+        shares: 0,
+        profit: 0,
+        profitPercent: 0,
+        transactions: []
+      }
+      profitData.value.unshift(existingStock)
+    }
+    
+    existingStock.transactions.push({
+      type: newOrder.value.tradeType,
+      price,
+      quantity,
+      date: new Date().toISOString().split('T')[0],
+      commission
+    })
+    
+    recalculateStock(existingStock)
   }
+  
   closeAddModal()
   newOrder.value = {
     stockInput: '',
