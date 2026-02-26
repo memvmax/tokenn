@@ -190,11 +190,11 @@ const filteredProfitData = computed(() => {
       let valueA, valueB
       
       if (field === 'value') {
-        valueA = a.currentPrice * a.shares
-        valueB = b.currentPrice * b.shares
+        valueA = convertToCNY(a.currentPrice * a.shares, a.market)
+        valueB = convertToCNY(b.currentPrice * b.shares, b.market)
       } else if (field === 'profit') {
-        valueA = a.profit
-        valueB = b.profit
+        valueA = convertToCNY(a.profit, a.market)
+        valueB = convertToCNY(b.profit, b.market)
       } else if (field === 'change') {
         valueA = a.profitPercent
         valueB = b.profitPercent
