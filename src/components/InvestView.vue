@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useStockApi } from '../composables/useStockApi'
 
 const props = defineProps({
   t: {
@@ -12,6 +13,14 @@ const props = defineProps({
   }
 })
 
+const { 
+  loading: stockLoading, 
+  fetchStockPrice, 
+  fetchMultipleStockPrices, 
+  searchStock,
+  convertSymbol 
+} = useStockApi()
+
 const activeTab = ref('profit')
 const showMarketDropdown = ref(false)
 const showAddDropdown = ref(false)
@@ -20,9 +29,12 @@ const showAddModal = ref(false)
 const selectedStockCode = ref(null)
 const selectedCategoryCode = ref(null)
 const positionViewType = ref('industry')
-const sortState = ref({ field: null, order: 0 }) // 0: original, 1: desc, 2: asc
+const sortState = ref({ field: null, order: 0 })
 const positionSortState = ref({ field: null, order: 0 })
 const selectedMarkets = ref(['A股', '港股', '美股'])
+const searchSuggestions = ref([])
+const showSuggestions = ref(false)
+const priceLoading = ref(false)
 
 const markets = [
   { id: 'A股', name: 'A股', nameEn: 'A-SHARE' },
@@ -446,6 +458,76 @@ const recalculateStock = (stock) => {
   stock.profitPercent = totalCost > 0 ? (stock.profit / totalCost * 100) : 0
 }
 
+let searchTimeout = null
+
+const handleStockInput = async (value) => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  
+  if (!value || value.length < 1) {
+    searchSuggestions.value = []
+    showSuggestions.value = false
+    return
+  }
+  
+  searchTimeout = setTimeout(async () => {
+    const results = await searchStock(value)
+    searchSuggestions.value = results.slice(0, 8)
+    showSuggestions.value = results.length > 0
+  }, 300)
+}
+
+const selectSuggestion = (suggestion) => {
+  newOrder.value.stockInput = `${suggestion.symbol} ${suggestion.name}`
+  
+  let market = '美股'
+  if (suggestion.exchange && suggestion.exchange.includes('SH')) {
+    market = 'A股'
+  } else if (suggestion.exchange && suggestion.exchange.includes('SZ')) {
+    market = 'A股'
+  } else if (suggestion.exchange && suggestion.exchange.includes('HK')) {
+    market = '港股'
+  }
+  
+  showSuggestions.value = false
+  searchSuggestions.value = []
+}
+
+const refreshPrices = async () => {
+  if (profitData.value.length === 0) return
+  
+  priceLoading.value = true
+  
+  try {
+    const stocks = profitData.value.map(item => ({
+      code: item.code,
+      market: item.market
+    }))
+    
+    const prices = await fetchMultipleStockPrices(stocks)
+    
+    prices.forEach(priceData => {
+      const stock = profitData.value.find(s => s.code === priceData.symbol)
+      if (stock) {
+        stock.currentPrice = priceData.price
+        stock.profit = (priceData.price - stock.buyPrice) * stock.shares
+        stock.profitPercent = stock.buyPrice > 0 
+          ? ((priceData.price - stock.buyPrice) / stock.buyPrice * 100) 
+          : 0
+      }
+    })
+  } catch (e) {
+    console.error('Failed to refresh prices:', e)
+  } finally {
+    priceLoading.value = false
+  }
+}
+
+onMounted(() => {
+  refreshPrices()
+})
+
 const selectCategory = (code) => {
   if (selectedCategoryCode.value === code) {
     selectedCategoryCode.value = null
@@ -718,6 +800,10 @@ defineExpose({
       <button class="action-btn" @click="toggleHistory" :class="{ 'active': showHistory }">
         <i class="fas fa-history"></i>
       </button>
+
+      <button class="action-btn refresh-btn" @click="refreshPrices" :disabled="priceLoading" :class="{ 'loading': priceLoading }">
+        <i class="fas fa-sync-alt" :class="{ 'fa-spin': priceLoading }"></i>
+      </button>
     </div>
 
     <div class="invest-content">
@@ -919,14 +1005,29 @@ defineExpose({
             </button>
           </div>
           <div class="modal-body">
-            <div class="form-group">
+            <div class="form-group stock-input-group">
               <label class="form-label">{{ getLabel('stockCode') }}</label>
               <input 
                 type="text" 
                 class="form-input" 
                 v-model="newOrder.stockInput"
                 :placeholder="getLabel('stockCodePlaceholder')"
+                @input="handleStockInput($event.target.value)"
+                @focus="newOrder.stockInput && handleStockInput(newOrder.stockInput)"
+                @blur="setTimeout(() => showSuggestions = false, 200)"
               >
+              <div class="suggestions-dropdown" v-if="showSuggestions && searchSuggestions.length > 0">
+                <div 
+                  class="suggestion-item" 
+                  v-for="item in searchSuggestions" 
+                  :key="item.symbol"
+                  @mousedown="selectSuggestion(item)"
+                >
+                  <span class="suggestion-symbol">{{ item.symbol }}</span>
+                  <span class="suggestion-name">{{ item.name }}</span>
+                  <span class="suggestion-exchange">{{ item.exchange }}</span>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
@@ -1810,5 +1911,70 @@ defineExpose({
 
 .context-menu-item.delete i {
   color: var(--accent-red);
+}
+
+.stock-input-group {
+  position: relative;
+}
+
+.suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 100;
+  margin-top: 4px;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.suggestion-item:hover {
+  background: var(--bg-hover);
+}
+
+.suggestion-symbol {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 80px;
+}
+
+.suggestion-name {
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestion-exchange {
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 2px 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.refresh-btn.loading {
+  pointer-events: none;
 }
 </style>
