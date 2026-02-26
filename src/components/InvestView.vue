@@ -913,7 +913,6 @@ defineExpose({
           <div class="table-header">
             <div class="th col-code">{{ getLabel('code') }}</div>
             <div class="th col-name">{{ getLabel('name') }}</div>
-            <div class="th col-market">{{ getLabel('market') }}</div>
             <div class="th col-price">{{ getLabel('buyPrice') }}</div>
             <div class="th col-price">{{ getLabel('currentPrice') }}</div>
             <div class="th col-shares">{{ getLabel('shares') }}</div>
@@ -936,7 +935,6 @@ defineExpose({
               >
                 <div class="td col-code">{{ item.code }}</div>
                 <div class="td col-name">{{ item.name }}</div>
-                <div class="td col-market">{{ getMarketLabel(item.market) }}</div>
                 <div class="td col-price font-numeric">{{ formatNumber(item.buyPrice) }}</div>
                 <div class="td col-price font-numeric">{{ formatNumber(item.currentPrice) }}</div>
                 <div class="td col-shares font-numeric">{{ item.shares }}</div>
@@ -1023,13 +1021,11 @@ defineExpose({
                   <div class="trans-row trans-header stock-row">
                     <div class="trans-col code">{{ getLabel('code') }}</div>
                     <div class="trans-col name">{{ getLabel('name') }}</div>
-                    <div class="trans-col market">{{ getLabel('market') }}</div>
                     <div class="trans-col value">{{ getLabel('marketValue') }}</div>
                   </div>
                   <div class="trans-row stock-row" v-for="stock in item.stocks" :key="stock.code">
                     <div class="trans-col code">{{ stock.code }}</div>
                     <div class="trans-col name">{{ stock.name }}</div>
-                    <div class="trans-col market">{{ getMarketLabel(stock.market) }}</div>
                     <div class="trans-col value font-numeric">{{ formatNumber(stock.value) }}</div>
                   </div>
                 </div>
@@ -1526,7 +1522,7 @@ defineExpose({
 
 .table-header {
   display: grid;
-  grid-template-columns: 90px 100px 1fr 90px 90px 90px 90px 90px 90px;
+  grid-template-columns: 90px 1fr 90px 90px 90px 90px 90px 90px;
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-light);
 }
@@ -1599,7 +1595,7 @@ defineExpose({
 
 .table-row {
   display: grid;
-  grid-template-columns: 90px 100px 1fr 90px 90px 90px 90px 90px 90px;
+  grid-template-columns: 90px 1fr 90px 90px 90px 90px 90px 90px;
   border-bottom: 1px solid var(--border-light);
   transition: background 0.15s ease;
   cursor: pointer;
@@ -1657,7 +1653,7 @@ defineExpose({
 }
 
 .trans-row.stock-row {
-  grid-template-columns: 90px 100px 1fr 90px;
+  grid-template-columns: 90px 1fr 90px;
 }
 
 .trans-row.stock-row .trans-col.value {
@@ -1715,11 +1711,6 @@ defineExpose({
 }
 
 .trans-col.name {
-}
-
-.trans-col.market {
-  color: var(--text-muted);
-  justify-content: flex-end;
 }
 
 .trans-col.value {
@@ -1946,11 +1937,6 @@ defineExpose({
 
 .btn-confirm:hover {
   background: #0e7490;
-}
-
-.col-market {
-  font-size: 11px;
-  color: var(--text-muted);
 }
 
 .col-price,
