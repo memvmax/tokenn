@@ -676,13 +676,21 @@ const getLabel = (key) => {
 
 .th {
   padding: 10px 12px;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.5px;
   display: flex;
   align-items: center;
+  min-height: 38px;
+  box-sizing: border-box;
+}
+
+.th.col-source,
+.th.col-tags,
+.th.col-date {
+  justify-content: flex-end;
 }
 
 .table-body {
@@ -711,6 +719,8 @@ const getLabel = (key) => {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-height: 38px;
+  box-sizing: border-box;
 }
 
 .col-title {
