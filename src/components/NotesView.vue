@@ -216,6 +216,7 @@ const labels = {
   noData: { 'zh-CN': '暂无数据', 'en-US': 'No data' },
   allTags: { 'zh-CN': '全部', 'en-US': 'ALL' },
   open: { 'zh-CN': '打开', 'en-US': 'OPEN' },
+  savedAt: { 'zh-CN': '保存日期', 'en-US': 'DATE' },
 }
 
 const getLabel = (key) => {
@@ -322,7 +323,7 @@ const getLabel = (key) => {
             <div class="th col-title">{{ getLabel('title') }}</div>
             <div class="th col-source">{{ getLabel('source') }}</div>
             <div class="th col-tags">{{ getLabel('tags') }}</div>
-            <div class="th col-date">{{ getLabel('savedAt') || 'DATE' }}</div>
+            <div class="th col-date">{{ getLabel('savedAt') }}</div>
             <div class="th col-actions"></div>
           </div>
           <div class="table-body">
@@ -668,18 +669,18 @@ const getLabel = (key) => {
 
 .table-header {
   display: grid;
-  grid-template-columns: 1fr 120px 150px 100px 80px;
+  grid-template-columns: 1fr 90px 90px 90px 60px;
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-light);
 }
 
 .th {
   padding: 10px 12px;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
   display: flex;
   align-items: center;
 }
@@ -689,7 +690,7 @@ const getLabel = (key) => {
 
 .table-row {
   display: grid;
-  grid-template-columns: 1fr 120px 150px 100px 80px;
+  grid-template-columns: 1fr 90px 90px 90px 60px;
   border-bottom: 1px solid var(--border-light);
   transition: background 0.15s ease;
   cursor: pointer;
@@ -704,7 +705,7 @@ const getLabel = (key) => {
 }
 
 .td {
-  padding: 12px;
+  padding: 10px 12px;
   font-size: 13px;
   color: var(--text-primary);
   display: flex;
@@ -714,24 +715,31 @@ const getLabel = (key) => {
 
 .col-title {
   font-weight: 500;
+  justify-content: flex-start;
 }
 
 .col-title:hover {
   color: #0891b2;
 }
 
+.col-source,
+.col-tags,
+.col-date {
+  justify-content: flex-end;
+  font-size: 12px;
+}
+
 .col-source {
   color: var(--text-secondary);
-  font-size: 12px;
 }
 
 .col-tags {
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .col-date {
   color: var(--text-muted);
-  font-size: 12px;
 }
 
 .col-actions {
