@@ -328,6 +328,80 @@ const togglePositionViewType = () => {
   selectedCategoryCode.value = null
 }
 
+const showContextMenu = ref(false)
+const contextMenuType = ref('')
+const contextMenuData = ref(null)
+const contextMenuX = ref(0)
+const contextMenuY = ref(0)
+const longPressTimer = ref(null)
+
+const startLongPress = (event, type, data) => {
+  longPressTimer.value = setTimeout(() => {
+    const rect = event.target.getBoundingClientRect()
+    contextMenuX.value = rect.left
+    contextMenuY.value = rect.bottom + 5
+    contextMenuType.value = type
+    contextMenuData.value = data
+    showContextMenu.value = true
+  }, 500)
+}
+
+const endLongPress = () => {
+  if (longPressTimer.value) {
+    clearTimeout(longPressTimer.value)
+    longPressTimer.value = null
+  }
+}
+
+const closeContextMenu = () => {
+  showContextMenu.value = false
+  contextMenuType.value = ''
+  contextMenuData.value = null
+}
+
+const deleteStock = (code) => {
+  profitData.value = profitData.value.filter(item => item.code !== code)
+  if (selectedStockCode.value === code) {
+    selectedStockCode.value = null
+  }
+  closeContextMenu()
+}
+
+const deleteTransaction = (stockCode, transIndex) => {
+  const stock = profitData.value.find(item => item.code === stockCode)
+  if (stock && stock.transactions) {
+    stock.transactions.splice(transIndex, 1)
+    if (stock.transactions.length === 0) {
+      deleteStock(stockCode)
+    } else {
+      recalculateStock(stock)
+    }
+  }
+  closeContextMenu()
+}
+
+const recalculateStock = (stock) => {
+  if (!stock.transactions || stock.transactions.length === 0) return
+  
+  let totalCost = 0
+  let totalShares = 0
+  
+  stock.transactions.forEach(trans => {
+    if (trans.type === 'buy') {
+      totalCost += trans.price * trans.quantity + trans.commission
+      totalShares += trans.quantity
+    } else {
+      totalCost -= trans.price * trans.quantity - trans.commission
+      totalShares -= trans.quantity
+    }
+  })
+  
+  stock.shares = totalShares
+  stock.buyPrice = totalShares > 0 ? totalCost / totalShares : 0
+  stock.profit = stock.currentPrice * stock.shares - totalCost
+  stock.profitPercent = totalCost > 0 ? (stock.profit / totalCost * 100) : 0
+}
+
 const selectCategory = (code) => {
   if (selectedCategoryCode.value === code) {
     selectedCategoryCode.value = null
@@ -521,6 +595,8 @@ const labels = {
   targetPercent: { 'zh-CN': '目标占比', 'en-US': 'TARGET' },
   deviation: { 'zh-CN': '偏离度', 'en-US': 'DEVIATION' },
   stocks: { 'zh-CN': '持仓明细', 'en-US': 'HOLDINGS' },
+  edit: { 'zh-CN': '修改', 'en-US': 'EDIT' },
+  delete: { 'zh-CN': '删除', 'en-US': 'DELETE' },
 }
 
 const getLabel = (key) => {
@@ -632,6 +708,12 @@ defineExpose({
                 class="table-row" 
                 :class="{ 'selected': selectedStockCode === item.code }"
                 @click="selectStock(item.code)"
+                @touchstart="startLongPress($event, 'stock', item)"
+                @touchend="endLongPress"
+                @touchmove="endLongPress"
+                @mousedown="startLongPress($event, 'stock', item)"
+                @mouseup="endLongPress"
+                @mouseleave="endLongPress"
               >
                 <div class="td col-code">{{ item.code }}</div>
                 <div class="td col-name">{{ item.name }}</div>
@@ -658,7 +740,14 @@ defineExpose({
                     <div class="trans-col comm">{{ getLabel('commissionLabel') }}</div>
                     <div class="trans-col amount">{{ getLabel('total') }}</div>
                   </div>
-                  <div class="trans-row profit-trans" v-for="(trans, idx) in item.transactions" :key="idx">
+                  <div class="trans-row profit-trans" v-for="(trans, idx) in item.transactions" :key="idx"
+                    @touchstart="startLongPress($event, 'transaction', { stockCode: item.code, transIndex: idx })"
+                    @touchend="endLongPress"
+                    @touchmove="endLongPress"
+                    @mousedown="startLongPress($event, 'transaction', { stockCode: item.code, transIndex: idx })"
+                    @mouseup="endLongPress"
+                    @mouseleave="endLongPress"
+                  >
                     <div class="trans-col date">{{ trans.date }}</div>
                     <div class="trans-col type" :class="trans.type === 'buy' ? 'buy' : 'sell'">
                       {{ trans.type === 'buy' ? getLabel('buy') : getLabel('sell') }}
@@ -861,6 +950,25 @@ defineExpose({
             <button class="btn-cancel" @click="closeAddModal">{{ getLabel('cancel') }}</button>
             <button class="btn-confirm" @click="submitOrder">{{ getLabel('confirm') }}</button>
           </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="showContextMenu" class="context-menu-overlay" @click="closeContextMenu">
+        <div 
+          class="context-menu" 
+          :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
+          @click.stop
+        >
+          <button class="context-menu-item" @click="closeContextMenu">
+            <i class="fas fa-edit"></i>
+            <span>{{ getLabel('edit') }}</span>
+          </button>
+          <button class="context-menu-item delete" @click="contextMenuType === 'stock' ? deleteStock(contextMenuData.code) : deleteTransaction(contextMenuData.stockCode, contextMenuData.transIndex)">
+            <i class="fas fa-trash"></i>
+            <span>{{ getLabel('delete') }}</span>
+          </button>
         </div>
       </div>
     </Teleport>
@@ -1605,5 +1713,57 @@ defineExpose({
 
 .balanced {
   color: var(--text-secondary);
+}
+
+.context-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+}
+
+.context-menu {
+  position: absolute;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px 0;
+  min-width: 120px;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.context-menu-item:hover {
+  background: var(--bg-hover);
+}
+
+.context-menu-item i {
+  font-size: 12px;
+  color: var(--text-muted);
+  width: 14px;
+}
+
+.context-menu-item.delete {
+  color: var(--accent-red);
+}
+
+.context-menu-item.delete i {
+  color: var(--accent-red);
 }
 </style>
