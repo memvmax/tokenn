@@ -22,6 +22,7 @@
           :invest-tab="currentView === 'invest' ? investRef?.activeTab : null"
           :stock-value="investRef?.totalStockValue || 0"
           :cash-value="cashAmount"
+          :total-profit="investRef?.totalProfit || 0"
         />
 
         <template v-if="currentView === 'wallet'">

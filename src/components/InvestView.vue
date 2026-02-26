@@ -534,7 +534,8 @@ const totalStockValue = computed(() => {
 
 defineExpose({
   activeTab,
-  totalStockValue
+  totalStockValue,
+  totalProfit
 })
 </script>
 

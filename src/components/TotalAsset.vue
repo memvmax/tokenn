@@ -25,6 +25,10 @@ const props = defineProps({
   cashValue: {
     type: Number,
     default: 0
+  },
+  totalProfit: {
+    type: Number,
+    default: 0
   }
 })
 
@@ -34,6 +38,15 @@ const totalAmount = computed(() => {
 
 const showInvestMode = computed(() => {
   return props.investTab === 'profit'
+})
+
+const totalInvestValue = computed(() => {
+  return props.stockValue + props.cashValue
+})
+
+const totalEarnPercent = computed(() => {
+  if (totalInvestValue.value === 0) return 0
+  return (props.totalProfit / totalInvestValue.value) * 100
 })
 </script>
 
@@ -63,6 +76,12 @@ const showInvestMode = computed(() => {
       <div class="cash-label">CASH</div>
       <div class="cash-value">
         <span class="cash-amount font-numeric">{{ formatCurrency(cashValue) }}</span>
+      </div>
+      <div class="cash-change">
+        <span class="earn-value" :class="{ 'positive': totalEarnPercent >= 0, 'negative': totalEarnPercent < 0 }">
+          {{ totalEarnPercent >= 0 ? '+' : '' }}{{ totalEarnPercent.toFixed(2) }}%
+        </span>
+        <span class="earn-period">total earn</span>
       </div>
     </div>
   </div>
@@ -219,5 +238,29 @@ const showInvestMode = computed(() => {
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -1px;
+}
+
+.cash-change {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.earn-value {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.earn-value.positive {
+  color: var(--accent-green);
+}
+
+.earn-value.negative {
+  color: var(--accent-red);
+}
+
+.earn-period {
+  font-size: 13px;
+  color: var(--text-muted);
 }
 </style>
