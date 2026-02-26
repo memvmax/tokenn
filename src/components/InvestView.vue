@@ -1006,7 +1006,7 @@ defineExpose({
           :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
           @click.stop
         >
-          <button class="context-menu-item" @click="editTransaction">
+          <button v-if="contextMenuType === 'transaction'" class="context-menu-item" @click="editTransaction">
             <i class="fas fa-edit"></i>
             <span>{{ getLabel('edit') }}</span>
           </button>
