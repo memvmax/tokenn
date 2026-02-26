@@ -527,6 +527,15 @@ const getLabel = (key) => {
   const locale = localStorage.getItem('locale') || 'zh-CN'
   return labels[key]?.[locale] || key
 }
+
+const totalStockValue = computed(() => {
+  return filteredProfitData.value.reduce((sum, item) => sum + item.currentPrice * item.shares, 0)
+})
+
+defineExpose({
+  activeTab,
+  totalStockValue
+})
 </script>
 
 <template>

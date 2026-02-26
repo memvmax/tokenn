@@ -19,6 +19,9 @@
           :assets="visibleAssets" 
           :t="t" 
           :format-currency="formatCurrency"
+          :invest-tab="currentView === 'invest' ? investRef?.activeTab : null"
+          :stock-value="investRef?.totalStockValue || 0"
+          :cash-value="cashAmount"
         />
 
         <template v-if="currentView === 'wallet'">
@@ -133,7 +136,7 @@
         </template>
 
         <template v-else-if="currentView === 'invest'">
-          <InvestView :t="t" :format-amount="formatAmount" />
+          <InvestView :t="t" :format-amount="formatAmount" ref="investRef" />
         </template>
 
         <template v-else-if="currentView === 'notes'">
@@ -186,6 +189,7 @@ getView();
 
 const user = ref(null);
 const showAuthModal = ref(false);
+const investRef = ref(null);
 const selectedAssetId = ref(null);
 const visibleModules = ref(['cash', 'stock', 'bond', 'gold', 'emerging']);
 const idealPercentages = ref({
@@ -247,6 +251,11 @@ const totalAsset = computed(() => {
   return visibleAssets.value.reduce((sum, asset) => {
     return sum + (Number(asset.amount) || 0);
   }, 0);
+});
+
+const cashAmount = computed(() => {
+  const cash = assets.value.find(asset => asset.id === 'cash');
+  return cash ? cash.amount : 0;
 });
 
 const totalIdealPercentage = computed(() => {

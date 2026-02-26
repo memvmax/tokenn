@@ -13,27 +13,43 @@ const props = defineProps({
   formatCurrency: {
     type: Function,
     required: true
+  },
+  investTab: {
+    type: String,
+    default: 'profit'
+  },
+  stockValue: {
+    type: Number,
+    default: 0
+  },
+  cashValue: {
+    type: Number,
+    default: 0
   }
 })
 
 const totalAmount = computed(() => {
   return props.assets.reduce((sum, asset) => sum + (asset.amount || 0), 0)
 })
+
+const showInvestMode = computed(() => {
+  return props.investTab === 'profit'
+})
 </script>
 
 <template>
   <div class="total-asset-container">
     <div class="asset-main">
-      <div class="asset-label">CNY</div>
+      <div class="asset-label">{{ showInvestMode ? 'STOCK VALUE (CNY)' : 'CNY' }}</div>
       <div class="asset-value">
-        <span class="amount font-numeric">{{ formatCurrency(totalAmount) }}</span>
+        <span class="amount font-numeric">{{ showInvestMode ? formatCurrency(stockValue) : formatCurrency(totalAmount) }}</span>
       </div>
       <div class="asset-change">
         <span class="change-value positive">+0.00%</span>
         <span class="change-period">this month</span>
       </div>
     </div>
-    <div class="asset-health">
+    <div class="asset-health" v-if="!showInvestMode">
       <div class="health-label">HEALTH PTS</div>
       <div class="health-score">
         <span class="score-value font-numeric">85</span>
@@ -41,6 +57,12 @@ const totalAmount = computed(() => {
       <div class="health-change">
         <span class="health-delta negative">-2 pts</span>
         <span class="health-period">vs yesterday</span>
+      </div>
+    </div>
+    <div class="asset-cash" v-if="showInvestMode">
+      <div class="cash-label">CASH</div>
+      <div class="cash-value">
+        <span class="cash-amount font-numeric">{{ formatCurrency(cashValue) }}</span>
       </div>
     </div>
   </div>
@@ -171,5 +193,31 @@ const totalAmount = computed(() => {
 .health-period {
   font-size: 13px;
   color: var(--text-muted);
+}
+
+.asset-cash {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.cash-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 2px;
+}
+
+.cash-value {
+  margin-bottom: 0;
+}
+
+.cash-amount {
+  font-size: 42px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -1px;
 }
 </style>
