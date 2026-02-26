@@ -2,6 +2,17 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useStockApi } from '../composables/useStockApi'
 
+const EXCHANGE_RATES = {
+  'A股': 1,
+  '港股': 0.92,
+  '美股': 7.25
+}
+
+const convertToCNY = (value, market) => {
+  const rate = EXCHANGE_RATES[market] || 1
+  return value * rate
+}
+
 const props = defineProps({
   t: {
     type: Function,
@@ -225,12 +236,10 @@ const filteredPositionData = computed(() => {
   return positionData.value.filter(item => selectedMarkets.value.includes(item.market))
 })
 
-const totalProfit = computed(() => {
-  return filteredProfitData.value.reduce((sum, item) => sum + item.profit, 0)
-})
-
 const totalProfitPercent = computed(() => {
-  const totalCost = filteredProfitData.value.reduce((sum, item) => sum + item.buyPrice * item.shares, 0)
+  const totalCost = filteredProfitData.value.reduce((sum, item) => {
+    return sum + convertToCNY(item.buyPrice * item.shares, item.market)
+  }, 0)
   return totalCost > 0 ? (totalProfit.value / totalCost * 100) : 0
 })
 
@@ -820,7 +829,15 @@ const getLabel = (key) => {
 }
 
 const totalStockValue = computed(() => {
-  return filteredProfitData.value.reduce((sum, item) => sum + item.currentPrice * item.shares, 0)
+  return filteredProfitData.value.reduce((sum, item) => {
+    return sum + convertToCNY(item.currentPrice * item.shares, item.market)
+  }, 0)
+})
+
+const totalProfit = computed(() => {
+  return filteredProfitData.value.reduce((sum, item) => {
+    return sum + convertToCNY(item.profit, item.market)
+  }, 0)
 })
 
 defineExpose({
@@ -916,8 +933,8 @@ defineExpose({
             <div class="th col-price">{{ getLabel('buyPrice') }}</div>
             <div class="th col-price">{{ getLabel('currentPrice') }}</div>
             <div class="th col-shares">{{ getLabel('shares') }}</div>
-            <div class="th col-value sortable" :class="getSortClass('value')" @click="toggleSort('value')">{{ getLabel('marketValue') }}</div>
-            <div class="th col-profit sortable" :class="getSortClass('profit')" @click="toggleSort('profit')">{{ getLabel('profit') }}</div>
+            <div class="th col-value sortable" :class="getSortClass('value')" @click="toggleSort('value')">{{ getLabel('marketValue') }} (CNY)</div>
+            <div class="th col-profit sortable" :class="getSortClass('profit')" @click="toggleSort('profit')">{{ getLabel('profit') }} (CNY)</div>
             <div class="th col-percent sortable" :class="getSortClass('change')" @click="toggleSort('change')">{{ getLabel('changePercent') }}</div>
           </div>
           <div class="table-body">
@@ -938,9 +955,9 @@ defineExpose({
                 <div class="td col-price font-numeric">{{ formatNumber(item.buyPrice) }}</div>
                 <div class="td col-price font-numeric">{{ formatNumber(item.currentPrice) }}</div>
                 <div class="td col-shares font-numeric">{{ item.shares }}</div>
-                <div class="td col-value font-numeric">{{ formatNumber(item.currentPrice * item.shares) }}</div>
+                <div class="td col-value font-numeric">{{ formatNumber(convertToCNY(item.currentPrice * item.shares, item.market)) }}</div>
                 <div class="td col-profit font-numeric" :class="getProfitClass(item.profit)">
-                  {{ item.profit >= 0 ? '+' : '' }}{{ formatNumber(item.profit) }}
+                  {{ item.profit >= 0 ? '+' : '' }}{{ formatNumber(convertToCNY(item.profit, item.market)) }}
                 </div>
                 <div class="td col-percent font-numeric" :class="getProfitClass(item.profit)">
                   {{ item.profitPercent >= 0 ? '+' : '' }}{{ item.profitPercent.toFixed(1) }}%

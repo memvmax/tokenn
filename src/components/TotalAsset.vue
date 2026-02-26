@@ -57,7 +57,13 @@ const totalEarnPercent = computed(() => {
       <div class="asset-value">
         <span class="amount font-numeric">{{ showInvestMode ? formatCurrency(stockValue) : formatCurrency(totalAmount) }}</span>
       </div>
-      <div class="asset-change">
+      <div class="asset-change" v-if="showInvestMode">
+        <span class="change-value" :class="{ 'positive': totalProfit >= 0, 'negative': totalProfit < 0 }">
+          {{ totalProfit >= 0 ? '+' : '' }}{{ formatCurrency(totalProfit) }}
+        </span>
+        <span class="change-period">total profit</span>
+      </div>
+      <div class="asset-change" v-else>
         <span class="change-value positive">+0.00%</span>
         <span class="change-period">this month</span>
       </div>
@@ -81,7 +87,7 @@ const totalEarnPercent = computed(() => {
         <span class="earn-value" :class="{ 'positive': totalEarnPercent >= 0, 'negative': totalEarnPercent < 0 }">
           {{ totalEarnPercent >= 0 ? '+' : '' }}{{ totalEarnPercent.toFixed(2) }}%
         </span>
-        <span class="earn-period">total earn</span>
+        <span class="earn-period">ROI</span>
       </div>
     </div>
   </div>
