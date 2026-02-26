@@ -8,35 +8,74 @@ export default async function handler(req, res) {
   console.log('Searching stocks for:', q)
 
   try {
-    const yahooUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=10&newsCount=0`
+    const quotes = []
     
-    const response = await fetch(yahooUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
-        'Accept-Language': 'en-US,en;q=0.9'
+    if (/^\d+$/.test(q)) {
+      const markets = [
+        { prefix: 'sh', suffix: '.SS', market: 'A股' },
+        { prefix: 'sz', suffix: '.SZ', market: 'A股' },
+        { prefix: 'hk', suffix: '.HK', market: '港股' }
+      ]
+      
+      for (const m of markets) {
+        try {
+          const sinaUrl = `https://hq.sinajs.cn/list=${m.prefix}${q.padStart(m.prefix === 'hk' ? 5 : 6, '0')}`
+          
+          const response = await fetch(sinaUrl, {
+            headers: {
+              'Referer': 'https://finance.sina.com.cn/',
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+          })
+          
+          const text = await response.text()
+          const match = text.match(/="([^"]+)"/)
+          
+          if (match && match[1] && match[1].length > 0) {
+            const parts = match[1].split(',')
+            if (parts.length >= 4) {
+              quotes.push({
+                symbol: q.padStart(m.prefix === 'hk' ? 5 : 6, '0') + m.suffix,
+                name: m.prefix === 'hk' ? parts[1] : parts[0],
+                exchange: m.market,
+                type: 'EQUITY'
+              })
+            }
+          }
+        } catch (e) {
+          console.error('Sina search error:', e.message)
+        }
       }
-    })
-    
-    console.log('Yahoo Search API response status:', response.status)
-    
-    if (!response.ok) {
-      const text = await response.text()
-      console.error('Yahoo Search API error response:', text)
-      return res.status(response.status).json({ 
-        error: `Yahoo API error: ${response.status}`,
-        details: text.substring(0, 500)
-      })
     }
     
-    const data = await response.json()
-    
-    const quotes = (data.quotes || []).map(quote => ({
-      symbol: quote.symbol,
-      name: quote.shortname || quote.longname || quote.symbol,
-      exchange: quote.exchange,
-      type: quote.quoteType
-    }))
+    try {
+      const yahooUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=5&newsCount=0`
+      
+      const response = await fetch(yahooUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        
+        if (data.quotes) {
+          for (const quote of data.quotes.slice(0, 5)) {
+            if (!quotes.find(q => q.symbol === quote.symbol)) {
+              quotes.push({
+                symbol: quote.symbol,
+                name: quote.shortname || quote.longname || quote.symbol,
+                exchange: quote.exchange || 'Unknown',
+                type: quote.quoteType || 'EQUITY'
+              })
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Yahoo search error:', e.message)
+    }
     
     console.log('Search results:', quotes.length, 'quotes found')
     
