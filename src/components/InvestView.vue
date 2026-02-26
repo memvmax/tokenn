@@ -1869,6 +1869,11 @@ defineExpose({
   -moz-appearance: textfield;
 }
 
+.form-input[type=date]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6);
+  cursor: pointer;
+}
+
 .trade-type-btns {
   display: flex;
   gap: 8px;
