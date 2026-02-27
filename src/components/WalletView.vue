@@ -1347,15 +1347,15 @@ defineExpose({
 }
 
 .overweight {
-  color: var(--accent-red);
+  color: #f59e0b;
 }
 
 .underweight {
-  color: var(--accent-green);
+  color: #ef4444;
 }
 
 .balanced {
-  color: var(--text-secondary);
+  color: #22c55e;
 }
 
 .table-body {
