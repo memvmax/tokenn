@@ -11,15 +11,16 @@
         <i :class="tab.icon"></i>
         <span>{{ tab.name }}</span>
       </button>
+
+      <button class="action-btn" @click="showAddModal = true">
+        <i class="fas fa-plus"></i>
+      </button>
     </div>
 
     <div class="wallet-content">
       <div v-if="activeTab === 'cash'" class="cash-section">
         <div class="section-header">
           <span class="section-title">CASH ACCOUNTS</span>
-          <button class="add-btn" @click="showAddModal = true">
-            <i class="fas fa-plus"></i>
-          </button>
         </div>
 
         <div class="data-table" v-if="cashAccounts.length > 0">
@@ -62,9 +63,6 @@
       <div v-if="activeTab === 'gold'" class="gold-section">
         <div class="section-header">
           <span class="section-title">PRECIOUS METALS</span>
-          <button class="add-btn" @click="showAddModal = true">
-            <i class="fas fa-plus"></i>
-          </button>
         </div>
 
         <div class="data-table" v-if="goldHoldings.length > 0">
@@ -114,9 +112,6 @@
       <div v-if="activeTab === 'bond'" class="bond-section">
         <div class="section-header">
           <span class="section-title">BONDS</span>
-          <button class="add-btn" @click="showAddModal = true">
-            <i class="fas fa-plus"></i>
-          </button>
         </div>
 
         <div class="data-table" v-if="bondHoldings.length > 0">
@@ -161,9 +156,6 @@
       <div v-if="activeTab === 'stock'" class="stock-section">
         <div class="section-header">
           <span class="section-title">STOCKS</span>
-          <button class="add-btn" @click="showAddModal = true">
-            <i class="fas fa-plus"></i>
-          </button>
         </div>
 
         <div class="data-table" v-if="stockHoldings.length > 0">
@@ -508,21 +500,22 @@ defineExpose({
   color: var(--text-primary);
 }
 
-.add-btn {
-  width: 28px;
-  height: 28px;
+.action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-tertiary);
+  width: 36px;
+  height: 36px;
+  background: var(--bg-secondary);
   border: 1px solid var(--border-light);
   border-radius: 4px;
   color: var(--text-secondary);
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.add-btn:hover {
+.action-btn:hover {
   border-color: var(--accent-blue);
   color: var(--accent-blue);
 }
