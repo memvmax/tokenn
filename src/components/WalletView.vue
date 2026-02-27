@@ -5,8 +5,8 @@
         v-for="tab in tabs" 
         :key="tab.id" 
         class="tab-btn" 
-        :class="{ 'active': activeTab === tab.id }"
-        @click="activeTab = tab.id"
+        :class="{ 'active': activeTabs.includes(tab.id) }"
+        @click="toggleTab(tab.id)"
       >
         <i :class="tab.icon"></i>
         <span>{{ tab.name }}</span>
@@ -18,7 +18,7 @@
     </div>
 
     <div class="wallet-content">
-      <div v-if="activeTab === 'cash'" class="cash-section">
+      <div v-if="activeTabs.includes('cash')" class="cash-section">
         <div class="section-header">
           <span class="section-title">CASH ACCOUNTS</span>
         </div>
@@ -60,7 +60,7 @@
         </div>
       </div>
 
-      <div v-if="activeTab === 'gold'" class="gold-section">
+      <div v-if="activeTabs.includes('gold')" class="gold-section">
         <div class="section-header">
           <span class="section-title">PRECIOUS METALS</span>
         </div>
@@ -109,7 +109,7 @@
         </div>
       </div>
 
-      <div v-if="activeTab === 'bond'" class="bond-section">
+      <div v-if="activeTabs.includes('bond')" class="bond-section">
         <div class="section-header">
           <span class="section-title">BONDS</span>
         </div>
@@ -153,7 +153,7 @@
         </div>
       </div>
 
-      <div v-if="activeTab === 'stock'" class="stock-section">
+      <div v-if="activeTabs.includes('stock')" class="stock-section">
         <div class="section-header">
           <span class="section-title">STOCKS</span>
         </div>
@@ -199,12 +199,9 @@
         </div>
       </div>
 
-      <div v-if="activeTab === 'emerging'" class="emerging-section">
+      <div v-if="activeTabs.includes('emerging')" class="emerging-section">
         <div class="section-header">
           <span class="section-title">EMERGING MARKETS</span>
-          <button class="add-btn" @click="showAddModal = true">
-            <i class="fas fa-plus"></i>
-          </button>
         </div>
 
         <div class="data-table" v-if="emergingHoldings.length > 0">
@@ -253,12 +250,22 @@
       <div v-if="showAddModal" class="modal-overlay" @click="showAddModal = false">
         <div class="modal-container" @click.stop>
           <div class="modal-header">
-            <span class="modal-title">ADD {{ activeTab.toUpperCase() }}</span>
+            <span class="modal-title">ADD {{ activeTabs[0]?.toUpperCase() || 'ITEM' }}</span>
             <button class="modal-close" @click="showAddModal = false">
               <i class="fas fa-times"></i>
             </button>
           </div>
           <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">TYPE</label>
+              <select class="form-select" v-model="addForm.type">
+                <option value="cash">CASH</option>
+                <option value="gold">GOLD</option>
+                <option value="bond">BOND</option>
+                <option value="stock">STOCK</option>
+                <option value="emerging">EMERGING</option>
+              </select>
+            </div>
             <div class="form-group">
               <label class="form-label">NAME</label>
               <input type="text" class="form-input" v-model="addForm.name" placeholder="Enter name">
@@ -294,9 +301,9 @@ const props = defineProps({
 
 const emit = defineEmits(['update:total'])
 
-const activeTab = ref('cash')
+const activeTabs = ref(['cash'])
 const showAddModal = ref(false)
-const addForm = ref({ name: '', amount: '', price: '' })
+const addForm = ref({ type: 'cash', name: '', amount: '', price: '' })
 
 const tabs = [
   { id: 'cash', name: 'CASH', icon: 'fas fa-wallet' },
@@ -345,14 +352,24 @@ const formatNumber = (value) => {
   return Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+const toggleTab = (tabId) => {
+  const index = activeTabs.value.indexOf(tabId)
+  if (index >= 0) {
+    activeTabs.value.splice(index, 1)
+  } else {
+    activeTabs.value.push(tabId)
+  }
+}
+
 const addItem = () => {
   const name = addForm.value.name.trim()
   const amount = parseFloat(addForm.value.amount) || 0
   const price = parseFloat(addForm.value.price) || 0
+  const type = addForm.value.type
 
   if (!name || amount <= 0) return
 
-  switch (activeTab.value) {
+  switch (type) {
     case 'cash':
       cashAccounts.value.push({ bank: name, currency: 'CNY', amount })
       break
@@ -372,7 +389,7 @@ const addItem = () => {
 
   saveData()
   showAddModal.value = false
-  addForm.value = { name: '', amount: '', price: '' }
+  addForm.value = { type: 'cash', name: '', amount: '', price: '' }
 }
 
 const removeCashAccount = (index) => {
@@ -448,7 +465,7 @@ defineExpose({
 .tab-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 10px 16px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-light);
@@ -484,8 +501,9 @@ defineExpose({
 
 .section-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
+  gap: 12px;
   padding: 10px 16px;
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-light);
@@ -580,24 +598,6 @@ defineExpose({
 .positive { color: var(--accent-green); }
 .negative { color: var(--accent-red); }
 
-.action-btn {
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  border-radius: 3px;
-  transition: all 0.15s ease;
-}
-
-.action-btn:hover {
-  background: var(--bg-tertiary);
-}
-
 .action-btn.delete:hover {
   color: var(--accent-red);
 }
@@ -652,7 +652,7 @@ defineExpose({
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.5px;
-  color: var(--text-secondary);
+  color: const(--text-secondary);
 }
 
 .summary-value {
@@ -741,7 +741,8 @@ defineExpose({
   margin-bottom: 6px;
 }
 
-.form-input {
+.form-input,
+.form-select {
   width: 100%;
   padding: 10px 12px;
   background: var(--bg-tertiary);
@@ -751,7 +752,8 @@ defineExpose({
   font-size: 13px;
 }
 
-.form-input:focus {
+.form-input:focus,
+.form-select:focus {
   outline: none;
   border-color: var(--accent-blue);
 }
