@@ -456,13 +456,13 @@ defineExpose({
 .tab-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 8px;
+  padding: 10px 16px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-light);
   border-radius: 4px;
   color: var(--text-secondary);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
