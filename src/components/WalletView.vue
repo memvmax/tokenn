@@ -59,11 +59,12 @@
     </div>
 
     <div class="wallet-content">
-      <div class="section-header">
-        <span class="section-title">ASSET MONITOR</span>
-      </div>
+      <div v-if="activeTab === 'profit'">
+        <div class="section-header">
+          <span class="section-title">ASSET MONITOR</span>
+        </div>
 
-      <div class="data-table" v-if="filteredAssets.length > 0">
+        <div class="data-table" v-if="filteredAssets.length > 0">
         <div class="table-header">
           <div class="th col-type">TYPE</div>
           <div class="th col-source">SOURCE</div>
@@ -212,6 +213,60 @@
           <span class="summary-value font-numeric">{{ formatNumber(totalSelectedValue) }} CNY</span>
         </div>
       </div>
+      </div>
+
+      <div v-if="activeTab === 'position'" class="position-section">
+        <div class="section-header">
+          <span class="section-title">ASSET ALLOCATION</span>
+        </div>
+        
+        <div class="data-table">
+          <div class="table-header position-header">
+            <div class="th col-type">TYPE</div>
+            <div class="th col-percent">CURRENT</div>
+            <div class="th col-percent">TARGET</div>
+            <div class="th col-diff">DEVIATION</div>
+          </div>
+          <div class="table-body">
+            <template v-for="item in assetAllocation" :key="item.type">
+              <div 
+                class="table-row position-row"
+                :class="{ selected: selectedPositionType === item.type }"
+                @click="selectedPositionType = selectedPositionType === item.type ? null : item.type"
+              >
+                <div class="td col-type">{{ item.name }}</div>
+                <div class="td col-percent font-numeric">{{ item.currentPercent.toFixed(1) }}%</div>
+                <div class="td col-percent font-numeric">{{ item.targetPercent.toFixed(1) }}%</div>
+                <div class="td col-diff font-numeric" :class="getDiffClass(item.deviation)">
+                  {{ item.deviation > 0 ? '+' : '' }}{{ item.deviation.toFixed(1) }}%
+                </div>
+              </div>
+              
+              <div v-if="selectedPositionType === item.type && item.assets" class="asset-detail">
+                <div class="detail-table">
+                  <div class="detail-row detail-header">
+                    <div class="detail-col source">SOURCE</div>
+                    <div class="detail-col value">VALUE</div>
+                    <div class="detail-col percent">%</div>
+                  </div>
+                  <div class="detail-row" v-for="asset in item.assets" :key="asset.id">
+                    <div class="detail-col source">{{ asset.source }}</div>
+                    <div class="detail-col value font-numeric">{{ formatNumber(asset.value) }}</div>
+                    <div class="detail-col percent font-numeric">{{ totalWalletValue > 0 ? (asset.value / totalWalletValue * 100).toFixed(1) : 0 }}%</div>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+        
+        <div class="section-summary">
+          <div class="summary-row">
+            <span class="summary-label">TOTAL VALUE</span>
+            <span class="summary-value font-numeric">{{ formatNumber(totalWalletValue) }} CNY</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <Teleport to="body">
@@ -297,7 +352,14 @@ import { ref, computed, onMounted } from 'vue'
 
 const props = defineProps({
   t: { type: Function, required: true },
-  formatAmount: { type: Function, required: true }
+  formatAmount: { type: Function, required: true },
+  preset: { 
+    type: Object, 
+    default: () => ({
+      modules: ['cash', 'stock', 'bond', 'gold', 'emerging'],
+      percentages: { cash: 20, stock: 30, bond: 25, gold: 15, emerging: 10 }
+    })
+  }
 })
 
 const emit = defineEmits(['update:total'])
@@ -305,6 +367,7 @@ const emit = defineEmits(['update:total'])
 const activeTab = ref('profit')
 const activeTabs = ref(['cash', 'gold', 'bond', 'stock', 'emerging'])
 const selectedAssetId = ref(null)
+const selectedPositionType = ref(null)
 const showAddModal = ref(false)
 const showTypeDropdown = ref(false)
 const showAddDropdown = ref(false)
@@ -558,9 +621,56 @@ const totalWalletValue = computed(() => {
   return assets.value.reduce((sum, asset) => sum + asset.value, 0)
 })
 
+const assetAllocation = computed(() => {
+  const allocation = {}
+  const total = totalWalletValue.value
+  
+  assets.value.forEach(asset => {
+    const type = asset.type
+    if (!allocation[type]) {
+      allocation[type] = { value: 0, assets: [] }
+    }
+    allocation[type].value += asset.value
+    allocation[type].assets.push(asset)
+  })
+  
+  const result = []
+  const typeNames = {
+    cash: 'CASH',
+    gold: 'GOLD',
+    bond: 'BOND',
+    stock: 'STOCK',
+    emerging: 'EMERGING'
+  }
+  
+  Object.keys(allocation).forEach(type => {
+    const currentPercent = total > 0 ? (allocation[type].value / total * 100) : 0
+    const targetPercent = props.preset.percentages[type] || 0
+    const deviation = currentPercent - targetPercent
+    
+    result.push({
+      type,
+      name: typeNames[type] || type.toUpperCase(),
+      value: allocation[type].value,
+      currentPercent,
+      targetPercent,
+      deviation,
+      assets: allocation[type].assets
+    })
+  })
+  
+  return result.sort((a, b) => Math.abs(b.deviation) - Math.abs(a.deviation))
+})
+
 const formatNumber = (value) => {
   if (!value && value !== 0) return '0.00'
   return Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+const getDiffClass = (diff) => {
+  if (Math.abs(diff) <= 5) return 'healthy'
+  if (diff > 5) return 'overweight'
+  return 'underweight'
 }
 
 const toggleTab = (tabId) => {
@@ -1212,6 +1322,30 @@ defineExpose({
 
 .col-price, .col-unit, .col-value, .col-profit, .col-change {
   justify-content: flex-end;
+}
+
+.position-header {
+  grid-template-columns: 100px 1fr 1fr 1fr;
+}
+
+.col-percent, .col-diff {
+  justify-content: flex-end;
+}
+
+.col-diff.healthy {
+  color: #22c55e;
+}
+
+.col-diff.overweight {
+  color: #f59e0b;
+}
+
+.col-diff.underweight {
+  color: #ef4444;
+}
+
+.position-row {
+  grid-template-columns: 100px 1fr 1fr 1fr;
 }
 
 .table-body {

@@ -28,7 +28,7 @@
         />
 
         <template v-if="currentView === 'wallet'">
-          <WalletView :t="t" :format-amount="formatAmount" ref="walletRef" />
+          <WalletView :t="t" :format-amount="formatAmount" :preset="currentPreset" ref="walletRef" />
         </template>
 
         <template v-else-if="currentView === 'invest'">
@@ -180,6 +180,26 @@ const handleLogout = async () => {
 
 const handleSwitchAccount = () => {
   showAuthModal.value = true;
+};
+
+const currentPreset = ref({
+  modules: ['cash', 'stock', 'bond', 'gold', 'emerging'],
+  percentages: {
+    cash: 20,
+    stock: 30,
+    bond: 25,
+    gold: 15,
+    emerging: 10
+  }
+});
+
+const handlePresetChange = (data) => {
+  if (data.preset) {
+    currentPreset.value = {
+      modules: data.preset.modules,
+      percentages: data.preset.percentages
+    };
+  }
 };
 
 const currentTheme = ref('default');
