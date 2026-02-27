@@ -227,20 +227,10 @@
             <div class="th col-percent">TARGET</div>
             <div class="th col-diff">DEVIATION</div>
           </div>
-          <div class="table-header mobile-header-row position-mobile-header">
-            <div class="th col-type">
-              <span class="header-top">TYPE</span>
-              <span class="header-bottom">CURRENT</span>
-            </div>
-            <div class="th col-percent">
-              <span class="header-top">TARGET</span>
-              <span class="header-bottom">DEVIATION</span>
-            </div>
-          </div>
           <div class="table-body">
             <template v-for="item in assetAllocation" :key="item.type">
               <div 
-                class="table-row position-row desktop-row"
+                class="table-row position-row"
                 :class="{ selected: selectedPositionType === item.type }"
                 @click="selectedPositionType = selectedPositionType === item.type ? null : item.type"
               >
@@ -249,20 +239,6 @@
                 <div class="td col-percent font-numeric">{{ item.targetPercent.toFixed(1) }}%</div>
                 <div class="td col-diff font-numeric" :class="getDiffClass(item.deviation)">
                   {{ item.deviation > 0 ? '+' : '' }}{{ item.deviation.toFixed(1) }}%
-                </div>
-              </div>
-              <div 
-                class="table-row position-row mobile-row"
-                :class="{ selected: selectedPositionType === item.type }"
-                @click="selectedPositionType = selectedPositionType === item.type ? null : item.type"
-              >
-                <div class="td col-type">
-                  <span class="cell-top">{{ item.name }}</span>
-                  <span class="cell-bottom font-numeric">{{ item.currentPercent.toFixed(1) }}%</span>
-                </div>
-                <div class="td col-percent">
-                  <span class="cell-top font-numeric">{{ item.targetPercent.toFixed(1) }}%</span>
-                  <span class="cell-bottom font-numeric" :class="getDiffClass(item.deviation)">{{ item.deviation > 0 ? '+' : '' }}{{ item.deviation.toFixed(1) }}%</span>
                 </div>
               </div>
               
@@ -692,7 +668,7 @@ const formatNumber = (value) => {
 }
 
 const getDiffClass = (diff) => {
-  if (Math.abs(diff) <= 5) return 'healthy'
+  if (Math.abs(diff) <= 5) return 'balanced'
   if (diff > 5) return 'overweight'
   return 'underweight'
 }
@@ -1348,25 +1324,38 @@ defineExpose({
   justify-content: flex-end;
 }
 
-.position-header {
-  display: grid;
+.table-header.position-header {
   grid-template-columns: 1fr 90px 90px 90px;
 }
 
-.col-percent, .col-diff {
+.table-row.position-row {
+  grid-template-columns: 1fr 90px 90px 90px;
+  cursor: pointer;
+}
+
+.col-type {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.col-percent {
   justify-content: flex-end;
 }
 
-.col-diff.healthy {
-  color: #22c55e;
+.col-diff {
+  justify-content: flex-end;
 }
 
-.col-diff.overweight {
-  color: #f59e0b;
+.overweight {
+  color: var(--accent-red);
 }
 
-.col-diff.underweight {
-  color: #ef4444;
+.underweight {
+  color: var(--accent-green);
+}
+
+.balanced {
+  color: var(--text-secondary);
 }
 
 .table-body {
@@ -1378,10 +1367,6 @@ defineExpose({
   border-bottom: 1px solid var(--border-light);
   transition: background 0.15s ease;
   cursor: pointer;
-}
-
-.table-row.position-row {
-  grid-template-columns: 1fr 90px 90px 90px;
 }
 
 .table-row:last-child {
@@ -1756,10 +1741,6 @@ defineExpose({
     grid-template-columns: 1fr 90px 90px 90px;
   }
   
-  .position-mobile-header {
-    grid-template-columns: 1fr 1fr !important;
-  }
-  
   .mobile-row {
     display: grid !important;
     grid-template-columns: 1fr 90px 90px 90px;
@@ -1782,8 +1763,33 @@ defineExpose({
     grid-template-columns: 1fr 90px 90px 90px;
   }
   
-  .position-row {
-    grid-template-columns: 1fr 1fr !important;
+  .table-header.position-header,
+  .table-row.position-row {
+    grid-template-columns: 1fr 90px 90px 90px;
+  }
+  
+  .position-header .th {
+    flex-direction: row;
+    align-items: center;
+  }
+  
+  .position-header .th.col-type {
+    justify-content: flex-start;
+  }
+  
+  .position-header .th.col-percent,
+  .position-header .th.col-diff {
+    justify-content: flex-end;
+  }
+  
+  .position-row .td {
+    flex-direction: row;
+    align-items: center;
+  }
+  
+  .position-row .td.col-percent,
+  .position-row .td.col-diff {
+    justify-content: flex-end;
   }
   
   .th {
