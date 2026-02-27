@@ -22,10 +22,6 @@ const props = defineProps({
     type: Number,
     default: 0
   },
-  cashValue: {
-    type: Number,
-    default: 0
-  },
   totalProfit: {
     type: Number,
     default: 0
@@ -38,15 +34,6 @@ const totalAmount = computed(() => {
 
 const showInvestMode = computed(() => {
   return props.investTab === 'profit' || props.investTab === 'position'
-})
-
-const totalInvestValue = computed(() => {
-  return props.stockValue + props.cashValue
-})
-
-const totalEarnPercent = computed(() => {
-  if (totalInvestValue.value === 0) return 0
-  return (props.totalProfit / totalInvestValue.value) * 100
 })
 </script>
 
@@ -76,18 +63,6 @@ const totalEarnPercent = computed(() => {
       <div class="health-change">
         <span class="health-delta negative">-2 pts</span>
         <span class="health-period">vs yesterday</span>
-      </div>
-    </div>
-    <div class="asset-cash" v-if="showInvestMode">
-      <div class="cash-label">CASH</div>
-      <div class="cash-value">
-        <span class="cash-amount font-numeric">{{ formatCurrency(cashValue) }}</span>
-      </div>
-      <div class="cash-change">
-        <span class="earn-value" :class="{ 'positive': totalEarnPercent >= 0, 'negative': totalEarnPercent < 0 }">
-          {{ totalEarnPercent >= 0 ? '+' : '' }}{{ totalEarnPercent.toFixed(2) }}%
-        </span>
-        <span class="earn-period">ROI</span>
       </div>
     </div>
   </div>
