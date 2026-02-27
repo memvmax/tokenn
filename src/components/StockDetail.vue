@@ -1,531 +1,196 @@
 <template>
   <div class="detail-section">
-    <div class="detail-header">
-      <div class="detail-title">
-        <i class="fas fa-chart-line"></i>
-        <span>{{ t('stockDetail') || 'Stock Detail' }}</span>
-      </div>
-      <div class="header-actions">
-      </div>
+    <div class="section-header">
+      <span class="section-title">{{ t('stockDetail') || 'STOCK DETAIL' }}</span>
+      <button class="add-btn" @click="openAddModal">
+        <i class="fas fa-plus"></i>
+      </button>
     </div>
 
-    <div class="stock-content">
-      <div class="holdings-table-section">
-        <div class="holdings-list" v-if="assets.length > 0">
-          <div class="accounts-header">
-            <div class="header-cell col-1">NAME / SHARES</div>
-            <div class="header-cell col-2">PRICE / COST</div>
-            <div class="header-cell col-3">VALUE / P&L</div>
+    <div class="data-table" v-if="holdings.length > 0">
+      <div class="table-header">
+        <div class="th col-name">NAME</div>
+        <div class="th col-shares">SHARES</div>
+        <div class="th col-price">PRICE</div>
+        <div class="th col-cost">COST</div>
+        <div class="th col-value">VALUE</div>
+        <div class="th col-pnl">P&L</div>
+        <div class="th col-actions"></div>
+      </div>
+      <div class="table-body">
+        <div v-for="(item, index) in holdings" :key="index" class="table-row">
+          <div class="td col-name">{{ item.name }}</div>
+          <div class="td col-shares font-numeric">{{ item.shares }}</div>
+          <div class="td col-price font-numeric">{{ formatNumber(item.price) }}</div>
+          <div class="td col-cost font-numeric">{{ formatNumber(item.cost) }}</div>
+          <div class="td col-value font-numeric">{{ formatCurrency(item.shares * item.price) }}</div>
+          <div class="td col-pnl font-numeric" :class="getPnLClass(item)">
+            {{ item.pnl >= 0 ? '+' : '' }}{{ formatCurrency(item.pnl) }}
           </div>
-          <div 
-            v-for="(asset, index) in filteredAssets" 
-            :key="asset.code"
-            class="asset-row"
-          >
-            <div class="cell col-1">
-              <span class="cell-text">
-                <span class="asset-dot" :style="{ background: asset.color }"></span>
-                {{ asset.name }} <span class="separator">/</span> <span class="font-numeric">{{ formatNumber(getTotalAmount(asset.code)) }}{{ asset.unit }}</span>
-              </span>
-            </div>
-            <div class="cell col-2">
-              <span class="cell-text font-numeric">{{ formatPrice(asset.price) }} <span class="separator">/</span> <span :class="getCostPriceClass(asset)">{{ formatPrice(getCostPrice(asset.code)) }}</span></span>
-            </div>
-            <div class="cell col-3">
-              <span class="cell-text font-numeric">{{ formatCurrency(getTotalAmount(asset.code) * asset.price) }} <span class="separator">/</span> <span :class="getPnLClass(asset)">{{ formatPnLShort(asset) }}</span></span>
-            </div>
-          </div>
-          
-          <div v-if="filteredAssets.length === 0 && assets.length > 0" class="no-results-row">
-            <span>{{ t('noMatchingResults') }}</span>
-          </div>
-        </div>
-
-        <div class="detail-summary" v-if="assets.length > 0">
-          <div class="summary-row">
-            <span class="summary-label">TOTAL VALUE</span>
-            <span class="summary-value font-numeric">{{ formatCurrency(filteredTotalValue) }} CNY</span>
-            <span v-if="filterAsset" class="filtered-hint">({{ t('filtered') }})</span>
-          </div>
-          <div class="summary-row summary-pnl">
-            <span class="summary-label">TOTAL P&L</span>
-            <span class="summary-pnl-value font-numeric" :class="totalPnL >= 0 ? 'positive' : 'negative'">
-              {{ totalPnL >= 0 ? '+' : '' }}{{ formatCurrency(Math.abs(totalPnL)) }} CNY
-              <span class="pnl-percent">({{ totalPnLPercent >= 0 ? '+' : '' }}{{ totalPnLPercent.toFixed(2) }}%)</span>
-            </span>
-          </div>
-          <div class="summary-row update-info">
-            <span class="update-label">{{ t('lastUpdate') }}: {{ lastUpdateTime }}</span>
+          <div class="td col-actions">
+            <button class="action-btn edit" @click="editHolding(index)">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="action-btn delete" @click="removeHolding(index)">
+              <i class="fas fa-trash"></i>
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="buy-modal-overlay" v-if="showBuyModal" @click="closeBuyModal">
-      <div class="buy-modal" @click.stop>
-        <div class="modal-header">
-          <h3>{{ currentAssetName }} - {{ t('addBuyRecord') || 'ADD BUY RECORD' }}</h3>
-          <button class="modal-close" @click="closeBuyModal">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="buy-form">
-            <div class="form-row">
-              <div class="form-group">
-                <label>SHARES</label>
-                <input type="text" v-model="buyForm.amount" class="form-input font-numeric" placeholder="0.00">
-              </div>
-              <div class="form-group">
-                <label>PRICE (CNY/SHARE)</label>
-                <input type="text" v-model="buyForm.price" class="form-input font-numeric" placeholder="0.00">
-              </div>
+    <div class="empty-state" v-else>
+      <i class="fas fa-chart-line"></i>
+      <p>{{ t('noHoldings') || 'No holdings' }}</p>
+      <button class="add-first-btn" @click="openAddModal()">{{ t('add') || 'ADD' }}</button>
+    </div>
+
+    <div class="detail-summary" v-if="holdings.length > 0">
+      <div class="summary-row">
+        <span class="summary-label">TOTAL VALUE</span>
+        <span class="summary-value font-numeric">{{ formatCurrency(totalValue) }} CNY</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">TOTAL P&L</span>
+        <span class="summary-pnl font-numeric" :class="totalPnL >= 0 ? 'positive' : 'negative'">
+          {{ totalPnL >= 0 ? '+' : '' }}{{ formatCurrency(Math.abs(totalPnL)) }} CNY
+        </span>
+      </div>
+    </div>
+
+    <Teleport to="body">
+      <div v-if="showAddModal" class="modal-overlay" @click="closeAddModal">
+        <div class="modal-container" @click.stop>
+          <div class="modal-header">
+            <span class="modal-title">{{ editingIndex >= 0 ? 'EDIT' : 'ADD' }} STOCK</span>
+            <button class="modal-close" @click="closeAddModal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">NAME</label>
+              <input type="text" class="form-input" v-model="addForm.name" placeholder="Stock name">
             </div>
             <div class="form-row">
-              <div class="form-group">
-                <label>FEE (CNY)</label>
-                <input type="text" v-model="buyForm.fee" class="form-input font-numeric" placeholder="0.00">
+              <div class="form-group half">
+                <label class="form-label">SHARES</label>
+                <input type="number" class="form-input" v-model="addForm.shares" placeholder="0">
               </div>
-              <div class="form-group">
-                <label>DATE</label>
-                <input type="date" v-model="buyForm.date" class="form-input">
+              <div class="form-group half">
+                <label class="form-label">PRICE</label>
+                <input type="number" class="form-input" v-model="addForm.price" placeholder="0.00">
               </div>
             </div>
-            <div class="form-summary">
-              <div class="form-summary-row">
-                <span>TOTAL COST</span>
-                <span class="font-numeric">{{ formatCurrency(calculateTotalCost) }} CNY</span>
-              </div>
+            <div class="form-group">
+              <label class="form-label">COST</label>
+              <input type="number" class="form-input" v-model="addForm.cost" placeholder="0.00">
             </div>
           </div>
-          
-          <div class="buy-records" v-if="currentAssetRecords.length > 0">
-            <div class="records-header">
-              <h4>{{ t('buyRecords') || 'BUY RECORDS' }}</h4>
-              <span class="records-count">{{ currentAssetRecords.length }} {{ t('records') || 'records' }}</span>
-            </div>
-            <div class="records-list">
-              <div v-for="(record, idx) in currentAssetRecords" :key="record.id" class="record-item">
-                <div class="record-main">
-                  <div class="record-amount">
-                    <span class="amount-num font-numeric">{{ formatNumber(record.amount) }}</span>
-                    <span class="amount-unit">{{ currentAssetUnit }}</span>
-                  </div>
-                  <div class="record-price">
-                    <span class="price-label">@</span>
-                    <span class="price-num font-numeric">{{ formatPrice(record.price) }}</span>
-                    <span class="price-unit">CNY/SHARE</span>
-                  </div>
-                  <div class="record-fee" v-if="record.fee > 0">
-                    <span class="fee-label">+{{ formatCurrency(record.fee) }}</span>
-                  </div>
-                </div>
-                <div class="record-meta">
-                  <span class="record-date">{{ record.date }}</span>
-                  <span class="record-total font-numeric">= {{ formatCurrency(record.amount * record.price + (record.fee || 0)) }} CNY</span>
-                </div>
-                <button class="record-delete" @click="deleteRecord(buyAssetCode, record.id)">
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </div>
-            </div>
-            <div class="records-summary">
-              <div class="records-summary-row">
-                <span>TOTAL</span>
-                <span class="font-numeric">{{ formatNumber(getTotalAmount(buyAssetCode)) }} {{ currentAssetUnit }}</span>
-              </div>
-              <div class="records-summary-row">
-                <span>AVG COST</span>
-                <span class="font-numeric">{{ formatPrice(getCostPrice(buyAssetCode)) }} CNY/SHARE</span>
-              </div>
-            </div>
+          <div class="modal-footer">
+            <button class="btn-cancel" @click="closeAddModal">{{ t('cancel') }}</button>
+            <button class="btn-confirm" @click="saveHolding">{{ t('confirm') }}</button>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button class="cancel-btn" @click="closeBuyModal">{{ t('cancel') }}</button>
-          <button class="confirm-btn" @click="addBuyRecord" :disabled="!canAddRecord">{{ t('confirm') }}</button>
         </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 
 const props = defineProps({
-  t: {
-    type: Function,
-    required: true
-  },
-  formatAmount: {
-    type: Function,
-    required: true
-  }
+  t: { type: Function, required: true },
+  formatCurrency: { type: Function, required: true }
 });
 
 const emit = defineEmits(['update:total']);
 
-const showActionMenu = ref(false);
+const holdings = ref([]);
+const showAddModal = ref(false);
+const editingIndex = ref(-1);
+const addForm = ref({
+  name: '',
+  shares: '',
+  price: '',
+  cost: ''
+});
 
-const formatCurrency = (value) => {
+const totalValue = computed(() => {
+  return holdings.value.reduce((sum, h) => sum + h.shares * h.price, 0);
+});
+
+const totalPnL = computed(() => {
+  return holdings.value.reduce((sum, h) => sum + h.pnl, 0);
+});
+
+const formatNumber = (value) => {
   if (!value && value !== 0) return '0.00';
   return Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const assets = ref([
-  { code: 'aapl', name: 'AAPL', color: '#555555', price: 0, unit: '股', symbol: 'AAPL' },
-  { code: 'googl', name: 'GOOGL', color: '#4285f4', price: 0, unit: '股', symbol: 'GOOGL' },
-  { code: 'msft', name: 'MSFT', color: '#00a4ef', price: 0, unit: '股', symbol: 'MSFT' },
-  { code: 'amzn', name: 'AMZN', color: '#ff9900', price: 0, unit: '股', symbol: 'AMZN' },
-  { code: 'tsla', name: 'TSLA', color: '#cc0000', price: 0, unit: '股', symbol: 'TSLA' }
-]);
+const getPnLClass = (item) => {
+  return item.pnl >= 0 ? 'positive' : 'negative';
+};
 
-const buyRecords = ref({});
+const openAddModal = () => {
+  addForm.value = { name: '', shares: '', price: '', cost: '' };
+  editingIndex.value = -1;
+  showAddModal.value = true;
+};
 
-const loading = ref(false);
-const lastUpdateTime = ref('--');
+const closeAddModal = () => {
+  showAddModal.value = false;
+};
 
-const sortField = ref('name');
-const sortOrder = ref('asc');
-const filterAsset = ref('');
-const showAssetDropdown = ref(false);
+const editHolding = (index) => {
+  const h = holdings.value[index];
+  addForm.value = { name: h.name, shares: h.shares, price: h.price, cost: h.cost };
+  editingIndex.value = index;
+  showAddModal.value = true;
+};
 
-const showBuyModal = ref(false);
-const buyAssetCode = ref('');
-const buyForm = ref({
-  amount: '',
-  price: '',
-  fee: '',
-  date: new Date().toISOString().split('T')[0]
-});
-
-const uniqueAssets = computed(() => {
-  return assets.value.map(a => a.name);
-});
-
-const filteredAssets = computed(() => {
-  let result = [...assets.value];
+const saveHolding = () => {
+  const name = addForm.value.name.trim();
+  const shares = parseFloat(addForm.value.shares) || 0;
+  const price = parseFloat(addForm.value.price) || 0;
+  const cost = parseFloat(addForm.value.cost) || 0;
   
-  if (filterAsset.value) {
-    result = result.filter(a => a.name === filterAsset.value);
-  }
+  if (!name || shares <= 0 || price <= 0) return;
   
-  if (sortField.value) {
-    result.sort((a, b) => {
-      let aVal, bVal;
-      
-      if (sortField.value === 'totalAmount') {
-        aVal = getTotalAmount(a.code);
-        bVal = getTotalAmount(b.code);
-      } else if (sortField.value === 'costPrice') {
-        aVal = getCostPrice(a.code);
-        bVal = getCostPrice(b.code);
-      } else if (sortField.value === 'price') {
-        aVal = a.price;
-        bVal = b.price;
-      } else {
-        aVal = String(a[sortField.value] || '').toLowerCase();
-        bVal = String(b[sortField.value] || '').toLowerCase();
-      }
-      
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return sortOrder.value === 'asc' ? aVal - bVal : bVal - aVal;
-      }
-      
-      if (aVal < bVal) return sortOrder.value === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortOrder.value === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }
+  const pnl = (price - cost) * shares;
   
-  return result;
-});
-
-const filteredTotalValue = computed(() => {
-  return filteredAssets.value.reduce((sum, a) => sum + getTotalAmount(a.code) * a.price, 0);
-});
-
-const totalValue = computed(() => {
-  return assets.value.reduce((sum, a) => sum + getTotalAmount(a.code) * a.price, 0);
-});
-
-const totalCost = computed(() => {
-  return assets.value.reduce((sum, a) => sum + getTotalCost(a.code), 0);
-});
-
-const totalPnL = computed(() => {
-  return totalValue.value - totalCost.value;
-});
-
-const totalPnLPercent = computed(() => {
-  if (totalCost.value === 0) return 0;
-  return (totalPnL.value / totalCost.value) * 100;
-});
-
-const currentAssetName = computed(() => {
-  const a = assets.value.find(a => a.code === buyAssetCode.value);
-  return a ? a.name : 'STOCK';
-});
-
-const currentAssetUnit = computed(() => {
-  return '股';
-});
-
-const currentAssetRecords = computed(() => {
-  return buyRecords.value[buyAssetCode.value] || [];
-});
-
-const calculateTotalCost = computed(() => {
-  const amount = parseFloat(buyForm.value.amount) || 0;
-  const price = parseFloat(buyForm.value.price) || 0;
-  const fee = parseFloat(buyForm.value.fee) || 0;
-  return amount * price + fee;
-});
-
-const canAddRecord = computed(() => {
-  const amount = parseFloat(buyForm.value.amount);
-  const price = parseFloat(buyForm.value.price);
-  return amount > 0 && price > 0;
-});
-
-const getTotalAmount = (code) => {
-  const records = buyRecords.value[code] || [];
-  return records.reduce((sum, r) => sum + r.amount, 0);
-};
-
-const getTotalCost = (code) => {
-  const records = buyRecords.value[code] || [];
-  return records.reduce((sum, r) => sum + r.amount * r.price + (r.fee || 0), 0);
-};
-
-const getCostPrice = (code) => {
-  const totalAmount = getTotalAmount(code);
-  if (totalAmount === 0) return 0;
-  return getTotalCost(code) / totalAmount;
-};
-
-const getCostPriceClass = (asset) => {
-  const costPrice = getCostPrice(asset.code);
-  if (costPrice === 0) return '';
-  return asset.price >= costPrice ? 'positive' : 'negative';
-};
-
-const getPnLClass = (asset) => {
-  const pnl = getTotalAmount(asset.code) * asset.price - getTotalCost(asset.code);
-  if (pnl === 0) return '';
-  return pnl > 0 ? 'positive' : 'negative';
-};
-
-const formatPnL = (asset) => {
-  const totalAmount = getTotalAmount(asset.code);
-  const totalCost = getTotalCost(asset.code);
-  const currentValue = totalAmount * asset.price;
-  const pnl = currentValue - totalCost;
-  
-  if (totalAmount === 0) return '-';
-  
-  const pnlPercent = totalCost > 0 ? (pnl / totalCost * 100) : 0;
-  const sign = pnl >= 0 ? '+' : '';
-  return `${sign}${formatCurrency(Math.abs(pnl))} (${sign}${pnlPercent.toFixed(2)}%)`;
-};
-
-const formatPnLShort = (asset) => {
-  const totalAmount = getTotalAmount(asset.code);
-  const totalCost = getTotalCost(asset.code);
-  const currentValue = totalAmount * asset.price;
-  const pnl = currentValue - totalCost;
-  
-  if (totalAmount === 0) return '-';
-  
-  const pnlPercent = totalCost > 0 ? (pnl / totalCost * 100) : 0;
-  const sign = pnl >= 0 ? '+' : '-';
-  return `${sign}${formatCurrency(Math.abs(pnl))} / ${sign}${pnlPercent.toFixed(1)}%`;
-};
-
-const formatPrice = (value) => {
-  if (!value) return '0.00';
-  return Number(value).toFixed(2);
-};
-
-const formatNumber = (value) => {
-  if (!value && value !== 0) return '0';
-  return Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 });
-};
-
-const toggleSort = (field) => {
-  if (sortField.value === field) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+  if (editingIndex.value >= 0) {
+    holdings.value[editingIndex.value] = { name, shares, price, cost, pnl };
   } else {
-    sortField.value = field;
-    sortOrder.value = 'asc';
+    holdings.value.push({ name, shares, price, cost, pnl });
   }
-};
-
-const togglePriceSort = () => toggleSort('price');
-const toggleCostSort = () => toggleSort('costPrice');
-const toggleAmountSort = () => toggleSort('totalAmount');
-
-const toggleAssetDropdown = () => {
-  showAssetDropdown.value = !showAssetDropdown.value;
-};
-
-const selectSort = (field, order) => {
-  sortField.value = field;
-  sortOrder.value = order;
-  showAssetDropdown.value = false;
-};
-
-const selectAssetFilter = (asset) => {
-  filterAsset.value = asset;
-  showAssetDropdown.value = false;
-};
-
-const sortIcon = (field) => {
-  if (sortField.value !== field) return 'fas fa-sort';
-  return sortOrder.value === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
-};
-
-const clearFilters = () => {
-  filterAsset.value = '';
-};
-
-const openBuyModal = (code) => {
-  buyAssetCode.value = code;
-  buyForm.value = {
-    amount: '',
-    price: '',
-    fee: '',
-    date: new Date().toISOString().split('T')[0]
-  };
-  showBuyModal.value = true;
-};
-
-const closeBuyModal = () => {
-  showBuyModal.value = false;
-  buyAssetCode.value = '';
-};
-
-const addBuyRecord = () => {
-  if (!canAddRecord.value) return;
-  
-  const code = buyAssetCode.value;
-  if (!buyRecords.value[code]) {
-    buyRecords.value[code] = [];
-  }
-  
-  buyRecords.value[code].unshift({
-    id: Date.now(),
-    amount: parseFloat(buyForm.value.amount),
-    price: parseFloat(buyForm.value.price),
-    fee: parseFloat(buyForm.value.fee) || 0,
-    date: buyForm.value.date
-  });
   
   saveData();
-  
-  buyForm.value = {
-    amount: '',
-    price: '',
-    fee: '',
-    date: new Date().toISOString().split('T')[0]
-  };
+  closeAddModal();
 };
 
-const deleteRecord = (code, id) => {
-  if (buyRecords.value[code]) {
-    buyRecords.value[code] = buyRecords.value[code].filter(r => r.id !== id);
-    saveData();
-  }
-};
-
-const fetchPrices = async () => {
-  loading.value = true;
-  try {
-    let usdToCny = 7.2;
-    try {
-      const forexResponse = await fetch(
-        'https://query1.finance.yahoo.com/v8/finance/chart/USDCNY=X?interval=1d&range=1d'
-      );
-      const forexData = await forexResponse.json();
-      if (forexData.chart && forexData.chart.result && forexData.chart.result[0]) {
-        usdToCny = forexData.chart.result[0].meta.regularMarketPrice || 7.2;
-      }
-    } catch (e) {
-      console.error('Failed to fetch forex rate:', e);
-    }
-
-    for (const asset of assets.value) {
-      try {
-        const response = await fetch(
-          `https://query1.finance.yahoo.com/v8/finance/chart/${asset.symbol}?interval=1d&range=1d`
-        );
-        const data = await response.json();
-        
-        if (data.chart && data.chart.result && data.chart.result[0]) {
-          const meta = data.chart.result[0].meta;
-          const priceUSD = meta.regularMarketPrice || meta.previousClose;
-          asset.price = priceUSD * usdToCny;
-        }
-      } catch (e) {
-        console.error(`Failed to fetch ${asset.code}:`, e);
-      }
-    }
-    
-    lastUpdateTime.value = new Date().toLocaleTimeString();
-  } catch (error) {
-    console.error('Failed to fetch prices:', error);
-  } finally {
-    loading.value = false;
-  }
+const removeHolding = (index) => {
+  holdings.value.splice(index, 1);
+  saveData();
 };
 
 const saveData = () => {
-  try {
-    localStorage.setItem('stockBuyRecords', JSON.stringify(buyRecords.value));
-    emit('update:total', totalValue.value);
-  } catch (error) {
-    console.error('Save failed:', error);
-  }
+  localStorage.setItem('stockHoldings', JSON.stringify(holdings.value));
+  emit('update:total', totalValue.value);
 };
 
 const loadData = () => {
-  try {
-    const saved = localStorage.getItem('stockBuyRecords');
-    if (saved) {
-      buyRecords.value = JSON.parse(saved);
-    }
-  } catch (error) {
-    console.error('Load failed:', error);
-  }
+  const saved = localStorage.getItem('stockHoldings');
+  if (saved) holdings.value = JSON.parse(saved);
 };
 
-const handleClickOutside = (e) => {
-  const target = e.target;
-  const isDropdown = target.closest('.dropdown-menu');
-  const isHeaderDropdown = target.closest('.header-dropdown');
-  const isActionMenu = target.closest('.action-menu-wrapper');
-  
-  if (!isDropdown && !isHeaderDropdown) {
-    showAssetDropdown.value = false;
-  }
-  if (!isActionMenu) {
-    showActionMenu.value = false;
-  }
-};
+watch(totalValue, (v) => emit('update:total', v));
 
-watch(totalValue, (newValue) => {
-  emit('update:total', newValue);
-});
-
-onMounted(async () => {
+onMounted(() => {
   loadData();
-  await fetchPrices();
-  document.addEventListener('click', handleClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
+  emit('update:total', totalValue.value);
 });
 </script>
 
@@ -537,64 +202,53 @@ onUnmounted(() => {
   padding: 16px;
 }
 
-.detail-header {
+.section-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 16px;
 }
 
-.detail-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.section-title {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.5px;
   color: var(--text-primary);
-  line-height: 1;
-  padding-top: 7px;
 }
 
-.detail-title i {
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
-.header-actions {
+.add-btn {
+  width: 28px;
+  height: 28px;
   display: flex;
-  gap: 8px;
-}
-
-.stock-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.holdings-table-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.holdings-list {
-  display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
   border: 1px solid var(--border-light);
   border-radius: 4px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.accounts-header {
+.add-btn:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.data-table {
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.table-header {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 80px 80px 80px 100px 90px 70px;
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-light);
 }
 
-.header-cell {
+.th {
   padding: 10px 12px;
   font-size: 9px;
   font-weight: 600;
@@ -603,166 +257,111 @@ onUnmounted(() => {
   letter-spacing: 0.5px;
   display: flex;
   align-items: center;
-  height: 44px;
-  box-sizing: border-box;
 }
 
-.header-cell.col-1 {
-  justify-content: flex-start;
-}
-
-.header-cell.col-2 {
-  justify-content: center;
-}
-
-.header-cell.col-3 {
-  justify-content: flex-end;
-}
-
-.asset-row {
+.table-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 80px 80px 80px 100px 90px 70px;
   border-bottom: 1px solid var(--border-light);
-  background: var(--bg-secondary);
-  cursor: pointer;
   transition: background 0.15s ease;
-  min-height: 44px;
-  box-sizing: border-box;
 }
 
-.asset-row:last-of-type {
+.table-row:last-child {
   border-bottom: none;
 }
 
-.asset-row:hover {
+.table-row:hover {
   background: var(--bg-hover);
 }
 
-.asset-row.active {
-  background: rgba(8, 145, 178, 0.15);
-  border-left: 3px solid #0891b2;
-}
-
-.cell {
+.td {
   padding: 10px 12px;
+  font-size: 13px;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
 }
 
-.cell.col-1 {
-  justify-content: flex-start;
-}
+.col-name { justify-content: flex-start; }
+.col-shares, .col-price, .col-cost, .col-value, .col-pnl { justify-content: flex-end; }
+.col-actions { justify-content: flex-end; gap: 4px; }
 
-.cell.col-2 {
-  justify-content: center;
-}
+.positive { color: var(--accent-green); }
+.negative { color: var(--accent-red); }
 
-.cell.col-3 {
-  justify-content: flex-end;
-}
-
-.cell-text {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.separator {
-  color: var(--text-muted);
-  margin: 0 2px;
-}
-
-.asset-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.positive {
-  color: var(--accent-green);
-}
-
-.negative {
-  color: var(--accent-red);
-}
-
-.no-results-row {
-  padding: 24px 14px;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 12px;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.amount-value {
-  font-size: 13px;
-  color: var(--text-primary);
-}
-
-.amount-unit {
-  font-size: 10px;
-  color: var(--text-secondary);
-  margin-left: 4px;
-}
-
-.value-amount {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.pnl-value {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.pnl-value.positive {
-  color: var(--accent-green);
-}
-
-.pnl-value.negative {
-  color: var(--accent-red);
-}
-
-.add-buy-btn {
+.action-btn {
   width: 26px;
   height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 3px;
+  background: transparent;
+  border: none;
   color: var(--text-muted);
   cursor: pointer;
+  border-radius: 3px;
   transition: all 0.15s ease;
-  font-size: 11px;
 }
 
-.add-buy-btn:hover {
-  color: #0891b2;
-  border-color: #0891b2;
+.action-btn:hover {
+  background: var(--bg-tertiary);
+}
+
+.action-btn.edit:hover { color: var(--accent-blue); }
+.action-btn.delete:hover { color: var(--accent-red); }
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state i {
+  font-size: 32px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.add-first-btn {
+  padding: 8px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.add-first-btn:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
 }
 
 .detail-summary {
+  margin-top: 12px;
   padding: 12px 14px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-light);
-  border-top: none;
-  border-radius: 0 0 4px 4px;
+  border-radius: 4px;
 }
 
 .summary-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 8px;
 }
 
-.summary-pnl {
-  margin-top: 8px;
+.summary-row:last-child {
+  margin-bottom: 0;
 }
 
 .summary-label {
@@ -778,40 +377,12 @@ onUnmounted(() => {
   color: var(--text-primary);
 }
 
-.summary-pnl-value {
+.summary-pnl {
   font-size: 14px;
   font-weight: 500;
 }
 
-.summary-pnl-value.positive {
-  color: var(--accent-green);
-}
-
-.summary-pnl-value.negative {
-  color: var(--accent-red);
-}
-
-.pnl-percent {
-  font-size: 12px;
-  opacity: 0.8;
-}
-
-.filtered-hint {
-  font-size: 10px;
-  color: var(--text-muted);
-  margin-left: 8px;
-}
-
-.update-info {
-  margin-top: 6px;
-}
-
-.update-label {
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-.buy-modal-overlay {
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -824,33 +395,27 @@ onUnmounted(() => {
   z-index: 1000;
 }
 
-.buy-modal {
+.modal-container {
   background: var(--bg-secondary);
   border: 1px solid var(--border-light);
   border-radius: 8px;
   width: 90%;
-  max-width: 480px;
-  max-height: 80vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  max-width: 400px;
 }
 
-.buy-modal .modal-header {
+.modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
   border-bottom: 1px solid var(--border-light);
-  flex-shrink: 0;
 }
 
-.buy-modal .modal-header h3 {
-  font-size: 13px;
+.modal-title {
+  font-size: 12px;
   font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
   letter-spacing: 0.5px;
+  color: var(--text-primary);
 }
 
 .modal-close {
@@ -864,45 +429,41 @@ onUnmounted(() => {
   color: var(--text-muted);
   cursor: pointer;
   border-radius: 4px;
-  transition: color 0.15s ease;
 }
 
 .modal-close:hover {
   color: var(--text-primary);
 }
 
-.buy-modal .modal-body {
+.modal-body {
   padding: 20px;
-  overflow-y: auto;
-  flex: 1;
 }
 
-.buy-form {
-  margin-bottom: 20px;
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group.half {
+  flex: 1;
 }
 
 .form-row {
   display: flex;
   gap: 12px;
-  margin-bottom: 12px;
 }
 
-.form-group {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.form-group label {
+.form-label {
+  display: block;
   font-size: 9px;
+  font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
 }
 
 .form-input {
+  width: 100%;
   padding: 10px 12px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-light);
@@ -913,172 +474,7 @@ onUnmounted(() => {
 
 .form-input:focus {
   outline: none;
-  border-color: #0891b2;
-}
-
-.form-summary {
-  background: var(--bg-tertiary);
-  border-radius: 4px;
-  padding: 12px;
-  margin-top: 8px;
-}
-
-.form-summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.form-summary-row span:last-child {
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.buy-records {
-  border-top: 1px solid var(--border-light);
-  padding-top: 16px;
-}
-
-.records-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.records-header h4 {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin: 0;
-}
-
-.records-count {
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-.records-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.record-item {
-  background: var(--bg-tertiary);
-  border-radius: 4px;
-  padding: 10px 12px;
-  position: relative;
-}
-
-.record-main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 4px;
-}
-
-.record-amount .amount-num {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.record-amount .amount-unit {
-  font-size: 10px;
-  color: var(--text-secondary);
-  margin-left: 2px;
-}
-
-.record-price .price-label {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-right: 2px;
-}
-
-.record-price .price-num {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.record-price .price-unit {
-  font-size: 10px;
-  color: var(--text-muted);
-  margin-left: 4px;
-}
-
-.record-fee .fee-label {
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-.record-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-.record-total {
-  color: var(--text-secondary);
-}
-
-.record-delete {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  border-radius: 3px;
-  transition: color 0.15s ease;
-  font-size: 10px;
-  opacity: 0;
-}
-
-.record-item:hover .record-delete {
-  opacity: 1;
-}
-
-.record-delete:hover {
-  color: var(--accent-red);
-}
-
-.records-summary {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-light);
-}
-
-.records-summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
-}
-
-.records-summary-row:last-child {
-  margin-bottom: 0;
-}
-
-.records-summary-row span:last-child {
-  font-weight: 500;
-  color: var(--text-primary);
+  border-color: var(--border-color);
 }
 
 .modal-footer {
@@ -1087,10 +483,9 @@ onUnmounted(() => {
   gap: 8px;
   padding: 16px 20px;
   border-top: 1px solid var(--border-light);
-  flex-shrink: 0;
 }
 
-.cancel-btn {
+.btn-cancel {
   padding: 8px 16px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-light);
@@ -1098,139 +493,27 @@ onUnmounted(() => {
   color: var(--text-secondary);
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.15s ease;
 }
 
-.cancel-btn:hover {
-  border-color: var(--border-color);
-  color: var(--text-primary);
-}
-
-.confirm-btn {
+.btn-confirm {
   padding: 8px 16px;
-  background: #0891b2;
+  background: var(--accent-blue);
   border: none;
   border-radius: 4px;
   color: #fff;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.15s ease;
 }
 
-.confirm-btn:hover:not(:disabled) {
-  background: #0e7490;
-}
-
-.confirm-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.action-menu-wrapper {
-  position: relative;
-}
-
-.action-menu-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: var(--bg-tertiary);
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  transition: all 0.2s ease;
-}
-
-.action-menu-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.action-menu-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 4px;
-  min-width: 140px;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  overflow: hidden;
-}
-
-.menu-item {
-  width: 100%;
-  padding: 10px 14px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--text-primary);
-  text-align: left;
-  transition: background 0.2s ease;
-}
-
-.menu-item:hover {
-  background: var(--bg-hover);
-}
-
-.menu-item i {
-  width: 16px;
-  color: var(--text-secondary);
-}
-
-@media (max-width: 480px) {
-  .holdings-list {
-    border-radius: 6px;
+@media (max-width: 768px) {
+  .table-header,
+  .table-row {
+    grid-template-columns: 1fr 70px 80px 70px;
   }
-
-  .accounts-header {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .header-cell {
-    padding: 8px 6px;
-    font-size: 8px;
-    height: 36px;
-  }
-
-  .asset-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    min-height: 50px;
-  }
-
-  .asset-row .cell {
-    padding: 8px 6px;
-  }
-
-  .asset-row .cell.col-1 {
-    justify-content: flex-start;
-  }
-
-  .asset-row .cell.col-2 {
-    justify-content: center;
-  }
-
-  .asset-row .cell.col-3 {
-    justify-content: flex-end;
-  }
-
-  .asset-row .cell-text {
-    font-size: 11px;
+  
+  .col-cost,
+  .col-actions {
+    display: none;
   }
 }
 </style>

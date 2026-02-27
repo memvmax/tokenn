@@ -1,814 +1,186 @@
 <template>
-  <div class="detail-section" ref="sectionRef">
-    <div class="detail-header">
-      <div class="detail-title">
-        <i class="fas fa-landmark"></i>
-        <span>{{ t('bondDetail') }}</span>
-      </div>
-      <div class="header-actions">
-      </div>
+  <div class="detail-section">
+    <div class="section-header">
+      <span class="section-title">{{ t('bondDetail') }}</span>
+      <button class="add-btn" @click="openAddModal">
+        <i class="fas fa-plus"></i>
+      </button>
     </div>
 
-    <div class="transfer-modal-overlay" v-if="showTransferModal" @click="showTransferModal = false">
-      <div class="transfer-modal" @click.stop>
-        <div class="modal-header">
-          <h3>{{ t('transferFunds') }}</h3>
-          <button class="modal-close" @click="showTransferModal = false">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="transfer-form">
-            <div class="form-group">
-              <label>{{ t('fromBond') || 'FROM BOND' }}</label>
-              <select v-model="transferFrom" class="form-select">
-                <option value="">{{ t('selectBond') || 'Select Bond' }}</option>
-                <option v-for="bond in bondsWithHoldings" :key="bond.code" :value="bond.code">
-                  {{ bond.name }} ({{ formatNumber(getTotalAmount(bond.code)) }} 份)
-                </option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>{{ t('transferAmount') }}</label>
-              <input type="text" v-model="transferAmount" class="form-input" placeholder="0.00">
-            </div>
-            <div class="form-group">
-              <label>{{ t('toAsset') }}</label>
-              <select v-model="transferToAsset" class="form-select">
-                <option value="">{{ t('selectAsset') }}</option>
-                <option value="cash">{{ t('cash') }}</option>
-                <option value="stock">{{ t('stock') }}</option>
-                <option value="gold">{{ t('gold') }}</option>
-                <option value="emerging">{{ t('emerging') }}</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>{{ t('note') }}</label>
-              <input type="text" v-model="transferNote" class="form-input" :placeholder="t('notePlaceholder')">
-            </div>
-          </div>
-          <div class="transfer-history" v-if="transfers.length > 0">
-            <h4>{{ t('transferHistory') }}</h4>
-            <div class="history-list">
-              <div v-for="(tf, idx) in transfers" :key="idx" class="history-item">
-                <div class="history-info">
-                  <span class="history-amount">{{ formatNumber(tf.amount) }} 份</span>
-                  <span class="history-arrow">→</span>
-                  <span class="history-target">{{ t(tf.toAsset) }}</span>
-                </div>
-                <div class="history-meta">
-                  <span class="history-date">{{ tf.date }}</span>
-                  <span v-if="tf.note" class="history-note">{{ tf.note }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="cancel-btn" @click="showTransferModal = false">{{ t('cancel') }}</button>
-          <button class="confirm-btn" @click="executeTransfer">{{ t('confirm') }}</button>
-        </div>
+    <div class="data-table" v-if="holdings.length > 0">
+      <div class="table-header">
+        <div class="th col-name">NAME</div>
+        <div class="th col-shares">SHARES</div>
+        <div class="th col-price">PRICE</div>
+        <div class="th col-value">VALUE</div>
+        <div class="th col-rate">RATE</div>
+        <div class="th col-actions"></div>
       </div>
-    </div>
-
-    <div class="help-modal-overlay" v-if="showHelpModal" @click="showHelpModal = false">
-      <div class="help-modal" @click.stop>
-        <div class="modal-header">
-          <h3>{{ t('importGuide') }}</h3>
-          <button class="modal-close" @click="showHelpModal = false">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="guide-section">
-            <h4>{{ t('supportedFormats') }}</h4>
-            <div class="format-tags">
-              <span class="format-tag">.csv</span>
-              <span class="format-tag">.xlsx</span>
-              <span class="format-tag">.xls</span>
-            </div>
-          </div>
-          <div class="guide-section">
-            <h4>{{ t('columnRequirements') }}</h4>
-            <table class="format-table">
-              <thead>
-                <tr>
-                  <th>{{ t('columnName') }}</th>
-                  <th>{{ t('columnOrder') }}</th>
-                  <th>{{ t('example') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><span class="col-name">bondName</span></td>
-                  <td>{{ t('column1') }}</td>
-                  <td>国债2024</td>
-                </tr>
-                <tr>
-                  <td><span class="col-name">amount</span></td>
-                  <td>{{ t('column2') }}</td>
-                  <td>1000</td>
-                </tr>
-                <tr>
-                  <td><span class="col-name">price</span></td>
-                  <td>{{ t('column3') }}</td>
-                  <td>100.50</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="guide-section">
-            <h4>{{ t('exampleFile') }}</h4>
-            <div class="example-table">
-              <div class="example-row header">
-                <span>bondName</span>
-                <span>amount</span>
-                <span>price</span>
-              </div>
-              <div class="example-row">
-                <span>国债2024</span>
-                <span>1000</span>
-                <span>100.50</span>
-              </div>
-              <div class="example-row">
-                <span>企业债A</span>
-                <span>500</span>
-                <span>98.00</span>
-              </div>
-            </div>
+      <div class="table-body">
+        <div v-for="(item, index) in holdings" :key="index" class="table-row">
+          <div class="td col-name">{{ item.name }}</div>
+          <div class="td col-shares font-numeric">{{ item.shares }}</div>
+          <div class="td col-price font-numeric">{{ formatNumber(item.price) }}</div>
+          <div class="td col-value font-numeric">{{ formatCurrency(item.shares * item.price) }}</div>
+          <div class="td col-rate font-numeric">{{ item.rate }}%</div>
+          <div class="td col-actions">
+            <button class="action-btn edit" @click="editHolding(index)">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="action-btn delete" @click="removeHolding(index)">
+              <i class="fas fa-trash"></i>
+            </button>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="bond-content">
-      <div class="holdings-table-section">
-        <div class="holdings-list" v-if="bonds.length > 0">
-          <div class="accounts-header">
-            <div class="header-cell col-1">NAME / SHARES</div>
-            <div class="header-cell col-2">PRICE / COST</div>
-            <div class="header-cell col-3">VALUE / P&L</div>
-          </div>
-          <div 
-            v-for="(bond, index) in filteredBonds" 
-            :key="bond.code"
-            class="bond-row"
-            :class="{ 'is-editing': isEditMode }"
-          >
-            <div class="cell col-1">
-              <span class="cell-text">
-                <span class="bond-dot" :style="{ background: bond.color }"></span>
-                {{ bond.name }} <span class="separator">/</span> <span class="font-numeric">{{ formatNumber(bond.holdings) }}</span>
-              </span>
-            </div>
-            <div class="cell col-2">
-              <span class="cell-text font-numeric">{{ formatPrice(bond.price) }} <span class="separator">/</span> <span :class="getCostPriceClass(bond)">{{ formatPrice(bond.costPrice) }}</span></span>
-            </div>
-            <div class="cell col-3">
-              <span class="cell-text font-numeric">{{ formatCurrency(bond.holdings * bond.price) }} <span class="separator">/</span> <span :class="getPnLClass(bond)">{{ formatPnLShort(bond) }}</span></span>
-            </div>
-          </div>
-          
-          <div v-if="filteredBonds.length === 0 && bonds.length > 0" class="no-results-row">
-            <span>{{ t('noMatchingResults') }}</span>
-          </div>
-        </div>
+    <div class="empty-state" v-else>
+      <i class="fas fa-landmark"></i>
+      <p>{{ t('noHoldings') || 'No holdings' }}</p>
+      <button class="add-first-btn" @click="openAddModal()">{{ t('add') || 'ADD' }}</button>
+    </div>
 
-        <div class="detail-summary" v-if="bonds.length > 0">
-          <div class="summary-row">
-            <span class="summary-label">TOTAL VALUE</span>
-            <span class="summary-value font-numeric">{{ formatCurrency(filteredTotalValue) }} CNY</span>
-            <span v-if="filterBond" class="filtered-hint">({{ t('filtered') }})</span>
-          </div>
-          <div class="summary-row summary-pnl">
-            <span class="summary-label">TOTAL P&L</span>
-            <span class="summary-pnl-value font-numeric" :class="totalPnL >= 0 ? 'positive' : 'negative'">
-              {{ totalPnL >= 0 ? '+' : '' }}{{ formatCurrency(Math.abs(totalPnL)) }} CNY
-              <span class="pnl-percent">({{ totalPnLPercent >= 0 ? '+' : '' }}{{ totalPnLPercent.toFixed(2) }}%)</span>
-            </span>
-          </div>
-        </div>
+    <div class="detail-summary" v-if="holdings.length > 0">
+      <div class="summary-row">
+        <span class="summary-label">TOTAL VALUE</span>
+        <span class="summary-value font-numeric">{{ formatCurrency(totalValue) }} CNY</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">AVG RATE</span>
+        <span class="summary-rate font-numeric">{{ avgRate }}%</span>
       </div>
     </div>
 
-    <div class="buy-modal-overlay" v-if="showBuyModal" @click="closeBuyModal">
-      <div class="buy-modal" @click.stop>
-        <div class="modal-header">
-          <h3>{{ currentBondName }} - {{ t('addBuyRecord') || 'ADD BUY RECORD' }}</h3>
-          <button class="modal-close" @click="closeBuyModal">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="buy-form">
-            <div class="form-row">
-              <div class="form-group">
-                <label>AMOUNT (份)</label>
-                <input type="text" v-model="buyForm.amount" class="form-input font-numeric" placeholder="0.00">
-              </div>
-              <div class="form-group">
-                <label>PRICE (CNY/份)</label>
-                <input type="text" v-model="buyForm.price" class="form-input font-numeric" placeholder="0.00">
-              </div>
+    <Teleport to="body">
+      <div v-if="showAddModal" class="modal-overlay" @click="closeAddModal">
+        <div class="modal-container" @click.stop>
+          <div class="modal-header">
+            <span class="modal-title">{{ editingIndex >= 0 ? 'EDIT' : 'ADD' }} BOND</span>
+            <button class="modal-close" @click="closeAddModal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">NAME</label>
+              <input type="text" class="form-input" v-model="addForm.name" placeholder="Bond name">
             </div>
             <div class="form-row">
-              <div class="form-group">
-                <label>FEE (CNY)</label>
-                <input type="text" v-model="buyForm.fee" class="form-input font-numeric" placeholder="0.00">
+              <div class="form-group half">
+                <label class="form-label">SHARES</label>
+                <input type="number" class="form-input" v-model="addForm.shares" placeholder="0">
               </div>
-              <div class="form-group">
-                <label>DATE</label>
-                <input type="date" v-model="buyForm.date" class="form-input">
+              <div class="form-group half">
+                <label class="form-label">PRICE</label>
+                <input type="number" class="form-input" v-model="addForm.price" placeholder="0.00">
               </div>
             </div>
-            <div class="form-summary">
-              <div class="form-summary-row">
-                <span>TOTAL COST</span>
-                <span class="font-numeric">{{ formatCurrency(calculateTotalCost) }} CNY</span>
-              </div>
+            <div class="form-group">
+              <label class="form-label">RATE (%)</label>
+              <input type="number" step="0.01" class="form-input" v-model="addForm.rate" placeholder="0.00">
             </div>
           </div>
-          
-          <div class="buy-records" v-if="currentBondRecords.length > 0">
-            <div class="records-header">
-              <h4>{{ t('buyRecords') || 'BUY RECORDS' }}</h4>
-              <span class="records-count">{{ currentBondRecords.length }} {{ t('records') || 'records' }}</span>
-            </div>
-            <div class="records-list">
-              <div v-for="(record, idx) in currentBondRecords" :key="record.id" class="record-item">
-                <div class="record-main">
-                  <div class="record-amount">
-                    <span class="amount-num font-numeric">{{ formatNumber(record.amount) }}</span>
-                    <span class="amount-unit">份</span>
-                  </div>
-                  <div class="record-price">
-                    <span class="price-label">@</span>
-                    <span class="price-num font-numeric">{{ formatPrice(record.price) }}</span>
-                    <span class="price-unit">CNY/份</span>
-                  </div>
-                  <div class="record-fee" v-if="record.fee > 0">
-                    <span class="fee-label">+{{ formatCurrency(record.fee) }}</span>
-                  </div>
-                </div>
-                <div class="record-meta">
-                  <span class="record-date">{{ record.date }}</span>
-                  <span class="record-total font-numeric">= {{ formatCurrency(record.amount * record.price + (record.fee || 0)) }} CNY</span>
-                </div>
-                <button class="record-delete" @click="deleteRecord(buyBondCode, record.id)">
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </div>
-            </div>
-            <div class="records-summary">
-              <div class="records-summary-row">
-                <span>TOTAL</span>
-                <span class="font-numeric">{{ formatNumber(getTotalAmount(buyBondCode)) }}份</span>
-              </div>
-              <div class="records-summary-row">
-                <span>AVG COST</span>
-                <span class="font-numeric">{{ formatPrice(getCostPrice(buyBondCode)) }} CNY/份</span>
-              </div>
-            </div>
+          <div class="modal-footer">
+            <button class="btn-cancel" @click="closeAddModal">{{ t('cancel') }}</button>
+            <button class="btn-confirm" @click="saveHolding">{{ t('confirm') }}</button>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button class="cancel-btn" @click="closeBuyModal">{{ t('cancel') }}</button>
-          <button class="confirm-btn" @click="addBuyRecord" :disabled="!canAddRecord">{{ t('confirm') }}</button>
         </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import * as XLSX from 'xlsx';
+import { ref, computed, onMounted, watch } from 'vue';
 
 const props = defineProps({
-  t: {
-    type: Function,
-    required: true
-  },
-  formatAmount: {
-    type: Function,
-    required: true
-  }
+  t: { type: Function, required: true },
+  formatCurrency: { type: Function, required: true }
 });
 
-const emit = defineEmits(['update:total', 'transfer']);
+const emit = defineEmits(['update:total']);
 
-const sectionRef = ref(null);
-const fileInput = ref(null);
-const showActionMenu = ref(false);
-const showHelpModal = ref(false);
-const showTransferModal = ref(false);
-const isEditMode = ref(false);
+const holdings = ref([]);
+const showAddModal = ref(false);
+const editingIndex = ref(-1);
+const addForm = ref({
+  name: '',
+  shares: '',
+  price: '',
+  rate: ''
+});
 
-const transferFrom = ref('');
-const transferAmount = ref('');
-const transferToAsset = ref('');
-const transferNote = ref('');
-const transfers = ref([]);
+const totalValue = computed(() => {
+  return holdings.value.reduce((sum, h) => sum + h.shares * h.price, 0);
+});
 
-const formatCurrency = (value) => {
+const avgRate = computed(() => {
+  if (holdings.value.length === 0) return '0.00';
+  const total = holdings.value.reduce((sum, h) => sum + h.rate * h.shares * h.price, 0);
+  return (total / totalValue.value).toFixed(2);
+});
+
+const formatNumber = (value) => {
   if (!value && value !== 0) return '0.00';
   return Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const bonds = ref([
-  { code: 'treasury', name: 'TREASURY BOND', color: '#4ade80', price: 100, holdings: 0, costPrice: 0 },
-  { code: 'corporate', name: 'CORPORATE BOND', color: '#60a5fa', price: 100, holdings: 0, costPrice: 0 },
-  { code: 'municipal', name: 'MUNICIPAL BOND', color: '#f472b6', price: 100, holdings: 0, costPrice: 0 },
-  { code: 'financial', name: 'FINANCIAL BOND', color: '#a78bfa', price: 100, holdings: 0, costPrice: 0 }
-]);
+const openAddModal = () => {
+  addForm.value = { name: '', shares: '', price: '', rate: '' };
+  editingIndex.value = -1;
+  showAddModal.value = true;
+};
 
-const buyRecords = ref({});
+const closeAddModal = () => {
+  showAddModal.value = false;
+};
 
-const sortField = ref('name');
-const sortOrder = ref('asc');
-const filterBond = ref('');
-const showBondDropdown = ref(false);
+const editHolding = (index) => {
+  const h = holdings.value[index];
+  addForm.value = { name: h.name, shares: h.shares, price: h.price, rate: h.rate };
+  editingIndex.value = index;
+  showAddModal.value = true;
+};
 
-const showBuyModal = ref(false);
-const buyBondCode = ref('');
-const buyForm = ref({
-  amount: '',
-  price: '',
-  fee: '',
-  date: new Date().toISOString().split('T')[0]
-});
-
-const uniqueBonds = computed(() => {
-  return bonds.value.map(b => b.name);
-});
-
-const filteredBonds = computed(() => {
-  let result = [...bonds.value];
+const saveHolding = () => {
+  const name = addForm.value.name.trim();
+  const shares = parseFloat(addForm.value.shares) || 0;
+  const price = parseFloat(addForm.value.price) || 0;
+  const rate = parseFloat(addForm.value.rate) || 0;
   
-  if (filterBond.value) {
-    result = result.filter(b => b.name === filterBond.value);
-  }
+  if (!name || shares <= 0 || price <= 0) return;
   
-  if (sortField.value) {
-    result.sort((a, b) => {
-      let aVal, bVal;
-      
-      if (sortField.value === 'holdings') {
-        aVal = a.holdings || 0;
-        bVal = b.holdings || 0;
-      } else if (sortField.value === 'costPrice') {
-        aVal = a.costPrice || 0;
-        bVal = b.costPrice || 0;
-      } else if (sortField.value === 'price') {
-        aVal = a.price;
-        bVal = b.price;
-      } else if (sortField.value === 'pnl') {
-        const aPnL = ((a.holdings || 0) * a.price) - ((a.holdings || 0) * (a.costPrice || 0));
-        const bPnL = ((b.holdings || 0) * b.price) - ((b.holdings || 0) * (b.costPrice || 0));
-        aVal = aPnL;
-        bVal = bPnL;
-      } else {
-        aVal = String(a[sortField.value] || '').toLowerCase();
-        bVal = String(b[sortField.value] || '').toLowerCase();
-      }
-      
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return sortOrder.value === 'asc' ? aVal - bVal : bVal - aVal;
-      }
-      
-      if (aVal < bVal) return sortOrder.value === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortOrder.value === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }
-  
-  return result;
-});
-
-const filteredTotalValue = computed(() => {
-  return filteredBonds.value.reduce((sum, b) => sum + getTotalAmount(b.code) * b.price, 0);
-});
-
-const totalValue = computed(() => {
-  return bonds.value.reduce((sum, b) => sum + (b.holdings || 0) * b.price, 0);
-});
-
-const totalCost = computed(() => {
-  return bonds.value.reduce((sum, b) => sum + (b.holdings || 0) * (b.costPrice || 0), 0);
-});
-
-const totalPnL = computed(() => {
-  return totalValue.value - totalCost.value;
-});
-
-const totalPnLPercent = computed(() => {
-  if (totalCost.value === 0) return 0;
-  return (totalPnL.value / totalCost.value) * 100;
-});
-
-const currentBondName = computed(() => {
-  const b = bonds.value.find(b => b.code === buyBondCode.value);
-  return b ? b.name : 'BOND';
-});
-
-const currentBondRecords = computed(() => {
-  return buyRecords.value[buyBondCode.value] || [];
-});
-
-const calculateTotalCost = computed(() => {
-  const amount = parseFloat(buyForm.value.amount) || 0;
-  const price = parseFloat(buyForm.value.price) || 0;
-  const fee = parseFloat(buyForm.value.fee) || 0;
-  return amount * price + fee;
-});
-
-const canAddRecord = computed(() => {
-  const amount = parseFloat(buyForm.value.amount);
-  const price = parseFloat(buyForm.value.price);
-  return amount > 0 && price > 0;
-});
-
-const bondsWithHoldings = computed(() => {
-  return bonds.value.filter(b => getTotalAmount(b.code) > 0);
-});
-
-const getTotalAmount = (code) => {
-  const records = buyRecords.value[code] || [];
-  return records.reduce((sum, r) => sum + r.amount, 0);
-};
-
-const getTotalCost = (code) => {
-  const records = buyRecords.value[code] || [];
-  return records.reduce((sum, r) => sum + r.amount * r.price + (r.fee || 0), 0);
-};
-
-const getCostPrice = (code) => {
-  const totalAmount = getTotalAmount(code);
-  if (totalAmount === 0) return 0;
-  return getTotalCost(code) / totalAmount;
-};
-
-const getCostPriceClass = (bond) => {
-  const costPrice = getCostPrice(bond.code);
-  if (costPrice === 0) return '';
-  return bond.price >= costPrice ? 'positive' : 'negative';
-};
-
-const getPnLClassNew = (bond) => {
-  const holdings = bond.holdings || 0;
-  const costPrice = bond.costPrice || 0;
-  const currentPrice = bond.price || 0;
-  const costValue = holdings * costPrice;
-  const currentValue = holdings * currentPrice;
-  const pnl = currentValue - costValue;
-  if (pnl === 0) return '';
-  return pnl > 0 ? 'positive' : 'negative';
-};
-
-const formatPnLNew = (bond) => {
-  const holdings = bond.holdings || 0;
-  const costPrice = bond.costPrice || 0;
-  const currentPrice = bond.price || 0;
-  const costValue = holdings * costPrice;
-  const currentValue = holdings * currentPrice;
-  const pnl = currentValue - costValue;
-  
-  if (holdings === 0 || costPrice === 0) return '-';
-  
-  const pnlPercent = costValue > 0 ? (pnl / costValue * 100) : 0;
-  const sign = pnl >= 0 ? '+' : '';
-  return `${sign}${formatCurrency(pnl)} (${sign}${pnlPercent.toFixed(2)}%)`;
-};
-
-const formatPnLShort = (bond) => {
-  const holdings = bond.holdings || 0;
-  const costPrice = bond.costPrice || 0;
-  const currentPrice = bond.price || 0;
-  const costValue = holdings * costPrice;
-  const currentValue = holdings * currentPrice;
-  const pnl = currentValue - costValue;
-  
-  if (holdings === 0 || costPrice === 0) return '-';
-  
-  const pnlPercent = costValue > 0 ? (pnl / costValue * 100) : 0;
-  const sign = pnl >= 0 ? '+' : '-';
-  return `${sign}${formatCurrency(Math.abs(pnl))} / ${sign}${pnlPercent.toFixed(1)}%`;
-};
-
-const getPnLClass = (bond) => {
-  const pnl = getTotalAmount(bond.code) * bond.price - getTotalCost(bond.code);
-  if (pnl === 0) return '';
-  return pnl > 0 ? 'positive' : 'negative';
-};
-
-const formatPnL = (bond) => {
-  const totalAmount = getTotalAmount(bond.code);
-  const totalCost = getTotalCost(bond.code);
-  const currentValue = totalAmount * bond.price;
-  const pnl = currentValue - totalCost;
-  
-  if (totalAmount === 0) return '-';
-  
-  const pnlPercent = totalCost > 0 ? (pnl / totalCost * 100) : 0;
-  const sign = pnl >= 0 ? '+' : '';
-  return `${sign}${formatCurrency(Math.abs(pnl))} (${sign}${pnlPercent.toFixed(2)}%)`;
-};
-
-const formatPrice = (value) => {
-  if (!value) return '0.00';
-  return Number(value).toFixed(2);
-};
-
-const formatNumber = (value) => {
-  if (!value && value !== 0) return '0';
-  return Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 });
-};
-
-const toggleSort = (field) => {
-  if (sortField.value === field) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+  if (editingIndex.value >= 0) {
+    holdings.value[editingIndex.value] = { name, shares, price, rate };
   } else {
-    sortField.value = field;
-    sortOrder.value = 'asc';
+    holdings.value.push({ name, shares, price, rate });
   }
-};
-
-const togglePriceSort = () => toggleSort('price');
-const toggleCostPriceSort = () => toggleSort('costPrice');
-const toggleHoldingsSort = () => toggleSort('holdings');
-const toggleNameSort = () => toggleSort('name');
-const togglePnLSort = () => toggleSort('pnl');
-
-const toggleBondDropdown = () => {
-  showBondDropdown.value = !showBondDropdown.value;
-};
-
-const selectSort = (field, order) => {
-  sortField.value = field;
-  sortOrder.value = order;
-  showBondDropdown.value = false;
-};
-
-const selectBondFilter = (bond) => {
-  filterBond.value = bond;
-  showBondDropdown.value = false;
-};
-
-const sortIcon = (field) => {
-  if (sortField.value !== field) return 'fas fa-sort';
-  return sortOrder.value === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
-};
-
-const clearFilters = () => {
-  sortField.value = '';
-  sortOrder.value = 'asc';
-  filterBond.value = '';
-};
-
-const openBuyModal = (code) => {
-  buyBondCode.value = code;
-  buyForm.value = {
-    amount: '',
-    price: '',
-    fee: '',
-    date: new Date().toISOString().split('T')[0]
-  };
-  showBuyModal.value = true;
-};
-
-const closeBuyModal = () => {
-  showBuyModal.value = false;
-  buyBondCode.value = '';
-};
-
-const addBuyRecord = () => {
-  if (!canAddRecord.value) return;
-  
-  const code = buyBondCode.value;
-  if (!buyRecords.value[code]) {
-    buyRecords.value[code] = [];
-  }
-  
-  buyRecords.value[code].unshift({
-    id: Date.now(),
-    amount: parseFloat(buyForm.value.amount),
-    price: parseFloat(buyForm.value.price),
-    fee: parseFloat(buyForm.value.fee) || 0,
-    date: buyForm.value.date
-  });
   
   saveData();
-  
-  buyForm.value = {
-    amount: '',
-    price: '',
-    fee: '',
-    date: new Date().toISOString().split('T')[0]
-  };
+  closeAddModal();
 };
 
-const deleteRecord = (code, id) => {
-  if (buyRecords.value[code]) {
-    buyRecords.value[code] = buyRecords.value[code].filter(r => r.id !== id);
-    saveData();
-  }
-};
-
-const toggleEditMode = () => {
-  if (isEditMode.value) {
-    saveData();
-  }
-  isEditMode.value = !isEditMode.value;
-};
-
-const addBond = () => {
-  const newCode = 'bond_' + Date.now();
-  bonds.value.push({
-    code: newCode,
-    name: 'NEW BOND',
-    color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'),
-    price: 100
-  });
-  isEditMode.value = true;
-};
-
-const removeBond = (code) => {
-  bonds.value = bonds.value.filter(b => b.code !== code);
-  delete buyRecords.value[code];
+const removeHolding = (index) => {
+  holdings.value.splice(index, 1);
   saveData();
-};
-
-const executeTransfer = () => {
-  if (transferFrom.value === '' || !transferAmount.value || !transferToAsset.value) {
-    return;
-  }
-
-  const amount = parseFloat(transferAmount.value) || 0;
-  const currentAmount = getTotalAmount(transferFrom.value);
-  
-  if (amount <= 0 || amount > currentAmount) {
-    return;
-  }
-
-  const records = buyRecords.value[transferFrom.value] || [];
-  if (records.length > 0) {
-    const costPrice = getCostPrice(transferFrom.value);
-    const remainingAmount = currentAmount - amount;
-    
-    if (remainingAmount > 0) {
-      buyRecords.value[transferFrom.value] = [{
-        id: Date.now(),
-        amount: remainingAmount,
-        price: costPrice,
-        fee: 0,
-        date: new Date().toISOString().split('T')[0]
-      }];
-    } else {
-      buyRecords.value[transferFrom.value] = [];
-    }
-  }
-
-  transfers.value.unshift({
-    amount: amount,
-    fromBond: transferFrom.value,
-    toAsset: transferToAsset.value,
-    note: transferNote.value,
-    date: new Date().toLocaleDateString()
-  });
-
-  emit('transfer', {
-    amount: amount,
-    fromBond: transferFrom.value,
-    toAsset: transferToAsset.value
-  });
-
-  saveData();
-  saveTransfers();
-
-  transferFrom.value = '';
-  transferAmount.value = '';
-  transferToAsset.value = '';
-  transferNote.value = '';
-  showTransferModal.value = false;
-};
-
-const handleFileImport = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  try {
-    const data = await readFile(file);
-    const workbook = XLSX.read(data, { type: 'array' });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-    jsonData.forEach(row => {
-      const bondName = row['bondName'] || row['Bond Name'] || row['bond_name'] || row['Bond'] || '';
-      const amount = parseFloat(row['amount'] || row['Amount'] || 0) || 0;
-      const price = parseFloat(row['price'] || row['Price'] || 100) || 100;
-
-      if (bondName && amount > 0) {
-        const newCode = 'bond_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        bonds.value.push({
-          code: newCode,
-          name: String(bondName).trim().toUpperCase(),
-          color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'),
-          price: price
-        });
-        
-        if (!buyRecords.value[newCode]) {
-          buyRecords.value[newCode] = [];
-        }
-        buyRecords.value[newCode].push({
-          id: Date.now(),
-          amount: amount,
-          price: price,
-          fee: 0,
-          date: new Date().toISOString().split('T')[0]
-        });
-      }
-    });
-
-    saveData();
-    e.target.value = '';
-  } catch (error) {
-    console.error('Import failed:', error);
-    alert(t('importFailed'));
-  }
-};
-
-const readFile = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => resolve(new Uint8Array(e.target.result));
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(file);
-  });
 };
 
 const saveData = () => {
-  try {
-    localStorage.setItem('bondsBuyRecords', JSON.stringify(buyRecords.value));
-    localStorage.setItem('bondsList', JSON.stringify(bonds.value));
-    emit('update:total', totalValue.value);
-  } catch (error) {
-    console.error('Save failed:', error);
-  }
-};
-
-const saveTransfers = () => {
-  try {
-    localStorage.setItem('bondsTransfers', JSON.stringify(transfers.value));
-  } catch (error) {
-    console.error('Save transfers failed:', error);
-  }
+  localStorage.setItem('bondHoldings', JSON.stringify(holdings.value));
+  emit('update:total', totalValue.value);
 };
 
 const loadData = () => {
-  try {
-    const saved = localStorage.getItem('bondsBuyRecords');
-    if (saved) {
-      buyRecords.value = JSON.parse(saved);
-    }
-    const savedBonds = localStorage.getItem('bondsList');
-    if (savedBonds) {
-      bonds.value = JSON.parse(savedBonds);
-    }
-    const savedTransfers = localStorage.getItem('bondsTransfers');
-    if (savedTransfers) {
-      transfers.value = JSON.parse(savedTransfers);
-    }
-  } catch (error) {
-    console.error('Load failed:', error);
-  }
+  const saved = localStorage.getItem('bondHoldings');
+  if (saved) holdings.value = JSON.parse(saved);
 };
 
-const handleClickOutside = (e) => {
-  const target = e.target;
-  const isDropdown = target.closest('.dropdown-menu');
-  const isHeaderDropdown = target.closest('.header-dropdown');
-  const isActionMenu = target.closest('.action-menu-wrapper');
-  
-  if (!isDropdown && !isHeaderDropdown) {
-    showBondDropdown.value = false;
-  }
-  if (!isActionMenu) {
-    showActionMenu.value = false;
-  }
-};
-
-watch(totalValue, (newValue) => {
-  emit('update:total', newValue);
-});
+watch(totalValue, (v) => emit('update:total', v));
 
 onMounted(() => {
   loadData();
-  document.addEventListener('click', handleClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
+  emit('update:total', totalValue.value);
 });
 </script>
 
@@ -820,1085 +192,163 @@ onUnmounted(() => {
   padding: 16px;
 }
 
-.detail-header {
+.section-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 16px;
 }
 
-.detail-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.section-title {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.5px;
-  color: var(--text-primary);
-  line-height: 1;
-  padding-top: 7px;
-}
-
-.detail-title i {
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.edit-toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 10px;
-  height: 30px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-sizing: border-box;
-}
-
-.edit-toggle-btn:hover {
-  border-color: var(--border-color);
-  color: var(--text-primary);
-}
-
-.edit-toggle-btn.is-editing {
-  border-color: #0891b2;
-  color: #0891b2;
-  background: rgba(8, 145, 178, 0.1);
-}
-
-.transfer-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 10px;
-  height: 30px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-sizing: border-box;
-}
-
-.transfer-btn:hover {
-  border-color: var(--border-color);
-  color: #f59e0b;
-}
-
-.help-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 10px;
-  height: 30px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-size: 12px;
-  box-sizing: border-box;
-}
-
-.help-btn:hover {
-  border-color: var(--border-color);
-  color: #06b6d4;
-}
-
-.import-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  height: 30px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-sizing: border-box;
-}
-
-.import-btn:hover {
-  border-color: var(--border-color);
   color: var(--text-primary);
 }
 
 .add-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  height: 30px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-sizing: border-box;
-}
-
-.add-btn:hover {
-  border-color: var(--border-color);
-  color: var(--text-primary);
-}
-
-.transfer-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.transfer-modal {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  width: 90%;
-  max-width: 400px;
-  max-height: 80vh;
-  overflow: hidden;
-}
-
-.transfer-modal .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.transfer-modal .modal-header h3 {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.transfer-modal .modal-body {
-  padding: 20px;
-  max-height: calc(80vh - 130px);
-  overflow-y: auto;
-}
-
-.transfer-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.form-group label {
-  font-size: 9px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  font-weight: 600;
-}
-
-.form-input,
-.form-select {
-  padding: 10px 12px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  color: var(--text-primary);
-  font-size: 13px;
-}
-
-.form-input:focus,
-.form-select:focus {
-  outline: none;
-  border-color: var(--border-color);
-}
-
-.transfer-history {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-light);
-}
-
-.transfer-history h4 {
-  font-size: 9px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  font-weight: 600;
-  margin: 0 0 12px 0;
-}
-
-.history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.history-item {
-  padding: 10px 12px;
-  background: var(--bg-tertiary);
-  border-radius: 4px;
-}
-
-.history-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.history-amount {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.history-arrow {
-  color: var(--text-muted);
-  font-size: 11px;
-}
-
-.history-target {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.history-meta {
-  display: flex;
-  gap: 12px;
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-.help-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.help-modal {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  width: 90%;
-  max-width: 480px;
-  max-height: 80vh;
-  overflow: hidden;
-}
-
-.help-modal .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.help-modal .modal-header h3 {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.help-modal .modal-body {
-  padding: 20px;
-  overflow-y: auto;
-  max-height: calc(80vh - 60px);
-}
-
-.guide-section {
-  margin-bottom: 20px;
-}
-
-.guide-section:last-child {
-  margin-bottom: 0;
-}
-
-.guide-section h4 {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin: 0 0 10px 0;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-}
-
-.format-tags {
-  display: flex;
-  gap: 8px;
-}
-
-.format-tag {
-  padding: 4px 10px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  font-size: 11px;
-  color: var(--text-primary);
-  font-family: 'Space Grotesk', monospace;
-}
-
-.format-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-
-.format-table th,
-.format-table td {
-  padding: 8px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.format-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-
-.format-table td {
-  color: var(--text-primary);
-}
-
-.format-table tr:last-child td {
-  border-bottom: none;
-}
-
-.col-name {
-  font-family: 'Space Grotesk', monospace;
-  color: #06b6d4;
-  background: rgba(6, 182, 212, 0.1);
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
-.example-table {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.example-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  padding: 8px 12px;
-  font-size: 12px;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.example-row:last-child {
-  border-bottom: none;
-}
-
-.example-row.header {
-  background: var(--bg-secondary);
-  color: var(--text-muted);
-  font-size: 10px;
-  text-transform: uppercase;
-}
-
-.example-row span {
-  color: var(--text-primary);
-}
-
-.example-row.header span {
-  color: var(--text-muted);
-}
-
-.bond-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.holdings-table-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.holdings-list {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.accounts-header {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  background: var(--bg-tertiary);
-  border-bottom: 1px solid var(--border-light);
-}
-
-.header-cell {
-  padding: 10px 12px;
-  font-size: 9px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  height: 44px;
-  box-sizing: border-box;
-}
-
-.header-cell.col-1 {
-  justify-content: flex-start;
-}
-
-.header-cell.col-2 {
-  justify-content: center;
-}
-
-.header-cell.col-3 {
-  justify-content: flex-end;
-}
-
-.bond-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  border-bottom: 1px solid var(--border-light);
-  background: var(--bg-secondary);
-  cursor: pointer;
-  transition: background 0.15s ease;
-  min-height: 44px;
-  box-sizing: border-box;
-}
-
-.bond-row:last-of-type {
-  border-bottom: none;
-}
-
-.bond-row:hover {
-  background: var(--bg-hover);
-}
-
-.bond-row.active {
-  background: rgba(8, 145, 178, 0.15);
-  border-left: 3px solid #0891b2;
-}
-
-.cell {
-  padding: 10px 12px;
-  display: flex;
-  align-items: center;
-}
-
-.cell.col-1 {
-  justify-content: flex-start;
-}
-
-.cell.col-2 {
-  justify-content: center;
-}
-
-.cell.col-3 {
-  justify-content: flex-end;
-}
-
-.cell-text {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.separator {
-  color: var(--text-muted);
-  margin: 0 2px;
-}
-
-.bond-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.positive {
-  color: var(--accent-green);
-}
-
-.negative {
-  color: var(--accent-red);
-}
-
-.no-results-row {
-  padding: 24px 14px;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 12px;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.detail-summary {
-  padding: 12px 14px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-top: none;
-  border-radius: 0 0 4px 4px;
-}
-
-.summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.summary-label {
-  font-size: 10px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.summary-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.summary-pnl {
-  margin-top: 8px;
-}
-
-.summary-pnl-value {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.summary-pnl-value.positive {
-  color: var(--accent-green);
-}
-
-.summary-pnl-value.negative {
-  color: var(--accent-red);
-}
-
-.pnl-percent {
-  font-size: 11px;
-  opacity: 0.8;
-}
-
-.update-info {
-  margin-top: 6px;
-}
-
-.update-label {
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-.buy-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.buy-modal {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  width: 90%;
-  max-width: 480px;
-  max-height: 80vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.buy-modal .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border-light);
-  flex-shrink: 0;
-}
-
-.buy-modal .modal-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.buy-modal .close-btn {
   width: 28px;
   height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
   border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.buy-modal .close-btn:hover {
+.add-btn:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.data-table {
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 1fr 80px 90px 100px 70px 70px;
   background: var(--bg-tertiary);
-  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
 }
 
-.buy-modal .modal-body {
-  padding: 20px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.buy-modal .form-group {
-  margin-bottom: 16px;
-}
-
-.buy-modal .form-label {
-  display: block;
-  font-size: 11px;
+.th {
+  padding: 10px 12px;
+  font-size: 9px;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 8px;
-}
-
-.buy-modal .form-input {
-  width: 100%;
-  padding: 10px 12px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  color: var(--text-primary);
-  font-size: 14px;
-  box-sizing: border-box;
-}
-
-.buy-modal .form-input:focus {
-  outline: none;
-  border-color: #0891b2;
-}
-
-.buy-modal .modal-footer {
-  padding: 16px 20px;
-  border-top: 1px solid var(--border-light);
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.buy-modal .btn {
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.buy-modal .btn-cancel {
-  background: transparent;
-  border: 1px solid var(--border-light);
-  color: var(--text-secondary);
-}
-
-.buy-modal .btn-cancel:hover {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.buy-modal .btn-submit {
-  background: #0891b2;
-  border: none;
-  color: white;
-}
-
-.buy-modal .btn-submit:hover {
-  background: #0e7490;
-}
-
-.transfer-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
-  justify-content: center;
-  z-index: 1000;
 }
 
-.transfer-modal {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  width: 90%;
-  max-width: 400px;
-  overflow: hidden;
-}
-
-.help-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.help-modal {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.help-section {
-  padding: 16px;
+.table-row {
+  display: grid;
+  grid-template-columns: 1fr 80px 90px 100px 70px 70px;
   border-bottom: 1px solid var(--border-light);
+  transition: background 0.15s ease;
 }
 
-.help-section:last-child {
+.table-row:last-child {
   border-bottom: none;
 }
 
-.help-title {
-  font-size: 14px;
-  font-weight: 600;
+.table-row:hover {
+  background: var(--bg-hover);
+}
+
+.td {
+  padding: 10px 12px;
+  font-size: 13px;
   color: var(--text-primary);
-  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
 }
 
-.help-text {
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.6;
+.col-name { justify-content: flex-start; }
+.col-shares, .col-price, .col-value, .col-rate { justify-content: flex-end; }
+.col-actions { justify-content: flex-end; gap: 4px; }
+
+.action-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s ease;
 }
 
-.help-code {
+.action-btn:hover {
   background: var(--bg-tertiary);
-  padding: 8px 12px;
+}
+
+.action-btn.edit:hover { color: var(--accent-blue); }
+.action-btn.delete:hover { color: var(--accent-red); }
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state i {
+  font-size: 32px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.add-first-btn {
+  padding: 8px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
   border-radius: 4px;
-  font-family: monospace;
-  font-size: 11px;
-  color: var(--text-primary);
-  margin-top: 8px;
-  overflow-x: auto;
-}
-
-.action-menu-wrapper {
-  position: relative;
-}
-
-.action-menu-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: var(--bg-tertiary);
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   color: var(--text-secondary);
-  transition: all 0.2s ease;
-}
-
-.action-menu-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.action-menu-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 4px;
-  min-width: 140px;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  overflow: hidden;
-}
-
-.menu-item {
-  width: 100%;
-  padding: 10px 14px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--text-primary);
-  text-align: left;
-  transition: background 0.2s ease;
-}
-
-.menu-item:hover {
-  background: var(--bg-hover);
-}
-
-.menu-item i {
-  width: 16px;
-  color: var(--text-secondary);
-}
-
-.menu-label {
-  cursor: pointer;
-}
-
-@media (max-width: 480px) {
-  .holdings-list {
-    border-radius: 6px;
-  }
-
-  .accounts-header {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .header-cell {
-    padding: 8px 6px;
-    font-size: 8px;
-    height: 36px;
-  }
-
-  .bond-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    min-height: 50px;
-  }
-
-  .bond-row .cell {
-    padding: 8px 6px;
-  }
-
-  .bond-row .cell.col-1 {
-    justify-content: flex-start;
-  }
-
-  .bond-row .cell.col-2 {
-    justify-content: center;
-  }
-
-  .bond-row .cell.col-3 {
-    justify-content: flex-end;
-  }
-
-  .bond-row .cell-text {
-    font-size: 11px;
-  }
-}
-
-.bond-name {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: var(--text-primary);
-}
-
-.field-input {
-  width: 100%;
-  padding: 6px 8px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 3px;
-  color: var(--text-primary);
   font-size: 12px;
-}
-
-.field-input:focus {
-  outline: none;
-  border-color: #0891b2;
-}
-
-.field-input::placeholder {
-  color: var(--text-muted);
-}
-
-.field-input.font-numeric {
-  font-family: 'Space Grotesk', 'SF Mono', monospace;
-  text-align: right;
-}
-
-.delete-btn {
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 3px;
-  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.delete-btn:hover {
-  color: var(--accent-red);
-  border-color: var(--accent-red);
-}
-
-.price-value {
-  font-size: 13px;
-  color: var(--text-primary);
-}
-
-.cost-value {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.cost-value.positive {
-  color: var(--accent-green);
-}
-
-.cost-value.negative {
-  color: var(--accent-red);
-}
-
-.amount-value {
-  font-size: 13px;
-  color: var(--text-primary);
-}
-
-.amount-unit {
-  font-size: 10px;
-  color: var(--text-secondary);
-  margin-left: 4px;
-}
-
-.value-amount {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.pnl-value {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.pnl-value.positive {
-  color: var(--accent-green);
-}
-
-.pnl-value.negative {
-  color: var(--accent-red);
-}
-
-.add-buy-btn {
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-light);
-  border-radius: 3px;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-size: 11px;
-}
-
-.add-buy-btn:hover {
-  color: #0891b2;
-  border-color: #0891b2;
-}
-
-.no-results-row {
-  padding: 24px 14px;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 12px;
-  border-bottom: 1px solid var(--border-light);
+.add-first-btn:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
 }
 
 .detail-summary {
+  margin-top: 12px;
   padding: 12px 14px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-light);
-  border-top: none;
-  border-radius: 0 0 4px 4px;
+  border-radius: 4px;
 }
 
 .summary-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 8px;
 }
 
-.summary-pnl {
-  margin-top: 8px;
+.summary-row:last-child {
+  margin-bottom: 0;
 }
 
 .summary-label {
@@ -1914,31 +364,13 @@ onUnmounted(() => {
   color: var(--text-primary);
 }
 
-.summary-pnl-value {
+.summary-rate {
   font-size: 14px;
   font-weight: 500;
-}
-
-.summary-pnl-value.positive {
   color: var(--accent-green);
 }
 
-.summary-pnl-value.negative {
-  color: var(--accent-red);
-}
-
-.pnl-percent {
-  font-size: 12px;
-  opacity: 0.8;
-}
-
-.filtered-hint {
-  font-size: 10px;
-  color: var(--text-muted);
-  margin-left: 8px;
-}
-
-.buy-modal-overlay {
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -1951,33 +383,27 @@ onUnmounted(() => {
   z-index: 1000;
 }
 
-.buy-modal {
+.modal-container {
   background: var(--bg-secondary);
   border: 1px solid var(--border-light);
   border-radius: 8px;
   width: 90%;
-  max-width: 480px;
-  max-height: 80vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  max-width: 400px;
 }
 
-.buy-modal .modal-header {
+.modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
   border-bottom: 1px solid var(--border-light);
-  flex-shrink: 0;
 }
 
-.buy-modal .modal-header h3 {
-  font-size: 13px;
+.modal-title {
+  font-size: 12px;
   font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
   letter-spacing: 0.5px;
+  color: var(--text-primary);
 }
 
 .modal-close {
@@ -1991,45 +417,41 @@ onUnmounted(() => {
   color: var(--text-muted);
   cursor: pointer;
   border-radius: 4px;
-  transition: color 0.15s ease;
 }
 
 .modal-close:hover {
   color: var(--text-primary);
 }
 
-.buy-modal .modal-body {
+.modal-body {
   padding: 20px;
-  overflow-y: auto;
-  flex: 1;
 }
 
-.buy-form {
-  margin-bottom: 20px;
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group.half {
+  flex: 1;
 }
 
 .form-row {
   display: flex;
   gap: 12px;
-  margin-bottom: 12px;
 }
 
-.form-group {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.form-group label {
+.form-label {
+  display: block;
   font-size: 9px;
+  font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
 }
 
 .form-input {
+  width: 100%;
   padding: 10px 12px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-light);
@@ -2040,172 +462,7 @@ onUnmounted(() => {
 
 .form-input:focus {
   outline: none;
-  border-color: #0891b2;
-}
-
-.form-summary {
-  background: var(--bg-tertiary);
-  border-radius: 4px;
-  padding: 12px;
-  margin-top: 8px;
-}
-
-.form-summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.form-summary-row span:last-child {
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.buy-records {
-  border-top: 1px solid var(--border-light);
-  padding-top: 16px;
-}
-
-.records-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.records-header h4 {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin: 0;
-}
-
-.records-count {
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-.records-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.record-item {
-  background: var(--bg-tertiary);
-  border-radius: 4px;
-  padding: 10px 12px;
-  position: relative;
-}
-
-.record-main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 4px;
-}
-
-.record-amount .amount-num {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.record-amount .amount-unit {
-  font-size: 10px;
-  color: var(--text-secondary);
-  margin-left: 2px;
-}
-
-.record-price .price-label {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-right: 2px;
-}
-
-.record-price .price-num {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.record-price .price-unit {
-  font-size: 10px;
-  color: var(--text-muted);
-  margin-left: 4px;
-}
-
-.record-fee .fee-label {
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-.record-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-.record-total {
-  color: var(--text-secondary);
-}
-
-.record-delete {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  border-radius: 3px;
-  transition: color 0.15s ease;
-  font-size: 10px;
-  opacity: 0;
-}
-
-.record-item:hover .record-delete {
-  opacity: 1;
-}
-
-.record-delete:hover {
-  color: var(--accent-red);
-}
-
-.records-summary {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-light);
-}
-
-.records-summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
-}
-
-.records-summary-row:last-child {
-  margin-bottom: 0;
-}
-
-.records-summary-row span:last-child {
-  font-weight: 500;
-  color: var(--text-primary);
+  border-color: var(--border-color);
 }
 
 .modal-footer {
@@ -2214,10 +471,9 @@ onUnmounted(() => {
   gap: 8px;
   padding: 16px 20px;
   border-top: 1px solid var(--border-light);
-  flex-shrink: 0;
 }
 
-.cancel-btn {
+.btn-cancel {
   padding: 8px 16px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-light);
@@ -2225,143 +481,27 @@ onUnmounted(() => {
   color: var(--text-secondary);
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.15s ease;
 }
 
-.cancel-btn:hover {
-  border-color: var(--border-color);
-  color: var(--text-primary);
-}
-
-.confirm-btn {
+.btn-confirm {
   padding: 8px 16px;
-  background: #0891b2;
+  background: var(--accent-blue);
   border: none;
   border-radius: 4px;
   color: #fff;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.15s ease;
 }
 
-.confirm-btn:hover:not(:disabled) {
-  background: #0e7490;
-}
-
-.confirm-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.action-menu-wrapper {
-  position: relative;
-}
-
-.action-menu-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: var(--bg-tertiary);
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  transition: all 0.2s ease;
-}
-
-.action-menu-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.action-menu-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 4px;
-  min-width: 140px;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  overflow: hidden;
-}
-
-.menu-item {
-  width: 100%;
-  padding: 10px 14px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--text-primary);
-  text-align: left;
-  transition: background 0.2s ease;
-}
-
-.menu-item:hover {
-  background: var(--bg-hover);
-}
-
-.menu-item i {
-  width: 16px;
-  color: var(--text-secondary);
-}
-
-.menu-label {
-  cursor: pointer;
-}
-
-@media (max-width: 480px) {
-  .holdings-list {
-    border-radius: 6px;
+@media (max-width: 768px) {
+  .table-header,
+  .table-row {
+    grid-template-columns: 1fr 70px 80px 60px;
   }
-
-  .accounts-header {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .header-cell {
-    padding: 8px 6px;
-    font-size: 8px;
-    height: 36px;
-  }
-
-  .bond-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    min-height: 50px;
-  }
-
-  .bond-row .cell {
-    padding: 8px 6px;
-  }
-
-  .bond-row .cell.col-1 {
-    justify-content: flex-start;
-  }
-
-  .bond-row .cell.col-2 {
-    justify-content: center;
-  }
-
-  .bond-row .cell.col-3 {
-    justify-content: flex-end;
-  }
-
-  .bond-row .cell-text {
-    font-size: 11px;
+  
+  .col-price,
+  .col-actions {
+    display: none;
   }
 }
 </style>
