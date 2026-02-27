@@ -19,13 +19,16 @@
           :assets="visibleAssets" 
           :t="t" 
           :format-currency="formatCurrency"
-          :invest-tab="currentView === 'invest' ? investRef?.activeTab : null"
+          :current-view="currentView"
+          :invest-tab="investRef?.activeTab"
           :stock-value="investRef?.totalStockValue || 0"
+          :wallet-value="walletRef?.totalWalletValue || 0"
           :cash-value="cashAmount"
           :total-profit="investRef?.totalProfit || 0"
         />
 
         <template v-if="currentView === 'wallet'">
+          <WalletView :t="t" :format-amount="formatAmount" ref="walletRef" />
         </template>
 
         <template v-else-if="currentView === 'invest'">
@@ -61,6 +64,7 @@ import NewsFeed from './components/NewsFeed.vue';
 import AuthModal from './components/AuthModal.vue';
 import InvestView from './components/InvestView.vue';
 import NotesView from './components/NotesView.vue';
+import WalletView from './components/WalletView.vue';
 import { useLocale } from './composables/useLocale';
 import { useSupabase } from './lib/supabase';
 import { useDataStorage } from './composables/useDataStorage';
@@ -76,6 +80,7 @@ getView();
 const user = ref(null);
 const showAuthModal = ref(false);
 const investRef = ref(null);
+const walletRef = ref(null);
 
 const assets = ref([
   {

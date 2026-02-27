@@ -14,11 +14,19 @@ const props = defineProps({
     type: Function,
     required: true
   },
+  currentView: {
+    type: String,
+    default: 'wallet'
+  },
   investTab: {
     type: String,
     default: 'profit'
   },
   stockValue: {
+    type: Number,
+    default: 0
+  },
+  walletValue: {
     type: Number,
     default: 0
   },
@@ -33,16 +41,26 @@ const totalAmount = computed(() => {
 })
 
 const showInvestMode = computed(() => {
-  return props.investTab === 'profit' || props.investTab === 'position'
+  return props.currentView === 'invest'
+})
+
+const showWalletMode = computed(() => {
+  return props.currentView === 'wallet'
+})
+
+const displayValue = computed(() => {
+  if (showInvestMode.value) return props.stockValue
+  if (showWalletMode.value) return props.walletValue || totalAmount.value
+  return totalAmount.value
 })
 </script>
 
 <template>
   <div class="total-asset-container">
     <div class="asset-main">
-      <div class="asset-label">{{ showInvestMode ? 'STOCK VALUE (CNY)' : 'CNY' }}</div>
+      <div class="asset-label">{{ showInvestMode ? 'STOCK VALUE (CNY)' : 'TOTAL ASSETS (CNY)' }}</div>
       <div class="asset-value">
-        <span class="amount font-numeric">{{ showInvestMode ? formatCurrency(stockValue) : formatCurrency(totalAmount) }}</span>
+        <span class="amount font-numeric">{{ formatCurrency(displayValue) }}</span>
       </div>
       <div class="asset-change" v-if="showInvestMode">
         <span class="change-value" :class="{ 'positive': totalProfit >= 0, 'negative': totalProfit < 0 }">
