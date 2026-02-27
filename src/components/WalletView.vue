@@ -1346,15 +1346,15 @@ defineExpose({
   justify-content: flex-end;
 }
 
-.overweight {
+.col-diff.overweight {
   color: #f59e0b;
 }
 
-.underweight {
+.col-diff.underweight {
   color: #ef4444;
 }
 
-.balanced {
+.col-diff.balanced {
   color: #22c55e;
 }
 
