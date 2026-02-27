@@ -1,5 +1,5 @@
 <template>
-  <div class="wallet-view">
+  <div class="wallet-container">
     <div class="wallet-tabs">
       <button 
         v-for="tab in tabs" 
@@ -442,28 +442,24 @@ defineExpose({
 </script>
 
 <style scoped>
-.wallet-view {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  overflow: hidden;
+.wallet-container {
+  margin-bottom: 16px;
 }
 
 .wallet-tabs {
   display: flex;
-  gap: 4px;
-  padding: 8px;
-  background: var(--bg-tertiary);
-  border-bottom: 1px solid var(--border-light);
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: center;
 }
 
 .tab-btn {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  background: transparent;
-  border: 1px solid transparent;
+  padding: 8px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
   border-radius: 4px;
   color: var(--text-secondary);
   font-size: 11px;
@@ -474,13 +470,13 @@ defineExpose({
 
 .tab-btn:hover {
   color: var(--text-primary);
-  background: var(--bg-hover);
+  border-color: var(--border-color);
 }
 
 .tab-btn.active {
   color: var(--accent-blue);
-  background: var(--bg-secondary);
-  border-color: var(--border-light);
+  border-color: var(--accent-blue);
+  background: rgba(41, 98, 255, 0.05);
 }
 
 .tab-btn i {
@@ -488,7 +484,10 @@ defineExpose({
 }
 
 .wallet-content {
-  padding: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .section-header {
