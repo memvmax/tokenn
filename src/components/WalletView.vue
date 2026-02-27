@@ -533,7 +533,7 @@ defineExpose({
 
 .table-header {
   display: grid;
-  grid-template-columns: 1fr 80px 100px 100px 70px;
+  grid-template-columns: 1fr 90px 90px 90px 70px;
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-light);
 }
@@ -551,7 +551,7 @@ defineExpose({
 
 .table-row {
   display: grid;
-  grid-template-columns: 1fr 80px 100px 100px 70px;
+  grid-template-columns: 1fr 90px 90px 90px 70px;
   border-bottom: 1px solid var(--border-light);
   transition: background 0.15s ease;
 }
@@ -806,7 +806,7 @@ defineExpose({
   
   .table-header,
   .table-row {
-    grid-template-columns: 1fr 70px 80px 60px;
+    grid-template-columns: 1fr 80px 80px 60px;
   }
   
   .col-currency,
