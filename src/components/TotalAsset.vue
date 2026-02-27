@@ -73,16 +73,6 @@ const displayValue = computed(() => {
         <span class="change-period">this month</span>
       </div>
     </div>
-    <div class="asset-health" v-if="!showInvestMode">
-      <div class="health-label">HEALTH PTS</div>
-      <div class="health-score">
-        <span class="score-value font-numeric">85</span>
-      </div>
-      <div class="health-change">
-        <span class="health-delta negative">-2 pts</span>
-        <span class="health-period">vs yesterday</span>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -163,102 +153,7 @@ const displayValue = computed(() => {
   color: var(--text-muted);
 }
 
-.asset-health {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.health-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-bottom: 2px;
-}
-
-.health-score {
-  margin-bottom: 0;
-}
-
-.score-value {
-  font-size: 42px;
-  font-weight: 600;
-  color: var(--text-primary);
-  letter-spacing: -1px;
-}
-
-.health-change {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.health-delta {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.health-delta.positive {
-  color: var(--accent-green);
-}
-
-.health-delta.negative {
-  color: var(--accent-red);
-}
-
 .health-period {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.asset-cash {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.cash-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-bottom: 2px;
-}
-
-.cash-value {
-  margin-bottom: 0;
-}
-
-.cash-amount {
-  font-size: 42px;
-  font-weight: 600;
-  color: var(--text-primary);
-  letter-spacing: -1px;
-}
-
-.cash-change {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.earn-value {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.earn-value.positive {
-  color: var(--accent-green);
-}
-
-.earn-value.negative {
-  color: var(--accent-red);
-}
-
-.earn-period {
   font-size: 13px;
   color: var(--text-muted);
 }
