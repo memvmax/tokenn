@@ -2,14 +2,32 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useStockApi } from '../composables/useStockApi'
 
-const EXCHANGE_RATES = {
+const exchangeRates = ref({
   'A股': 1,
-  '港股': 0.92,
+  '港股': 0.91,
   '美股': 7.25
+})
+
+const fetchExchangeRates = async () => {
+  try {
+    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD')
+    const data = await response.json()
+    if (data.rates) {
+      const cnyRate = data.rates.CNY || 7.25
+      const hkdRate = data.rates.HKD || 7.78
+      exchangeRates.value = {
+        'A股': 1,
+        '港股': cnyRate / hkdRate,
+        '美股': cnyRate
+      }
+    }
+  } catch (e) {
+    console.log('Failed to fetch exchange rates, using defaults')
+  }
 }
 
 const convertToCNY = (value, market) => {
-  const rate = EXCHANGE_RATES[market] || 1
+  const rate = exchangeRates.value[market] || 1
   return value * rate
 }
 
@@ -59,13 +77,17 @@ const profitData = ref([
     name: '贵州茅台', 
     market: 'A股', 
     buyPrice: 1500.10, 
-    currentPrice: 1680.00, 
-    shares: 100, 
-    profit: 17990.00, 
-    profitPercent: 12.0,
+    currentPrice: 1200.00, 
+    shares: 0, 
+    profit: -30015.00, 
+    profitPercent: -20.0,
+    category1: 'consumption',
+    category2: 'dividend',
+    targetPercent: 15,
     transactions: [
       { type: 'buy', price: 1450.00, quantity: 50, date: '2024-01-10', commission: 5.00 },
       { type: 'buy', price: 1550.00, quantity: 50, date: '2024-02-15', commission: 5.00 },
+      { type: 'sell', price: 1200.00, quantity: 100, date: '2026-02-02', commission: 5.00 },
     ]
   },
   { 
@@ -77,6 +99,9 @@ const profitData = ref([
     shares: 200, 
     profit: -3006.00, 
     profitPercent: -8.3,
+    category1: 'consumption',
+    category2: 'dividend',
+    targetPercent: 10,
     transactions: [
       { type: 'buy', price: 175.00, quantity: 100, date: '2024-01-05', commission: 3.00 },
       { type: 'buy', price: 185.00, quantity: 100, date: '2024-02-20', commission: 3.00 },
@@ -91,6 +116,9 @@ const profitData = ref([
     shares: 100, 
     profit: 2980.00, 
     profitPercent: 8.5,
+    category1: 'technology',
+    category2: 'growth',
+    targetPercent: 15,
     transactions: [
       { type: 'buy', price: 340.00, quantity: 50, date: '2024-01-15', commission: 10.00 },
       { type: 'buy', price: 360.00, quantity: 50, date: '2024-03-01', commission: 10.00 },
@@ -105,6 +133,9 @@ const profitData = ref([
     shares: 150, 
     profit: -3762.00, 
     profitPercent: -20.9,
+    category1: 'technology',
+    category2: 'value',
+    targetPercent: 10,
     transactions: [
       { type: 'buy', price: 110.00, quantity: 100, date: '2024-01-20', commission: 8.00 },
       { type: 'buy', price: 130.00, quantity: 50, date: '2024-02-25', commission: 4.00 },
@@ -119,6 +150,9 @@ const profitData = ref([
     shares: 100, 
     profit: 2846.00, 
     profitPercent: 19.0,
+    category1: 'technology',
+    category2: 'growth',
+    targetPercent: 20,
     transactions: [
       { type: 'buy', price: 145.00, quantity: 50, date: '2024-01-08', commission: 2.00 },
       { type: 'buy', price: 155.00, quantity: 50, date: '2024-02-12', commission: 2.00 },
@@ -133,6 +167,9 @@ const profitData = ref([
     shares: 50, 
     profit: -752.50, 
     profitPercent: -7.5,
+    category1: 'technology',
+    category2: 'hot',
+    targetPercent: 10,
     transactions: [
       { type: 'buy', price: 190.00, quantity: 30, date: '2024-01-25', commission: 1.50 },
       { type: 'buy', price: 210.00, quantity: 20, date: '2024-03-05', commission: 1.00 },
@@ -147,6 +184,9 @@ const profitData = ref([
     shares: 30, 
     profit: 4498.50, 
     profitPercent: 50.0,
+    category1: 'technology',
+    category2: 'hot',
+    targetPercent: 15,
     transactions: [
       { type: 'buy', price: 280.00, quantity: 20, date: '2024-01-12', commission: 1.00 },
       { type: 'buy', price: 320.00, quantity: 10, date: '2024-02-28', commission: 0.50 },
@@ -156,31 +196,41 @@ const profitData = ref([
     code: 'MSFT', 
     name: 'Microsoft Corp.', 
     market: '美股', 
-    buyPrice: 280.05, 
-    currentPrice: 320.00, 
-    shares: 80, 
-    profit: 3196.00, 
-    profitPercent: 14.3,
+    buyPrice: 380.00, 
+    currentPrice: 400.00, 
+    shares: 64, 
+    profit: 1280.00, 
+    profitPercent: 5.3,
+    category1: 'technology',
+    category2: 'bluechip',
+    targetPercent: 15,
     transactions: [
-      { type: 'buy', price: 270.00, quantity: 40, date: '2024-01-18', commission: 2.00 },
-      { type: 'buy', price: 290.00, quantity: 40, date: '2024-02-22', commission: 2.00 },
+      { type: 'buy', price: 375.00, quantity: 32, date: '2024-01-18', commission: 2.00 },
+      { type: 'buy', price: 385.00, quantity: 32, date: '2024-02-22', commission: 2.00 },
     ]
-  },
+  }
 ])
 
-const positionData = ref([
-  { code: '600519', name: '贵州茅台', market: 'A股', category1: 'consumption', category2: 'dividend', targetPercent: 15, currentPercent: 12.5, value: 168000.00 },
-  { code: '000858', name: '五粮液', market: 'A股', category1: 'consumption', category2: 'dividend', targetPercent: 10, currentPercent: 8.25, value: 33000.00 },
-  { code: '00700', name: '腾讯控股', market: '港股', category1: 'technology', category2: 'growth', targetPercent: 15, currentPercent: 9.5, value: 38000.00 },
-  { code: '09988', name: '阿里巴巴', market: '港股', category1: 'technology', category2: 'value', targetPercent: 10, currentPercent: 3.56, value: 14250.00 },
-  { code: 'AAPL', name: 'Apple Inc.', market: '美股', category1: 'technology', category2: 'growth', targetPercent: 20, currentPercent: 14.4, value: 17850.00 },
-  { code: 'TSLA', name: 'Tesla Inc.', market: '美股', category1: 'technology', category2: 'hot', targetPercent: 10, currentPercent: 4.63, value: 9250.00 },
-  { code: 'NVDA', name: 'NVIDIA Corp.', market: '美股', category1: 'technology', category2: 'hot', targetPercent: 15, currentPercent: 10.8, value: 13500.00 },
-  { code: 'MSFT', name: 'Microsoft Corp.', market: '美股', category1: 'technology', category2: 'bluechip', targetPercent: 15, currentPercent: 20.48, value: 25600.00 },
-])
+const positionData = computed(() => {
+  return profitData.value
+    .filter(item => item.shares > 0)
+    .map(item => ({
+      code: item.code,
+      name: item.name,
+      market: item.market,
+      category1: item.category1 || '',
+      category2: item.category2 || '',
+      targetPercent: item.targetPercent || 0,
+      value: convertToCNY(item.currentPrice * item.shares, item.market)
+    }))
+})
 
 const filteredProfitData = computed(() => {
   let data = profitData.value.filter(item => selectedMarkets.value.includes(item.market))
+  
+  if (!showHistory.value) {
+    data = data.filter(item => item.shares > 0)
+  }
   
   if (sortState.value.field && sortState.value.order !== 0) {
     const field = sortState.value.field
@@ -378,7 +428,8 @@ const submitOrder = async () => {
         profitPercent: 0,
         transactions: [],
         category1: '',
-        category2: ''
+        category2: '',
+        targetPercent: 0
       }
       profitData.value.unshift(existingStock)
     }
@@ -469,7 +520,9 @@ const getSelectedStock = (code) => {
 }
 
 const togglePositionViewType = () => {
-  positionViewType.value = positionViewType.value === 'industry' ? 'style' : 'industry'
+  const types = ['industry', 'style', 'market']
+  const currentIndex = types.indexOf(positionViewType.value)
+  positionViewType.value = types[(currentIndex + 1) % types.length]
   selectedCategoryCode.value = null
 }
 
@@ -619,8 +672,38 @@ const refreshPrices = async () => {
   }
 }
 
+const syncStockValuesToWallet = () => {
+  const marketValues = {
+    'A股': 0,
+    '港股': 0,
+    '美股': 0
+  }
+  
+  profitData.value.forEach(stock => {
+    if (stock.shares > 0 && marketValues.hasOwnProperty(stock.market)) {
+      marketValues[stock.market] += convertToCNY(stock.currentPrice * stock.shares, stock.market)
+    }
+  })
+  
+  const today = new Date()
+  const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+  const isLastDay = today.getDate() === lastDayOfMonth.getDate()
+  
+  const syncData = {
+    date: today.toISOString().split('T')[0],
+    markets: marketValues,
+    isLastDayOfMonth: isLastDay
+  }
+  
+  localStorage.setItem('stockSyncData', JSON.stringify(syncData))
+  
+  return syncData
+}
+
 onMounted(() => {
+  fetchExchangeRates()
   refreshPrices()
+  syncStockValuesToWallet()
 })
 
 const selectCategory = (code) => {
@@ -636,13 +719,28 @@ const positionSummaryData = computed(() => {
   const categoryMap = new Map()
   
   filteredPositionData.value.forEach(item => {
-    const category = type === 'industry' ? item.category1 : item.category2
+    let category
+    if (type === 'industry') {
+      category = item.category1
+    } else if (type === 'style') {
+      category = item.category2
+    } else if (type === 'market') {
+      category = item.market
+    }
+    
     if (!category) return
     
     if (!categoryMap.has(category)) {
+      let name
+      if (type === 'market') {
+        name = getMarketLabel(category)
+      } else {
+        name = getCategoryLabel(type === 'industry' ? category1Options : category2Options, category)
+      }
+      
       categoryMap.set(category, { 
         code: category, 
-        name: getCategoryLabel(type === 'industry' ? category1Options : category2Options, category),
+        name: name,
         currentValue: 0, 
         targetPercent: 0,
         count: 0,
@@ -717,20 +815,6 @@ const getPositionSortClass = (field) => {
   }
   return ''
 }
-
-const historyData = ref([
-  { code: 'BABA', name: 'Alibaba Group', market: '美股', buyPrice: 75.00, currentPrice: 85.00, shares: 100, profit: 2500.00, profitPercent: 15.5 },
-  { code: '01810', name: '小米集团', market: '港股', buyPrice: 16.00, currentPrice: 18.50, shares: 200, profit: 1200.00, profitPercent: 8.2 },
-])
-
-const totalHistoryProfit = computed(() => {
-  return historyData.value.reduce((sum, item) => sum + item.profit, 0)
-})
-
-const totalHistoryProfitPercent = computed(() => {
-  const totalCost = historyData.value.reduce((sum, item) => sum + item.buyPrice * item.shares, 0)
-  return totalCost > 0 ? (totalHistoryProfit.value / totalCost * 100) : 0
-})
 
 const formatPrice = (value) => {
   return value.toFixed(2)
@@ -985,7 +1069,7 @@ defineExpose({
                 </div>
                 <div class="td col-profit font-numeric" :class="getProfitClass(item.profit)">
                   <span class="desktop-only">{{ item.profit >= 0 ? '+' : '' }}{{ formatNumber(convertToCNY(item.profit, item.market)) }}</span>
-                  <span class="cell-top">{{ item.profit >= 0 ? '+' : '' }}{{ formatNumber(convertToCNY(item.profit, item.market)) }}</span>
+                  <span class="cell-top" :class="getProfitClass(item.profit)">{{ item.profit >= 0 ? '+' : '' }}{{ formatNumber(convertToCNY(item.profit, item.market)) }}</span>
                   <span class="cell-bottom" :class="getProfitClass(item.profit)">{{ item.profitPercent >= 0 ? '+' : '' }}{{ item.profitPercent.toFixed(1) }}%</span>
                 </div>
                 <div class="td col-percent font-numeric desktop-only" :class="getProfitClass(item.profit)">
@@ -1030,6 +1114,7 @@ defineExpose({
                     @mouseleave="endLongPress"
                   >
                     <div class="trans-col date">
+                      <span class="desktop-only">{{ trans.date }}</span>
                       <span class="cell-top" :class="trans.type === 'buy' ? 'buy' : 'sell'">{{ trans.type.toUpperCase() }}</span>
                       <span class="cell-bottom">{{ trans.date }}</span>
                     </div>
@@ -1037,12 +1122,14 @@ defineExpose({
                       {{ trans.type.toUpperCase() }}
                     </div>
                     <div class="trans-col price font-numeric">
+                      <span class="desktop-only">{{ formatNumber(trans.price) }}</span>
                       <span class="cell-top">{{ formatNumber(trans.price) }}</span>
                       <span class="cell-bottom">{{ formatNumber(trans.commission) }}</span>
                     </div>
                     <div class="trans-col qty font-numeric desktop-only">{{ trans.quantity }}</div>
                     <div class="trans-col comm font-numeric desktop-only">{{ formatNumber(trans.commission) }}</div>
                     <div class="trans-col amount font-numeric">
+                      <span class="desktop-only">{{ formatNumber(trans.price * trans.quantity) }}</span>
                       <span class="cell-top">{{ trans.quantity }}</span>
                       <span class="cell-bottom">{{ formatNumber(trans.price * trans.quantity) }}</span>
                     </div>
@@ -1058,14 +1145,14 @@ defineExpose({
         <div class="section-header">
           <span class="section-title">{{ getLabel('positionConfig') }}</span>
           <button class="type-toggle-btn" @click="togglePositionViewType">
-            {{ positionViewType === 'industry' ? getLabel('industry') : getLabel('style') }}
+            {{ positionViewType === 'industry' ? getLabel('industry') : positionViewType === 'style' ? getLabel('style') : 'MARKET' }}
             <i class="fas fa-exchange-alt"></i>
           </button>
         </div>
         
         <div class="data-table">
           <div class="table-header position-header">
-            <div class="th col-category">{{ positionViewType === 'industry' ? getLabel('industry') : getLabel('style') }}</div>
+            <div class="th col-category">{{ positionViewType === 'industry' ? getLabel('industry') : positionViewType === 'style' ? getLabel('style') : 'MARKET' }}</div>
             <div class="th col-percent sortable" :class="getPositionSortClass('current')" @click="togglePositionSort('current')">{{ getLabel('currentPercent') }}</div>
             <div class="th col-percent sortable" :class="getPositionSortClass('target')" @click="togglePositionSort('target')">{{ getLabel('targetPercent') }}</div>
             <div class="th col-diff sortable" :class="getPositionSortClass('deviation')" @click="togglePositionSort('deviation')">{{ getLabel('deviation') }}</div>
@@ -1100,49 +1187,6 @@ defineExpose({
                 </div>
               </div>
             </template>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="showHistory" class="history-section">
-        <div class="section-header">
-          <span class="section-title">{{ getLabel('cleared') }}</span>
-          <div class="section-summary">
-            <span class="summary-label">{{ getLabel('totalProfit') }}</span>
-            <span class="summary-value" :class="getProfitClass(totalHistoryProfit)">
-              {{ totalHistoryProfit >= 0 ? '+' : '' }}{{ formatAmount(totalHistoryProfit) }} CNY
-            </span>
-            <span class="summary-percent" :class="getProfitClass(totalHistoryProfit)">
-              ({{ totalHistoryProfitPercent >= 0 ? '+' : '' }}{{ totalHistoryProfitPercent.toFixed(2) }}%)
-            </span>
-          </div>
-        </div>
-        <div class="data-table">
-          <div class="table-header">
-            <div class="th col-code">{{ getLabel('code') }}</div>
-            <div class="th col-name">{{ getLabel('name') }}</div>
-            <div class="th col-market">{{ getLabel('market') }}</div>
-            <div class="th col-price">{{ getLabel('buyPrice') }}</div>
-            <div class="th col-price">{{ getLabel('currentPrice') }}</div>
-            <div class="th col-shares">{{ getLabel('shares') }}</div>
-            <div class="th col-profit">{{ getLabel('profit') }}</div>
-            <div class="th col-percent">{{ getLabel('changePercent') }}</div>
-          </div>
-          <div class="table-body">
-            <div class="table-row" v-for="item in historyData" :key="item.code">
-              <div class="td col-code">{{ item.code }}</div>
-              <div class="td col-name">{{ item.name }}</div>
-              <div class="td col-market">{{ getMarketLabel(item.market) }}</div>
-              <div class="td col-price font-numeric">{{ formatPrice(item.buyPrice) }}</div>
-              <div class="td col-price font-numeric">{{ formatPrice(item.currentPrice) }}</div>
-              <div class="td col-shares font-numeric">{{ item.shares }}</div>
-              <div class="td col-profit font-numeric" :class="getProfitClass(item.profit)">
-                {{ item.profit >= 0 ? '+' : '' }}{{ formatAmount(item.profit) }}
-              </div>
-              <div class="td col-percent font-numeric" :class="getProfitClass(item.profit)">
-                {{ item.profitPercent >= 0 ? '+' : '' }}{{ item.profitPercent.toFixed(1) }}%
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -1494,10 +1538,6 @@ defineExpose({
 .add-option i {
   color: var(--text-secondary);
   width: 14px;
-}
-
-.history-section {
-  margin-top: 16px;
 }
 
 .tab-btn {
@@ -2325,6 +2365,14 @@ defineExpose({
     font-weight: 600;
   }
   
+  .col-profit .cell-top.positive {
+    color: var(--accent-green);
+  }
+  
+  .col-profit .cell-top.negative {
+    color: var(--accent-red);
+  }
+  
   .col-profit .cell-bottom.positive {
     color: var(--accent-green);
   }
@@ -2381,6 +2429,26 @@ defineExpose({
   
   .trans-row.stock-row {
     grid-template-columns: 90px 1fr 90px;
+  }
+  
+  .tab-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+  
+  .tab-btn span {
+    display: none;
+  }
+  
+  .invest-tabs {
+    overflow: visible;
+  }
+  
+  .market-dropdown,
+  .add-dropdown {
+    z-index: 1000;
   }
 }
 </style>

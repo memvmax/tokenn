@@ -65,40 +65,23 @@ const articlesData = ref([
 ])
 
 const searchQuery = ref('')
-const selectedTag = ref('')
 const showAddModal = ref(false)
 const editingItem = ref(null)
 
-const allNotesTags = computed(() => {
-  const tags = new Set()
-  notesData.value.forEach(item => item.tags.forEach(tag => tags.add(tag)))
-  return Array.from(tags)
-})
-
-const allArticlesTags = computed(() => {
-  const tags = new Set()
-  articlesData.value.forEach(item => item.tags.forEach(tag => tags.add(tag)))
-  return Array.from(tags)
-})
-
 const filteredNotes = computed(() => {
   return notesData.value.filter(item => {
-    const matchSearch = !searchQuery.value || 
+    return !searchQuery.value || 
       item.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       item.content.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       (item.stockCode && item.stockCode.toLowerCase().includes(searchQuery.value.toLowerCase()))
-    const matchTag = !selectedTag.value || item.tags.includes(selectedTag.value)
-    return matchSearch && matchTag
   })
 })
 
 const filteredArticles = computed(() => {
   return articlesData.value.filter(item => {
-    const matchSearch = !searchQuery.value || 
+    return !searchQuery.value || 
       item.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       item.source.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchTag = !selectedTag.value || item.tags.includes(selectedTag.value)
-    return matchSearch && matchTag
   })
 })
 
@@ -184,14 +167,6 @@ const toggleTag = (tag) => {
   }
 }
 
-const toggleTagFilter = (tag) => {
-  if (selectedTag.value === tag) {
-    selectedTag.value = ''
-  } else {
-    selectedTag.value = tag
-  }
-}
-
 const openArticle = (url) => {
   window.open(url, '_blank')
 }
@@ -214,7 +189,6 @@ const labels = {
   edit: { 'zh-CN': '编辑', 'en-US': 'EDIT' },
   delete: { 'zh-CN': '删除', 'en-US': 'DELETE' },
   noData: { 'zh-CN': '暂无数据', 'en-US': 'No data' },
-  allTags: { 'zh-CN': '全部', 'en-US': 'ALL' },
   open: { 'zh-CN': '打开', 'en-US': 'OPEN' },
   savedAt: { 'zh-CN': '保存日期', 'en-US': 'DATE' },
 }
@@ -231,7 +205,7 @@ const getLabel = (key) => {
       <button 
         class="tab-btn" 
         :class="{ 'active': activeTab === 'notes' }"
-        @click="activeTab = 'notes'; selectedTag = ''"
+        @click="activeTab = 'notes'"
       >
         <i class="fas fa-sticky-note"></i>
         <span>{{ getLabel('notes') }}</span>
@@ -239,7 +213,7 @@ const getLabel = (key) => {
       <button 
         class="tab-btn" 
         :class="{ 'active': activeTab === 'articles' }"
-        @click="activeTab = 'articles'; selectedTag = ''"
+        @click="activeTab = 'articles'"
       >
         <i class="fas fa-bookmark"></i>
         <span>{{ getLabel('articles') }}</span>
@@ -253,25 +227,6 @@ const getLabel = (key) => {
           :placeholder="getLabel('searchPlaceholder')"
           v-model="searchQuery"
         >
-      </div>
-
-      <div class="tag-filters">
-        <button 
-          class="tag-filter-btn" 
-          :class="{ 'active': !selectedTag }"
-          @click="selectedTag = ''"
-        >
-          {{ getLabel('allTags') }}
-        </button>
-        <button 
-          v-for="tag in (activeTab === 'notes' ? allNotesTags : allArticlesTags)" 
-          :key="tag"
-          class="tag-filter-btn" 
-          :class="{ 'active': selectedTag === tag }"
-          @click="toggleTagFilter(tag)"
-        >
-          {{ tag }}
-        </button>
       </div>
 
       <button class="add-btn" @click="addItem">
@@ -488,39 +443,12 @@ const getLabel = (key) => {
   color: var(--text-muted);
 }
 
-.tag-filters {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.tag-filter-btn {
-  padding: 6px 12px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  color: var(--text-secondary);
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.tag-filter-btn:hover {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.tag-filter-btn.active {
-  background: rgba(8, 145, 178, 0.15);
-  border-color: #0891b2;
-  color: #0891b2;
-}
-
 .add-btn {
+  height: 36px;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  padding: 0 14px;
   background: #0891b2;
   border: none;
   border-radius: 4px;
@@ -935,5 +863,29 @@ const getLabel = (key) => {
 
 .btn-confirm:hover {
   background: #0e7490;
+}
+
+@media (max-width: 768px) {
+  .tab-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+  
+  .tab-btn span {
+    display: none;
+  }
+  
+  .add-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+  
+  .add-btn span {
+    display: none;
+  }
 }
 </style>

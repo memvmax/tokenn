@@ -45,12 +45,12 @@ const showInvestMode = computed(() => {
 })
 
 const showWalletMode = computed(() => {
-  return props.currentView === 'wallet'
+  return props.currentView === 'wallet' || props.currentView === 'notes'
 })
 
 const displayValue = computed(() => {
   if (showInvestMode.value) return props.stockValue
-  if (showWalletMode.value) return props.walletValue || totalAmount.value
+  if (showWalletMode.value) return props.walletValue ?? 0
   return totalAmount.value
 })
 </script>

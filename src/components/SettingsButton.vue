@@ -37,6 +37,23 @@
               </button>
             </div>
           </div>
+          
+          <div class="menu-section">
+            <div class="section-label">
+              <i class="fas fa-exchange-alt"></i>
+              {{ t('exchangeRate') }}
+            </div>
+            <div class="rate-info">
+              <div class="rate-row">
+                <span class="rate-label">CNY : USD</span>
+                <span class="rate-value">{{ usdRate.toFixed(4) }}</span>
+              </div>
+              <div class="rate-row">
+                <span class="rate-label">CNY : HKD</span>
+                <span class="rate-value">{{ hkdRate.toFixed(4) }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </Transition>
       
@@ -54,6 +71,24 @@ const { currentLocale, setLocale, t } = useLocale()
 const showMenu = ref(false)
 const containerRef = ref(null)
 const buttonRect = ref(null)
+
+const usdRate = ref(7.25)
+const hkdRate = ref(0.91)
+
+const fetchExchangeRates = async () => {
+  try {
+    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD')
+    const data = await response.json()
+    if (data.rates) {
+      const cny = data.rates.CNY || 7.25
+      const hkd = data.rates.HKD || 7.78
+      usdRate.value = cny
+      hkdRate.value = cny / hkd
+    }
+  } catch (e) {
+    console.log('Failed to fetch exchange rates')
+  }
+}
 
 const menuStyle = computed(() => {
   if (!buttonRect.value) return {}
@@ -91,6 +126,7 @@ const handleResize = () => {
 
 onMounted(() => {
   window.addEventListener('resize', handleResize)
+  fetchExchangeRates()
 })
 
 onUnmounted(() => {
@@ -194,6 +230,31 @@ onUnmounted(() => {
   background: var(--accent-blue);
   border-color: var(--accent-blue);
   color: white;
+}
+
+.rate-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rate-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.rate-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.rate-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
 }
 
 .menu-overlay {
