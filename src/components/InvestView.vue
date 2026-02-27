@@ -966,21 +966,25 @@ defineExpose({
                 @mouseleave="endLongPress"
               >
                 <div class="td col-code">
+                  <span class="desktop-only">{{ item.code }}</span>
                   <span class="cell-top">{{ item.code }}</span>
                   <span class="cell-bottom">{{ item.name }}</span>
                 </div>
                 <div class="td col-name desktop-only">{{ item.name }}</div>
                 <div class="td col-price font-numeric">
+                  <span class="desktop-only">{{ formatNumber(item.buyPrice) }}</span>
                   <span class="cell-top">{{ formatNumber(item.currentPrice) }}</span>
                   <span class="cell-bottom">{{ formatNumber(item.buyPrice) }}</span>
                 </div>
                 <div class="td col-price font-numeric desktop-only">{{ formatNumber(item.currentPrice) }}</div>
                 <div class="td col-shares font-numeric desktop-only">{{ item.shares }}</div>
                 <div class="td col-value font-numeric">
+                  <span class="desktop-only">{{ formatNumber(convertToCNY(item.currentPrice * item.shares, item.market)) }}</span>
                   <span class="cell-top">{{ item.shares }}</span>
                   <span class="cell-bottom">{{ formatNumber(convertToCNY(item.currentPrice * item.shares, item.market)) }}</span>
                 </div>
                 <div class="td col-profit font-numeric" :class="getProfitClass(item.profit)">
+                  <span class="desktop-only">{{ item.profit >= 0 ? '+' : '' }}{{ formatNumber(convertToCNY(item.profit, item.market)) }}</span>
                   <span class="cell-top">{{ item.profit >= 0 ? '+' : '' }}{{ formatNumber(convertToCNY(item.profit, item.market)) }}</span>
                   <span class="cell-bottom" :class="getProfitClass(item.profit)">{{ item.profitPercent >= 0 ? '+' : '' }}{{ item.profitPercent.toFixed(1) }}%</span>
                 </div>
@@ -2173,7 +2177,7 @@ defineExpose({
 }
 
 .desktop-only {
-  display: flex;
+  display: inline;
 }
 
 .mobile-header {
@@ -2189,7 +2193,7 @@ defineExpose({
 
 .cell-top,
 .cell-bottom {
-  display: block;
+  display: none;
 }
 
 @media (min-width: 769px) {
@@ -2198,11 +2202,20 @@ defineExpose({
   .mobile-header {
     display: none;
   }
+  
+  .desktop-only {
+    display: inline;
+  }
 }
 
 @media (max-width: 768px) {
   .desktop-only {
     display: none !important;
+  }
+  
+  .cell-top,
+  .cell-bottom {
+    display: block;
   }
   
   .mobile-header {
