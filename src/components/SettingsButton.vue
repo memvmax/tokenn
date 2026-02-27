@@ -38,19 +38,19 @@
             </div>
           </div>
           
-          <div class="menu-section">
+          <div class="menu-section exchange-rate-section">
             <div class="section-label">
               <i class="fas fa-exchange-alt"></i>
-              {{ t('exchangeRate') }}
+              EXCHANGE RATE
             </div>
-            <div class="rate-info">
-              <div class="rate-row">
-                <span class="rate-label">CNY : USD</span>
-                <span class="rate-value">{{ usdRate.toFixed(4) }}</span>
+            <div class="exchange-rate-content">
+              <div class="exchange-row">
+                <span class="exchange-label">CNY : USD</span>
+                <span class="exchange-value">{{ usdRate.toFixed(4) }}</span>
               </div>
-              <div class="rate-row">
-                <span class="rate-label">CNY : HKD</span>
-                <span class="rate-value">{{ hkdRate.toFixed(4) }}</span>
+              <div class="exchange-row">
+                <span class="exchange-label">CNY : HKD</span>
+                <span class="exchange-value">{{ hkdRate.toFixed(4) }}</span>
               </div>
             </div>
           </div>
@@ -290,25 +290,32 @@ onUnmounted(() => {
   color: white;
 }
 
-.rate-info {
+.exchange-rate-section {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.exchange-rate-content {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  background: var(--bg-tertiary);
+  padding: 8px;
+  border-radius: 4px;
 }
 
-.rate-row {
+.exchange-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 4px 0;
 }
 
-.rate-label {
+.exchange-label {
   font-size: 12px;
   color: var(--text-secondary);
 }
 
-.rate-value {
+.exchange-value {
   font-size: 12px;
   font-weight: 500;
   color: var(--text-primary);

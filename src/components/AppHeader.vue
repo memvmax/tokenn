@@ -106,6 +106,23 @@
                 </div>
               </div>
 
+              <div class="menu-section exchange-rate-section">
+                <div class="section-label">
+                  <i class="fas fa-exchange-alt"></i>
+                  EXCHANGE RATE
+                </div>
+                <div class="exchange-rate-content">
+                  <div class="exchange-row">
+                    <span class="exchange-label">CNY : USD</span>
+                    <span class="exchange-value">{{ usdRate.toFixed(4) }}</span>
+                  </div>
+                  <div class="exchange-row">
+                    <span class="exchange-label">CNY : HKD</span>
+                    <span class="exchange-value">{{ hkdRate.toFixed(4) }}</span>
+                  </div>
+                </div>
+              </div>
+
               <div class="menu-section">
                 <div class="section-label">
                   <i class="fas fa-palette"></i>
@@ -318,6 +335,9 @@ const showPresetMenu = ref(false)
 const showMenu = ref(false)
 const showEditModal = ref(false)
 const isNewPreset = ref(false)
+
+const usdRate = ref(7.25)
+const hkdRate = ref(0.91)
 
 const presetRef = ref(null)
 const containerRef = ref(null)
@@ -584,9 +604,25 @@ const handleResize = () => {
   }
 }
 
+const fetchExchangeRates = async () => {
+  try {
+    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD')
+    const data = await response.json()
+    if (data.rates) {
+      const cny = data.rates.CNY || 7.25
+      const hkd = data.rates.HKD || 7.78
+      usdRate.value = cny
+      hkdRate.value = cny / hkd
+    }
+  } catch (e) {
+    console.log('Failed to fetch exchange rates')
+  }
+}
+
 onMounted(() => {
   loadPresets()
   window.addEventListener('resize', handleResize)
+  fetchExchangeRates()
 })
 
 onUnmounted(() => {
@@ -907,6 +943,37 @@ onUnmounted(() => {
   background: var(--accent-blue);
   border-color: var(--accent-blue);
   color: white;
+}
+
+.exchange-rate-section {
+}
+
+.exchange-rate-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg-tertiary);
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.exchange-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.exchange-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.exchange-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
 }
 
 .menu-item {
