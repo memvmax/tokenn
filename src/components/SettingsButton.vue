@@ -54,6 +54,38 @@
               </div>
             </div>
           </div>
+          
+          <div class="menu-section">
+            <div class="section-label">
+              <i class="fas fa-palette"></i>
+              {{ t('themes') }}
+            </div>
+            <div class="theme-dropdown">
+              <button class="menu-item" @click="toggleThemeMenu">
+                <span>{{ currentThemeName }}</span>
+                <i class="fas fa-chevron-right"></i>
+              </button>
+              <div v-if="showThemeMenu" class="theme-submenu">
+                <button 
+                  v-for="theme in themes" 
+                  :key="theme.id"
+                  class="theme-option"
+                  :class="{ 'active': currentTheme === theme.id }"
+                  @click="selectTheme(theme.id)"
+                >
+                  <span class="theme-preview" :style="{ background: theme.preview }"></span>
+                  <span>{{ theme.name }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="menu-divider"></div>
+          
+          <button class="menu-item login" @click="handleLogin">
+            <i class="fas fa-sign-in-alt"></i>
+            <span>{{ t('login') }}</span>
+          </button>
         </div>
       </Transition>
       
@@ -71,9 +103,35 @@ const { currentLocale, setLocale, t } = useLocale()
 const showMenu = ref(false)
 const containerRef = ref(null)
 const buttonRect = ref(null)
+const showThemeMenu = ref(false)
 
 const usdRate = ref(7.25)
 const hkdRate = ref(0.91)
+
+const currentTheme = ref('default')
+const themes = [
+  { id: 'default', name: 'Default', preview: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+  { id: 'dark', name: 'Dark', preview: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' },
+  { id: 'light', name: 'Light', preview: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)' }
+]
+
+const currentThemeName = computed(() => {
+  const theme = themes.find(t => t.id === currentTheme.value)
+  return theme ? theme.name : 'Default'
+})
+
+const toggleThemeMenu = () => {
+  showThemeMenu.value = !showThemeMenu.value
+}
+
+const selectTheme = (themeId) => {
+  currentTheme.value = themeId
+  showThemeMenu.value = false
+}
+
+const handleLogin = () => {
+  closeMenu()
+}
 
 const fetchExchangeRates = async () => {
   try {
@@ -255,6 +313,90 @@ onUnmounted(() => {
   font-weight: 500;
   color: var(--text-primary);
   font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.theme-dropdown {
+  position: relative;
+}
+
+.theme-submenu {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: 4px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 4px;
+  min-width: 120px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.theme-option:hover {
+  background: var(--bg-tertiary);
+}
+
+.theme-option.active {
+  background: var(--bg-tertiary);
+  color: var(--accent-blue);
+}
+
+.theme-preview {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.menu-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 8px 0;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+  text-align: left;
+}
+
+.menu-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.menu-item.login {
+  color: var(--accent-blue);
+}
+
+.menu-item i {
+  font-size: 12px;
+  width: 16px;
+  text-align: center;
 }
 
 .menu-overlay {
