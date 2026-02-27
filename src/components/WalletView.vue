@@ -227,10 +227,20 @@
             <div class="th col-percent">TARGET</div>
             <div class="th col-diff">DEVIATION</div>
           </div>
+          <div class="table-header mobile-header-row position-mobile-header">
+            <div class="th col-type">
+              <span class="header-top">TYPE</span>
+              <span class="header-bottom">CURRENT</span>
+            </div>
+            <div class="th col-percent">
+              <span class="header-top">TARGET</span>
+              <span class="header-bottom">DEVIATION</span>
+            </div>
+          </div>
           <div class="table-body">
             <template v-for="item in assetAllocation" :key="item.type">
               <div 
-                class="table-row position-row"
+                class="table-row position-row desktop-row"
                 :class="{ selected: selectedPositionType === item.type }"
                 @click="selectedPositionType = selectedPositionType === item.type ? null : item.type"
               >
@@ -239,6 +249,20 @@
                 <div class="td col-percent font-numeric">{{ item.targetPercent.toFixed(1) }}%</div>
                 <div class="td col-diff font-numeric" :class="getDiffClass(item.deviation)">
                   {{ item.deviation > 0 ? '+' : '' }}{{ item.deviation.toFixed(1) }}%
+                </div>
+              </div>
+              <div 
+                class="table-row position-row mobile-row"
+                :class="{ selected: selectedPositionType === item.type }"
+                @click="selectedPositionType = selectedPositionType === item.type ? null : item.type"
+              >
+                <div class="td col-type">
+                  <span class="cell-top">{{ item.name }}</span>
+                  <span class="cell-bottom font-numeric">{{ item.currentPercent.toFixed(1) }}%</span>
+                </div>
+                <div class="td col-percent">
+                  <span class="cell-top font-numeric">{{ item.targetPercent.toFixed(1) }}%</span>
+                  <span class="cell-bottom font-numeric" :class="getDiffClass(item.deviation)">{{ item.deviation > 0 ? '+' : '' }}{{ item.deviation.toFixed(1) }}%</span>
                 </div>
               </div>
               
@@ -1325,7 +1349,8 @@ defineExpose({
 }
 
 .position-header {
-  grid-template-columns: 100px 1fr 1fr 1fr;
+  display: grid;
+  grid-template-columns: 1fr 90px 90px 90px;
 }
 
 .col-percent, .col-diff {
@@ -1345,7 +1370,8 @@ defineExpose({
 }
 
 .position-row {
-  grid-template-columns: 100px 1fr 1fr 1fr;
+  display: grid;
+  grid-template-columns: 1fr 90px 90px 90px;
 }
 
 .table-body {
@@ -1731,6 +1757,10 @@ defineExpose({
     grid-template-columns: 1fr 90px 90px 90px;
   }
   
+  .position-mobile-header {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  
   .mobile-row {
     display: grid !important;
     grid-template-columns: 1fr 90px 90px 90px;
@@ -1751,6 +1781,10 @@ defineExpose({
   .table-header,
   .table-row {
     grid-template-columns: 1fr 90px 90px 90px;
+  }
+  
+  .position-row {
+    grid-template-columns: 1fr 1fr !important;
   }
   
   .th {
