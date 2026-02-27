@@ -2177,7 +2177,7 @@ defineExpose({
 }
 
 .desktop-only {
-  display: inline;
+  display: flex;
 }
 
 .mobile-header {
@@ -2204,7 +2204,7 @@ defineExpose({
   }
   
   .desktop-only {
-    display: inline;
+    display: flex;
   }
 }
 
