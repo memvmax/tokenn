@@ -1417,7 +1417,7 @@ defineExpose({
 
 .detail-row {
   display: grid;
-  grid-template-columns: 120px 1fr 90px 90px 90px 90px;
+  grid-template-columns: 1fr 90px 90px;
   border-bottom: 1px solid var(--border-light);
 }
 
@@ -1444,9 +1444,13 @@ defineExpose({
   text-transform: uppercase;
 }
 
-.detail-col.date,
-.detail-col.type {
+.detail-col.source {
   justify-content: flex-start;
+}
+
+.detail-col.value,
+.detail-col.percent {
+  justify-content: flex-end;
 }
 
 .detail-col.type.buy {
@@ -1880,9 +1884,7 @@ defineExpose({
     grid-template-columns: 1fr 80px 80px;
   }
   
-  .detail-col.date,
-  .detail-col.price,
-  .detail-col.value {
+  .detail-col.source {
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
@@ -1890,22 +1892,14 @@ defineExpose({
     font-size: 11px;
   }
   
-  .detail-col.date {
-    align-items: flex-start;
-  }
-  
-  .detail-col.price,
-  .detail-col.value {
+  .detail-col.value,
+  .detail-col.percent {
+    flex-direction: column;
     align-items: flex-end;
     text-align: right;
-  }
-  
-  .detail-col .cell-top.buy {
-    color: var(--accent-green);
-  }
-  
-  .detail-col .cell-top.sell {
-    color: var(--accent-red);
+    gap: 2px;
+    padding: 8px 6px;
+    font-size: 11px;
   }
 }
 </style>
