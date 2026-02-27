@@ -1369,11 +1369,6 @@ defineExpose({
   color: #ef4444;
 }
 
-.position-row {
-  display: grid;
-  grid-template-columns: 1fr 90px 90px 90px;
-}
-
 .table-body {
 }
 
@@ -1383,6 +1378,10 @@ defineExpose({
   border-bottom: 1px solid var(--border-light);
   transition: background 0.15s ease;
   cursor: pointer;
+}
+
+.table-row.position-row {
+  grid-template-columns: 1fr 90px 90px 90px;
 }
 
 .table-row:last-child {
