@@ -1100,6 +1100,18 @@ const refreshData = () => {
 }
 
 const fetchCryptoAndGoldPrices = async () => {
+  let cnyRate = 7.25
+  
+  try {
+    const rateResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD')
+    const rateData = await rateResponse.json()
+    if (rateData.rates && rateData.rates.CNY) {
+      cnyRate = rateData.rates.CNY
+    }
+  } catch (e) {
+    console.log('Failed to fetch exchange rate:', e)
+  }
+  
   try {
     const btcResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
     const btcData = await btcResponse.json()
@@ -1120,24 +1132,24 @@ const fetchCryptoAndGoldPrices = async () => {
   }
   
   try {
-    const goldResponse = await fetch('https://v2.xxapi.cn/api/goldprice')
+    const goldResponse = await fetch('https://www.goldapi.io/api/XAU/USD', {
+      headers: {
+        'x-access-token': 'goldapi-15ewwosmm69ynwv-io'
+      }
+    })
     const goldData = await goldResponse.json()
     
     console.log('Gold API response:', goldData)
     
-    if (goldData && goldData.data) {
-      const bocGold = goldData.data.find(item => item.name === '中国银行金条')
-      console.log('BOC Gold data:', bocGold)
+    if (goldData && goldData.price) {
+      const usdPrice = goldData.price
+      const goldPrice = usdPrice * cnyRate / 31.1035
+      console.log('Gold price (CNY/gram):', goldPrice)
       
-      if (bocGold && bocGold.price) {
-        const goldPrice = parseFloat(bocGold.price)
-        console.log('Gold price:', goldPrice)
-        
-        assets.value.filter(a => a.type === 'gold').forEach(goldAsset => {
-          goldAsset.currentPrice = goldPrice
-          goldAsset.value = goldPrice * goldAsset.unit
-        })
-      }
+      assets.value.filter(a => a.type === 'gold').forEach(goldAsset => {
+        goldAsset.currentPrice = goldPrice
+        goldAsset.value = goldPrice * goldAsset.unit
+      })
     }
   } catch (e) {
     console.log('Failed to fetch gold price:', e)
