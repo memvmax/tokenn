@@ -1447,7 +1447,7 @@ defineExpose({
 
 .detail-row {
   display: grid;
-  grid-template-columns: 1fr 90px 90px;
+  grid-template-columns: 120px 1fr 90px 90px 90px 90px;
   border-bottom: 1px solid var(--border-light);
 }
 
