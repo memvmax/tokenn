@@ -1396,7 +1396,7 @@ onUnmounted(() => {
   border: 1px solid var(--border-light);
   border-radius: 4px;
   margin-top: 4px;
-  z-index: 100;
+  z-index: 10001;
   overflow: hidden;
 }
 
