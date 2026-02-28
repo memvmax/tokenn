@@ -56,6 +56,7 @@ const showAddDropdown = ref(false)
 const showHistory = ref(false)
 const showAddModal = ref(false)
 const showImportModal = ref(false)
+const showImportHelp = ref(false)
 const importFile = ref(null)
 const importData = ref([])
 const importPreview = ref([])
@@ -345,49 +346,112 @@ const handleFileSelect = (event) => {
 const parseCSVFile = (file) => {
   const reader = new FileReader()
   reader.onload = (e) => {
-    const text = e.target.result
-    const lines = text.split('\n').filter(line => line.trim())
-    
-    if (lines.length < 2) {
-      alert('CSV 文件格式错误或没有数据')
-      return
-    }
-    
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
-    const data = []
-    
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''))
-      if (values.length >= 4) {
-        const row = {}
-        headers.forEach((header, index) => {
-          row[header] = values[index] || ''
-        })
-        data.push(row)
+    try {
+      let text = e.target.result
+      if (text.charCodeAt(0) === 0xFEFF) {
+        text = text.slice(1)
       }
+      
+      const lines = text.split('\n').filter(line => line.trim())
+      
+      if (lines.length < 2) {
+        alert('CSV 文件格式错误或没有数据')
+        return
+      }
+      
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
+      const data = []
+      
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''))
+        if (values.length >= 4) {
+          const row = {}
+          headers.forEach((header, index) => {
+            row[header] = values[index] || ''
+          })
+          data.push(row)
+        }
+      }
+      
+      if (data.length === 0) {
+        alert('CSV 文件没有有效数据')
+        return
+      }
+      
+      importData.value = data
+      importStep.value = 2
+    } catch (err) {
+      console.error('CSV 解析错误:', err)
+      alert('CSV 文件解析失败: ' + err.message)
     }
-    
-    importData.value = data
-    importPreview.value = data.slice(0, 5)
-    importStep.value = 2
   }
-  reader.readAsText(file)
+  reader.onerror = () => {
+    alert('文件读取失败')
+  }
+  reader.readAsText(file, 'UTF-8')
+}
+
+const detectMarket = (code) => {
+  if (!code) return 'A股'
+  const cleanCode = code.replace(/["'\t]/g, '').trim()
+  
+  if (cleanCode.startsWith('SH') || cleanCode.startsWith('sh')) {
+    return 'A股'
+  }
+  if (cleanCode.startsWith('SZ') || cleanCode.startsWith('sz')) {
+    return 'A股'
+  }
+  if (/^\d{5}$/.test(cleanCode) || cleanCode.length === 5 && /^\d/.test(cleanCode)) {
+    return '港股'
+  }
+  if (/^[A-Z]{1,5}$/.test(cleanCode) && !cleanCode.startsWith('SH') && !cleanCode.startsWith('SZ')) {
+    return '美股'
+  }
+  if (cleanCode.length === 6 && /^\d+$/.test(cleanCode)) {
+    if (cleanCode.startsWith('6')) {
+      return 'A股'
+    } else if (cleanCode.startsWith('0') || cleanCode.startsWith('3')) {
+      return 'A股'
+    }
+  }
+  return 'A股'
+}
+
+const cleanCode = (code) => {
+  if (!code) return ''
+  return code.replace(/["'\t]/g, '').replace(/^(SH|SZ|sh|sz)/, '').trim()
+}
+
+const parseNumber = (value) => {
+  if (!value) return 0
+  const str = String(value).replace(/,/g, '')
+  return parseFloat(str) || 0
+}
+
+const getSortedTransactions = (transactions) => {
+  if (!transactions) return []
+  return [...transactions].sort((a, b) => {
+    const dateA = new Date(a.date.replace(/\//g, '-'))
+    const dateB = new Date(b.date.replace(/\//g, '-'))
+    return dateB - dateA
+  })
 }
 
 const confirmImport = () => {
   importData.value.forEach(row => {
-    const code = row['代码'] || row['code'] || row['Code'] || row['股票代码'] || ''
+    const rawCode = row['代码'] || row['code'] || row['Code'] || row['股票代码'] || ''
+    const code = cleanCode(rawCode)
     const name = row['名称'] || row['name'] || row['Name'] || row['股票名称'] || ''
     const type = (row['类型'] || row['type'] || row['Type'] || 'buy').toLowerCase()
-    const price = parseFloat(row['价格'] || row['price'] || row['Price'] || row['成交价'] || 0)
-    const quantity = parseFloat(row['数量'] || row['quantity'] || row['Quantity'] || row['股数'] || 0)
-    const commission = parseFloat(row['佣金'] || row['commission'] || row['Commission'] || 0)
-    const tax = parseFloat(row['税费'] || row['tax'] || row['Tax'] || 0)
+    const price = parseNumber(row['价格'] || row['price'] || row['Price'] || row['成交价'])
+    const quantity = parseNumber(row['数量'] || row['quantity'] || row['Quantity'] || row['股数'])
+    const commission = parseNumber(row['佣金'] || row['commission'] || row['Commission'])
+    const tax = parseNumber(row['税费'] || row['tax'] || row['Tax'])
     const date = row['日期'] || row['date'] || row['Date'] || row['交易日期'] || new Date().toISOString().split('T')[0]
-    const market = row['市场'] || row['market'] || row['Market'] || 'A股'
+    const market = detectMarket(rawCode)
     
     if (code && price > 0 && quantity > 0) {
-      const existingStock = stockData.value.find(s => s.code === code)
+      const existingStock = profitData.value.find(s => s.code === code)
       
       if (existingStock) {
         existingStock.transactions.push({
@@ -399,12 +463,18 @@ const confirmImport = () => {
           tax
         })
       } else {
-        stockData.value.push({
+        profitData.value.push({
           code,
           name,
           market,
+          buyPrice: price,
+          currentPrice: price,
+          shares: type === 'buy' ? quantity : 0,
+          profit: 0,
+          profitPercent: 0,
           category1: '其他',
           category2: '混合',
+          targetPercent: 0,
           transactions: [{
             date,
             type,
@@ -418,12 +488,14 @@ const confirmImport = () => {
     }
   })
   
-  saveToStorage()
+  profitData.value.forEach(stock => {
+    recalculateStock(stock)
+  })
+  
   showImportModal.value = false
   importStep.value = 1
   importFile.value = null
   importData.value = []
-  importPreview.value = []
 }
 
 const closeImportModal = () => {
@@ -1171,10 +1243,10 @@ defineExpose({
                   <span class="cell-bottom">{{ formatNumber(item.buyPrice) }}</span>
                 </div>
                 <div class="td col-price font-numeric desktop-only">{{ formatNumber(item.currentPrice) }}</div>
-                <div class="td col-shares font-numeric desktop-only">{{ item.shares }}</div>
+                <div class="td col-shares font-numeric desktop-only">{{ formatNumber(item.shares) }}</div>
                 <div class="td col-value font-numeric">
                   <span class="desktop-only">{{ formatNumber(convertToCNY(item.currentPrice * item.shares, item.market)) }}</span>
-                  <span class="cell-top">{{ item.shares }}</span>
+                  <span class="cell-top">{{ formatNumber(item.shares) }}</span>
                   <span class="cell-bottom">{{ formatNumber(convertToCNY(item.currentPrice * item.shares, item.market)) }}</span>
                 </div>
                 <div class="td col-profit font-numeric" :class="getProfitClass(item.profit)">
@@ -1215,7 +1287,7 @@ defineExpose({
                       </span>
                     </div>
                   </div>
-                  <div class="trans-row profit-trans" v-for="(trans, idx) in item.transactions" :key="idx"
+                  <div class="trans-row profit-trans" v-for="(trans, idx) in getSortedTransactions(item.transactions)" :key="idx"
                     @touchstart="startLongPress($event, 'transaction', { stockCode: item.code, transIndex: idx })"
                     @touchend="endLongPress"
                     @touchmove="endLongPress"
@@ -1240,7 +1312,7 @@ defineExpose({
                     <div class="trans-col comm font-numeric desktop-only">{{ formatNumber(trans.commission) }}</div>
                     <div class="trans-col amount font-numeric">
                       <span class="desktop-only">{{ formatNumber(trans.price * trans.quantity) }}</span>
-                      <span class="cell-top">{{ trans.quantity }}</span>
+                      <span class="cell-top">{{ formatNumber(trans.quantity) }}</span>
                       <span class="cell-bottom">{{ formatNumber(trans.price * trans.quantity) }}</span>
                     </div>
                   </div>
@@ -1476,8 +1548,51 @@ defineExpose({
                 </label>
               </div>
               <div class="import-instructions">
-                <div class="instruction-title">CSV 格式要求</div>
-                <div class="instruction-text">
+                <div class="instruction-title">
+                  CSV 格式要求
+                  <button class="help-btn" @click="showImportHelp = !showImportHelp">
+                    <i class="fas fa-info-circle"></i>
+                  </button>
+                </div>
+                <div v-if="showImportHelp" class="help-content">
+                  <div class="help-row">
+                    <span class="help-label">代码</span>
+                    <span class="help-names">代码、code、Code、股票代码</span>
+                  </div>
+                  <div class="help-row">
+                    <span class="help-label">类型</span>
+                    <span class="help-names">类型、type、Type（buy/sell）</span>
+                  </div>
+                  <div class="help-row">
+                    <span class="help-label">价格</span>
+                    <span class="help-names">价格、price、Price、成交价</span>
+                  </div>
+                  <div class="help-row">
+                    <span class="help-label">数量</span>
+                    <span class="help-names">数量、quantity、Quantity、股数</span>
+                  </div>
+                  <div class="help-row optional">
+                    <span class="help-label">名称</span>
+                    <span class="help-names">名称、name、Name、股票名称</span>
+                  </div>
+                  <div class="help-row optional">
+                    <span class="help-label">佣金</span>
+                    <span class="help-names">佣金、commission、Commission</span>
+                  </div>
+                  <div class="help-row optional">
+                    <span class="help-label">税费</span>
+                    <span class="help-names">税费、tax、Tax</span>
+                  </div>
+                  <div class="help-row optional">
+                    <span class="help-label">日期</span>
+                    <span class="help-names">日期、date、Date、交易日期（格式：2024-01-15）</span>
+                  </div>
+                  <div class="help-row optional">
+                    <span class="help-label">市场</span>
+                    <span class="help-names">市场、market、Market</span>
+                  </div>
+                </div>
+                <div v-else class="instruction-text">
                   必填：代码、类型(buy/sell)、价格、数量<br>
                   可选：名称、佣金、税费、日期、市场
                 </div>
@@ -1485,7 +1600,7 @@ defineExpose({
             </div>
             <div v-if="importStep === 2" class="import-step">
               <div class="import-preview-header">
-                <span>预览数据（前5条）</span>
+                <span>预览数据</span>
                 <span class="import-count">共 {{ importData.length }} 条记录</span>
               </div>
               <div class="import-preview-table">
@@ -1494,6 +1609,7 @@ defineExpose({
                     <tr>
                       <th>代码</th>
                       <th>名称</th>
+                      <th>市场</th>
                       <th>类型</th>
                       <th>价格</th>
                       <th>数量</th>
@@ -1501,12 +1617,13 @@ defineExpose({
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="(row, index) in importPreview" :key="index">
-                      <td>{{ row['代码'] || row['code'] || row['Code'] || '-' }}</td>
+                    <tr v-for="(row, index) in importData" :key="index">
+                      <td>{{ cleanCode(row['代码'] || row['code'] || row['Code'] || '-') }}</td>
                       <td>{{ row['名称'] || row['name'] || row['Name'] || '-' }}</td>
+                      <td>{{ detectMarket(row['代码'] || row['code'] || row['Code']) }}</td>
                       <td>{{ row['类型'] || row['type'] || row['Type'] || '-' }}</td>
                       <td>{{ row['价格'] || row['price'] || row['Price'] || '-' }}</td>
-                      <td>{{ row['数量'] || row['quantity'] || row['Quantity'] || '-' }}</td>
+                      <td>{{ formatNumber(parseNumber(row['数量'] || row['quantity'] || row['Quantity'] || 0)) }}</td>
                       <td>{{ row['日期'] || row['date'] || row['Date'] || '-' }}</td>
                     </tr>
                   </tbody>
@@ -2695,6 +2812,58 @@ defineExpose({
   color: var(--text-muted);
   text-transform: uppercase;
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-btn {
+  background: none;
+  border: none;
+  color: var(--accent-blue);
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+
+.help-btn:hover {
+  opacity: 1;
+}
+
+.help-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.help-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  background: var(--bg-primary);
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.help-row.optional {
+  opacity: 0.7;
+}
+
+.help-label {
+  font-weight: 600;
+  color: var(--accent-blue);
+  min-width: 40px;
+}
+
+.help-row.optional .help-label {
+  color: var(--text-muted);
+}
+
+.help-names {
+  color: var(--text-secondary);
 }
 
 .instruction-text {
@@ -2717,7 +2886,8 @@ defineExpose({
 }
 
 .import-preview-table {
-  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 240px;
   border: 1px solid var(--border-light);
   border-radius: 4px;
 }
@@ -2725,6 +2895,12 @@ defineExpose({
 .import-preview-table table {
   width: 100%;
   border-collapse: collapse;
+}
+
+.import-preview-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .import-preview-table th,
