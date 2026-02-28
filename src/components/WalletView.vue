@@ -173,7 +173,7 @@
                   </div>
                   <div class="detail-col change desktop-only">CHANGE</div>
                 </div>
-                <div class="detail-row" v-for="(item, idx) in asset.history" :key="idx">
+                <div class="detail-row" v-for="(item, idx) in getSortedHistory(asset.history)" :key="idx">
                   <div class="detail-col date">
                     <span class="desktop-only">{{ item.date }}</span>
                     <span class="cell-top" :class="item.type">{{ item.type.toUpperCase() }}</span>
@@ -699,6 +699,15 @@ const formatNumber = (value) => {
   return Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+const getSortedHistory = (history) => {
+  if (!history) return []
+  return [...history].sort((a, b) => {
+    const dateA = new Date(a.date.replace(/\//g, '-'))
+    const dateB = new Date(b.date.replace(/\//g, '-'))
+    return dateB - dateA
+  })
+}
+
 const getDiffClass = (diff) => {
   if (Math.abs(diff) <= 5) return 'balanced'
   if (diff > 5) return 'overweight'
@@ -960,7 +969,7 @@ const receiveStockSyncData = () => {
   
   try {
     const syncData = JSON.parse(syncDataStr)
-    const { date, markets, isLastDayOfMonth } = syncData
+    const { date, markets, transactions, isLastDayOfMonth } = syncData
     
     const marketAssets = {
       'A股': assets.value.find(a => a.type === 'stock' && a.source === 'A股'),
@@ -978,6 +987,19 @@ const receiveStockSyncData = () => {
       
       asset.currentPrice = newValue
       asset.value = newValue
+      
+      if (transactions && transactions[market]) {
+        asset.history = transactions[market].map(trans => ({
+          date: trans.date,
+          type: trans.type,
+          price: trans.price,
+          unit: trans.quantity,
+          value: trans.value,
+          change: 0,
+          code: trans.code,
+          name: trans.name
+        }))
+      }
       
       if (isLastDayOfMonth) {
         const lastHistory = asset.history[asset.history.length - 1]
