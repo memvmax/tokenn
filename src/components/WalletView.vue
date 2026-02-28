@@ -313,11 +313,11 @@
             <div class="form-row">
               <div class="form-group half">
                 <label class="form-label">PRICE</label>
-                <input type="number" class="form-input" v-model="addForm.price" placeholder="0.00" step="0.01">
+                <input type="number" class="form-input" v-model="addForm.price">
               </div>
               <div class="form-group half">
                 <label class="form-label">UNIT</label>
-                <input type="number" class="form-input" v-model="addForm.unit" placeholder="0" step="1">
+                <input type="number" class="form-input" v-model="addForm.unit">
               </div>
             </div>
             <div class="form-group">
@@ -467,6 +467,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useSupabase } from '../lib/supabase'
+
+const { saveUserData, loadUserData, getUser } = useSupabase()
+const currentUser = ref(null)
 
 const props = defineProps({
   t: { type: Function, required: true },
@@ -504,7 +508,7 @@ const addForm = ref({
   source: '', 
   price: '', 
   unit: '', 
-  date: new Date().toISOString().split('T')[0] 
+  date: '' 
 })
 const editingAsset = ref(null)
 const editingHistoryIndex = ref(-1)
@@ -866,20 +870,6 @@ const closeAddDropdown = () => {
 
 const manualAdd = () => {
   closeAddDropdown()
-  
-  const syncDataStr = localStorage.getItem('stockSyncData')
-  if (syncDataStr) {
-    try {
-      const syncData = JSON.parse(syncDataStr)
-      if (syncData.markets) {
-        const totalValue = Object.values(syncData.markets).reduce((sum, val) => sum + val, 0)
-        addForm.value.price = totalValue.toFixed(2)
-      }
-    } catch (e) {
-      console.error('Failed to parse stock sync data:', e)
-    }
-  }
-  
   showAddModal.value = true
 }
 
@@ -1114,13 +1104,16 @@ const fetchCryptoAndGoldPrices = async () => {
     const btcResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
     const btcData = await btcResponse.json()
     
+    console.log('BTC API response:', btcData)
+    
     if (btcData.bitcoin && btcData.bitcoin.usd) {
       const btcPrice = btcData.bitcoin.usd
-      const btcAsset = assets.value.find(a => a.type === 'emerging' && a.source === 'BTC')
-      if (btcAsset) {
-        btcAsset.currentPrice = btcPrice
-        btcAsset.value = btcPrice * btcAsset.unit
-      }
+      console.log('BTC price:', btcPrice)
+      
+      assets.value.filter(a => a.type === 'emerging').forEach(emergingAsset => {
+        emergingAsset.currentPrice = btcPrice
+        emergingAsset.value = btcPrice * emergingAsset.unit
+      })
     }
   } catch (e) {
     console.log('Failed to fetch BTC price:', e)
@@ -1225,7 +1218,7 @@ const closeAddModal = () => {
     source: '', 
     price: '', 
     unit: '', 
-    date: new Date().toISOString().split('T')[0] 
+    date: '' 
   }
 }
 
@@ -1351,12 +1344,24 @@ const saveData = () => {
   localStorage.setItem('walletData', JSON.stringify(assets.value))
   localStorage.setItem('walletDataVersion', '8')
   emit('update:total', totalWalletValue.value)
+  
+  if (currentUser.value) {
+    saveUserData(currentUser.value.id, 'wallet', assets.value)
+  }
 }
 
-const loadData = () => {
-  localStorage.removeItem('walletData')
-  localStorage.removeItem('walletDataVersion')
+const loadData = async () => {
   const version = localStorage.getItem('walletDataVersion')
+  
+  if (currentUser.value) {
+    const { data: cloudData, error } = await loadUserData(currentUser.value.id, 'wallet')
+    if (!error && cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
+      assets.value = cloudData
+      localStorage.setItem('walletData', JSON.stringify(cloudData))
+      return
+    }
+  }
+  
   if (version === '8') {
     const saved = localStorage.getItem('walletData')
     if (saved) {
@@ -1437,8 +1442,11 @@ const receiveStockSyncData = () => {
   }
 }
 
-onMounted(() => {
-  loadData()
+onMounted(async () => {
+  const { user } = await getUser()
+  currentUser.value = user
+  
+  await loadData()
   receiveStockSyncData()
   fetchCryptoAndGoldPrices()
   emit('update:total', totalWalletValue.value)

@@ -49,6 +49,36 @@ export const useSupabase = () => {
     return supabase.auth.onAuthStateChange(callback);
   };
 
+  const saveUserData = async (userId, dataType, data) => {
+    if (!supabase || !userId) return { error: { message: 'Supabase not configured or not logged in' } };
+    
+    const { error } = await supabase
+      .from('user_data')
+      .upsert({
+        user_id: userId,
+        data_type: dataType,
+        data: data,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,data_type'
+      });
+    
+    return { error };
+  };
+
+  const loadUserData = async (userId, dataType) => {
+    if (!supabase || !userId) return { data: null, error: null };
+    
+    const { data, error } = await supabase
+      .from('user_data')
+      .select('data')
+      .eq('user_id', userId)
+      .eq('data_type', dataType)
+      .single();
+    
+    return { data: data?.data || null, error };
+  };
+
   return {
     supabase,
     isConfigured,
@@ -57,6 +87,8 @@ export const useSupabase = () => {
     signOut,
     getUser,
     getSession,
-    onAuthStateChange
+    onAuthStateChange,
+    saveUserData,
+    loadUserData
   };
 };
