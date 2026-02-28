@@ -883,7 +883,7 @@ onUnmounted(() => {
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
   border: 1px solid var(--border-light);
   z-index: 9999;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .menu-header {
@@ -1070,7 +1070,7 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 9998;
+  z-index: 9997;
 }
 
 .modal-overlay {
@@ -1397,7 +1397,7 @@ onUnmounted(() => {
   border-radius: 4px;
   margin-top: 4px;
   z-index: 10001;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .theme-option {

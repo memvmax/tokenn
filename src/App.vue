@@ -206,7 +206,6 @@ const currentTheme = ref('default');
 
 const themes = [
   { id: 'default', name: 'Default', nameKey: 'themeDefault' },
-  { id: 'ai-wallpaper', name: 'AI Wallpaper', nameKey: 'themeAI' },
   { id: 'halo', name: 'HALO', nameKey: 'themeHalo' }
 ];
 

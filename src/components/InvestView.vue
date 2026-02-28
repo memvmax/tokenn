@@ -55,6 +55,11 @@ const showMarketDropdown = ref(false)
 const showAddDropdown = ref(false)
 const showHistory = ref(false)
 const showAddModal = ref(false)
+const showImportModal = ref(false)
+const importFile = ref(null)
+const importData = ref([])
+const importPreview = ref([])
+const importStep = ref(1)
 const selectedStockCode = ref(null)
 const selectedCategoryCode = ref(null)
 const positionViewType = ref('industry')
@@ -322,6 +327,111 @@ const closeAddDropdown = () => {
 
 const importCSV = () => {
   closeAddDropdown()
+  showImportModal.value = true
+  importStep.value = 1
+  importFile.value = null
+  importData.value = []
+  importPreview.value = []
+}
+
+const handleFileSelect = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    importFile.value = file
+    parseCSVFile(file)
+  }
+}
+
+const parseCSVFile = (file) => {
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const text = e.target.result
+    const lines = text.split('\n').filter(line => line.trim())
+    
+    if (lines.length < 2) {
+      alert('CSV 文件格式错误或没有数据')
+      return
+    }
+    
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
+    const data = []
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''))
+      if (values.length >= 4) {
+        const row = {}
+        headers.forEach((header, index) => {
+          row[header] = values[index] || ''
+        })
+        data.push(row)
+      }
+    }
+    
+    importData.value = data
+    importPreview.value = data.slice(0, 5)
+    importStep.value = 2
+  }
+  reader.readAsText(file)
+}
+
+const confirmImport = () => {
+  importData.value.forEach(row => {
+    const code = row['代码'] || row['code'] || row['Code'] || row['股票代码'] || ''
+    const name = row['名称'] || row['name'] || row['Name'] || row['股票名称'] || ''
+    const type = (row['类型'] || row['type'] || row['Type'] || 'buy').toLowerCase()
+    const price = parseFloat(row['价格'] || row['price'] || row['Price'] || row['成交价'] || 0)
+    const quantity = parseFloat(row['数量'] || row['quantity'] || row['Quantity'] || row['股数'] || 0)
+    const commission = parseFloat(row['佣金'] || row['commission'] || row['Commission'] || 0)
+    const tax = parseFloat(row['税费'] || row['tax'] || row['Tax'] || 0)
+    const date = row['日期'] || row['date'] || row['Date'] || row['交易日期'] || new Date().toISOString().split('T')[0]
+    const market = row['市场'] || row['market'] || row['Market'] || 'A股'
+    
+    if (code && price > 0 && quantity > 0) {
+      const existingStock = stockData.value.find(s => s.code === code)
+      
+      if (existingStock) {
+        existingStock.transactions.push({
+          date,
+          type,
+          price,
+          quantity,
+          commission,
+          tax
+        })
+      } else {
+        stockData.value.push({
+          code,
+          name,
+          market,
+          category1: '其他',
+          category2: '混合',
+          transactions: [{
+            date,
+            type,
+            price,
+            quantity,
+            commission,
+            tax
+          }]
+        })
+      }
+    }
+  })
+  
+  saveToStorage()
+  showImportModal.value = false
+  importStep.value = 1
+  importFile.value = null
+  importData.value = []
+  importPreview.value = []
+}
+
+const closeImportModal = () => {
+  showImportModal.value = false
+  importStep.value = 1
+  importFile.value = null
+  importData.value = []
+  importPreview.value = []
 }
 
 const manualAdd = () => {
@@ -1341,6 +1451,75 @@ defineExpose({
           <div class="modal-footer">
             <button class="btn-cancel" @click="showEditStockModal = false">{{ getLabel('cancel') }}</button>
             <button class="btn-confirm" @click="saveStockEdit">{{ getLabel('confirm') }}</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="showImportModal" class="modal-overlay" @click="closeImportModal">
+        <div class="modal-container import-modal" @click.stop>
+          <div class="modal-header">
+            <span class="modal-title">{{ getLabel('importCSV') }}</span>
+            <button class="modal-close" @click="closeImportModal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div v-if="importStep === 1" class="import-step">
+              <div class="file-upload-row">
+                <input type="file" id="csvFile" accept=".csv" @change="handleFileSelect" style="display: none">
+                <div class="file-path">{{ importFile ? importFile.name : '未选择文件' }}</div>
+                <label for="csvFile" class="file-select-btn">
+                  <i class="fas fa-folder-open"></i>
+                  <span>选择文件</span>
+                </label>
+              </div>
+              <div class="import-instructions">
+                <div class="instruction-title">CSV 格式要求</div>
+                <div class="instruction-text">
+                  必填：代码、类型(buy/sell)、价格、数量<br>
+                  可选：名称、佣金、税费、日期、市场
+                </div>
+              </div>
+            </div>
+            <div v-if="importStep === 2" class="import-step">
+              <div class="import-preview-header">
+                <span>预览数据（前5条）</span>
+                <span class="import-count">共 {{ importData.length }} 条记录</span>
+              </div>
+              <div class="import-preview-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>代码</th>
+                      <th>名称</th>
+                      <th>类型</th>
+                      <th>价格</th>
+                      <th>数量</th>
+                      <th>日期</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(row, index) in importPreview" :key="index">
+                      <td>{{ row['代码'] || row['code'] || row['Code'] || '-' }}</td>
+                      <td>{{ row['名称'] || row['name'] || row['Name'] || '-' }}</td>
+                      <td>{{ row['类型'] || row['type'] || row['Type'] || '-' }}</td>
+                      <td>{{ row['价格'] || row['price'] || row['Price'] || '-' }}</td>
+                      <td>{{ row['数量'] || row['quantity'] || row['Quantity'] || '-' }}</td>
+                      <td>{{ row['日期'] || row['date'] || row['Date'] || '-' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-cancel" @click="closeImportModal">{{ getLabel('cancel') }}</button>
+            <button v-if="importStep === 2" class="btn-confirm" @click="confirmImport">
+              <i class="fas fa-check"></i>
+              确认导入
+            </button>
           </div>
         </div>
       </div>
@@ -2450,5 +2629,124 @@ defineExpose({
   .add-dropdown {
     z-index: 1000;
   }
+}
+
+.import-modal {
+  width: 400px;
+  max-width: 90vw;
+}
+
+.import-step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.file-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+}
+
+.file-path {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border-radius: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-select-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--accent-blue);
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.file-select-btn:hover {
+  opacity: 0.9;
+}
+
+.import-instructions {
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+}
+
+.instruction-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.instruction-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.import-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.import-count {
+  font-size: 11px;
+  color: var(--accent-blue);
+  font-weight: 500;
+}
+
+.import-preview-table {
+  overflow-x: auto;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+}
+
+.import-preview-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.import-preview-table th,
+.import-preview-table td {
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 11px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.import-preview-table th {
+  background: var(--bg-tertiary);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.import-preview-table td {
+  color: var(--text-primary);
+}
+
+.import-preview-table tr:last-child td {
+  border-bottom: none;
 }
 </style>

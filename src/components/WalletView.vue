@@ -243,7 +243,7 @@
               </div>
               
               <div v-if="selectedPositionType === item.type && item.assets" class="asset-detail">
-                <div class="detail-table">
+                <div class="detail-table position-detail-table">
                   <div class="detail-row detail-header">
                     <div class="detail-col source">SOURCE</div>
                     <div class="detail-col value">VALUE</div>
@@ -1500,6 +1500,19 @@ defineExpose({
   justify-content: flex-end;
 }
 
+.position-detail-table .detail-row {
+  grid-template-columns: 1fr 90px 90px;
+}
+
+.position-detail-table .detail-col.source {
+  justify-content: flex-start;
+}
+
+.position-detail-table .detail-col.value,
+.position-detail-table .detail-col.percent {
+  justify-content: flex-end;
+}
+
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -1923,6 +1936,10 @@ defineExpose({
   }
   
   .detail-row {
+    grid-template-columns: 1fr 80px 80px;
+  }
+  
+  .position-detail-table .detail-row {
     grid-template-columns: 1fr 80px 80px;
   }
   

@@ -79,7 +79,6 @@ const displayValue = computed(() => {
 <style scoped>
 .total-asset-container {
   background: var(--total-asset-bg);
-  background-image: var(--total-asset-overlay);
   border: var(--total-asset-border, 1px solid var(--border-light));
   border-radius: 4px;
   padding: 24px 20px;
@@ -89,6 +88,18 @@ const displayValue = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.total-asset-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--total-asset-overlay);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .total-asset-container::after {
@@ -105,6 +116,8 @@ const displayValue = computed(() => {
 .asset-main {
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 .asset-label {
@@ -114,6 +127,7 @@ const displayValue = computed(() => {
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 2px;
+  -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.3);
 }
 
 .asset-value {
@@ -127,6 +141,7 @@ const displayValue = computed(() => {
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -1px;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.5);
 }
 
 .asset-change {
@@ -138,6 +153,7 @@ const displayValue = computed(() => {
 .change-value {
   font-size: 14px;
   font-weight: 500;
+  -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.3);
 }
 
 .change-value.positive {
@@ -150,11 +166,13 @@ const displayValue = computed(() => {
 
 .change-period {
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.3);
 }
 
 .health-period {
   font-size: 13px;
   color: var(--text-muted);
+  -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.3);
 }
 </style>
