@@ -66,14 +66,14 @@
 
         <div class="data-table" v-if="filteredAssets.length > 0">
         <div class="table-header">
-          <div class="th col-type">TYPE</div>
+          <div class="th col-type sortable" :class="getSortClass('type')" @click="toggleSort('type')">TYPE</div>
           <div class="th col-source">SOURCE</div>
           <div class="th col-price">CURRENT</div>
           <div class="th col-price">BUY</div>
           <div class="th col-unit">UNIT</div>
-          <div class="th col-value">VALUE</div>
-          <div class="th col-profit">PROFIT</div>
-          <div class="th col-change">CHANGE</div>
+          <div class="th col-value sortable" :class="getSortClass('value')" @click="toggleSort('value')">VALUE</div>
+          <div class="th col-profit sortable" :class="getSortClass('profit')" @click="toggleSort('profit')">PROFIT</div>
+          <div class="th col-change sortable" :class="getSortClass('change')" @click="toggleSort('change')">CHANGE</div>
         </div>
         <div class="table-header mobile-header-row">
           <div class="th col-type">
@@ -372,6 +372,7 @@ const showAddModal = ref(false)
 const showTypeDropdown = ref(false)
 const showAddDropdown = ref(false)
 const showHistory = ref(false)
+const sortState = ref({ field: null, order: 0 })
 const addForm = ref({ 
   type: 'cash', 
   action: 'buy',
@@ -599,19 +600,51 @@ const filteredAssets = computed(() => {
     const order = sortState.value.order
     
     data = [...data].sort((a, b) => {
-      let valueA = a[field]
-      let valueB = b[field]
+      let valueA, valueB
       
-      if (order === 1) {
-        return valueB - valueA
+      if (field === 'type') {
+        valueA = a.type
+        valueB = b.type
+        if (order === 1) {
+          return valueA.localeCompare(valueB)
+        } else {
+          return valueB.localeCompare(valueA)
+        }
       } else {
-        return valueA - valueB
+        valueA = a[field] || 0
+        valueB = b[field] || 0
+        if (order === 1) {
+          return valueB - valueA
+        } else {
+          return valueA - valueB
+        }
       }
     })
   }
   
   return data
 })
+
+const toggleSort = (field) => {
+  if (sortState.value.field === field) {
+    if (sortState.value.order === 0) {
+      sortState.value = { field, order: 1 }
+    } else if (sortState.value.order === 1) {
+      sortState.value = { field, order: 2 }
+    } else {
+      sortState.value = { field: null, order: 0 }
+    }
+  } else {
+    sortState.value = { field, order: 1 }
+  }
+}
+
+const getSortClass = (field) => {
+  if (sortState.value.field === field) {
+    return sortState.value.order === 1 ? 'sort-desc' : sortState.value.order === 2 ? 'sort-asc' : ''
+  }
+  return ''
+}
 
 const totalSelectedValue = computed(() => {
   return filteredAssets.value.reduce((sum, asset) => sum + asset.value, 0)
@@ -1356,6 +1389,25 @@ defineExpose({
 
 .col-diff.balanced {
   color: #22c55e;
+}
+
+.th.sortable {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+
+.th.sortable:hover {
+  color: var(--text-primary);
+}
+
+.th.sortable.sort-desc {
+  color: #0891b2;
+}
+
+.th.sortable.sort-asc {
+  color: #0891b2;
 }
 
 .table-body {
