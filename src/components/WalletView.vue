@@ -571,7 +571,6 @@ const assets = ref([
     ]
   }
 ])
-const sortState = ref({ field: null, order: 0 })
 
 const showContextMenu = ref(false)
 const contextMenuType = ref('')
@@ -742,27 +741,6 @@ const toggleHistory = () => {
 
 const refreshData = () => {
   loadData()
-}
-
-const toggleSort = (field) => {
-  if (sortState.value.field === field) {
-    if (sortState.value.order === 0) {
-      sortState.value = { field, order: 1 }
-    } else if (sortState.value.order === 1) {
-      sortState.value = { field, order: 2 }
-    } else {
-      sortState.value = { field: null, order: 0 }
-    }
-  } else {
-    sortState.value = { field, order: 1 }
-  }
-}
-
-const getSortClass = (field) => {
-  if (sortState.value.field === field) {
-    return sortState.value.order === 1 ? 'sort-desc' : sortState.value.order === 2 ? 'sort-asc' : ''
-  }
-  return ''
 }
 
 const startLongPress = (event, type, data) => {
