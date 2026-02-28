@@ -41,6 +41,10 @@
           <i class="fas fa-plus"></i>
         </button>
         <div class="add-dropdown" v-if="showAddDropdown" @click.stop>
+          <button class="add-option" @click="importCSV">
+            <i class="fas fa-file-csv"></i>
+            <span>IMPORT CSV</span>
+          </button>
           <button class="add-option" @click="manualAdd">
             <i class="fas fa-keyboard"></i>
             <span>MANUAL ADD</span>
@@ -99,12 +103,10 @@
               class="table-row desktop-row"
               :class="{ selected: selectedAssetId === asset.id }"
               @click="selectAsset(asset.id)"
+              @contextmenu.prevent="showAssetContextMenu($event, asset)"
               @touchstart="startLongPress($event, 'asset', asset)"
               @touchend="endLongPress"
               @touchmove="endLongPress"
-              @mousedown="startLongPress($event, 'asset', asset)"
-              @mouseup="endLongPress"
-              @mouseleave="endLongPress"
             >
               <div class="td col-type">{{ asset.type.toUpperCase() }}</div>
               <div class="td col-source">{{ asset.source }}</div>
@@ -123,6 +125,7 @@
               class="table-row mobile-row"
               :class="{ selected: selectedAssetId === asset.id }"
               @click="selectAsset(asset.id)"
+              @contextmenu.prevent="showAssetContextMenu($event, asset)"
               @touchstart="startLongPress($event, 'asset', asset)"
               @touchend="endLongPress"
               @touchmove="endLongPress"
@@ -173,7 +176,11 @@
                   </div>
                   <div class="detail-col change desktop-only">CHANGE</div>
                 </div>
-                <div class="detail-row" v-for="(item, idx) in getSortedHistory(asset.history)" :key="idx">
+                <div class="detail-row" v-for="(item, idx) in getSortedHistory(asset.history)" :key="idx"
+                  @contextmenu.prevent="showHistoryContextMenu($event, asset, item, idx)"
+                  @touchstart="startHistoryLongPress($event, asset, item, idx)"
+                  @touchend="cancelHistoryLongPress"
+                  @touchmove="cancelHistoryLongPress">
                   <div class="detail-col date">
                     <span class="desktop-only">{{ item.date }}</span>
                     <span class="cell-top" :class="item.type">{{ item.type.toUpperCase() }}</span>
@@ -344,6 +351,117 @@
         </div>
       </div>
     </Teleport>
+
+    <Teleport to="body">
+      <div v-if="showImportModal" class="modal-overlay" @click="closeImportModal">
+        <div class="modal-container import-modal" @click.stop>
+          <div class="modal-header">
+            <span class="modal-title">IMPORT CSV</span>
+            <button class="modal-close" @click="closeImportModal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div v-if="importStep === 1" class="import-step">
+              <div class="file-upload-row">
+                <input type="file" id="csvFile" accept=".csv" @change="handleFileSelect" style="display: none">
+                <div class="file-path">{{ importFile ? importFile.name : '未选择文件' }}</div>
+                <label for="csvFile" class="file-select-btn">
+                  <i class="fas fa-folder-open"></i>
+                  <span>选择文件</span>
+                </label>
+              </div>
+              <div class="import-instructions">
+                <div class="instruction-title">
+                  CSV 格式要求
+                  <button class="help-btn" @click="showImportHelp = !showImportHelp">
+                    <i class="fas fa-info-circle"></i>
+                  </button>
+                </div>
+                <div v-if="showImportHelp" class="help-content">
+                  <div class="help-row">
+                    <span class="help-label">类型</span>
+                    <span class="help-names">类型、type、Type（cash/gold/bond/stock/emerging）</span>
+                  </div>
+                  <div class="help-row">
+                    <span class="help-label">来源</span>
+                    <span class="help-names">来源、source、Source</span>
+                  </div>
+                  <div class="help-row">
+                    <span class="help-label">操作</span>
+                    <span class="help-names">操作、action、Action（buy/sell/update）</span>
+                  </div>
+                  <div class="help-row">
+                    <span class="help-label">价格</span>
+                    <span class="help-names">价格、price、Price</span>
+                  </div>
+                  <div class="help-row">
+                    <span class="help-label">数量</span>
+                    <span class="help-names">数量、unit、Unit</span>
+                  </div>
+                  <div class="help-row optional">
+                    <span class="help-label">日期</span>
+                    <span class="help-names">日期、date、Date（格式：2024-01-15）</span>
+                  </div>
+                </div>
+                <div v-else class="instruction-text">
+                  必填：类型、来源、操作、价格、数量<br>
+                  可选：日期
+                </div>
+              </div>
+            </div>
+            <div v-if="importStep === 2" class="import-step">
+              <div class="import-preview-header">
+                <span>预览数据</span>
+                <span class="import-count">共 {{ importData.length }} 条记录</span>
+              </div>
+              <div class="import-preview-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>类型</th>
+                      <th>来源</th>
+                      <th>操作</th>
+                      <th>价格</th>
+                      <th>数量</th>
+                      <th>日期</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(row, index) in importData" :key="index">
+                      <td>{{ row['类型'] || row['type'] || row['Type'] || '-' }}</td>
+                      <td>{{ row['来源'] || row['source'] || row['Source'] || '-' }}</td>
+                      <td>{{ row['操作'] || row['action'] || row['Action'] || '-' }}</td>
+                      <td>{{ row['价格'] || row['price'] || row['Price'] || '-' }}</td>
+                      <td>{{ formatNumber(parseNumber(row['数量'] || row['unit'] || row['Unit'] || 0)) }}</td>
+                      <td>{{ row['日期'] || row['date'] || row['Date'] || '-' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-cancel" @click="closeImportModal">CANCEL</button>
+            <button v-if="importStep === 2" class="btn-confirm" @click="confirmImport">
+              <i class="fas fa-check"></i>
+              确认导入
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <div v-if="historyContextMenu.show" class="context-menu" :style="{ left: historyContextMenu.x + 'px', top: historyContextMenu.y + 'px' }" @click.stop>
+      <button class="context-menu-item" @click="editHistoryItem">
+        <i class="fas fa-edit"></i>
+        <span>EDIT</span>
+      </button>
+      <button class="context-menu-item delete" @click="deleteHistoryItem">
+        <i class="fas fa-trash"></i>
+        <span>DELETE</span>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -372,7 +490,14 @@ const showAddModal = ref(false)
 const showTypeDropdown = ref(false)
 const showAddDropdown = ref(false)
 const showHistory = ref(false)
+const showImportModal = ref(false)
+const showImportHelp = ref(false)
+const importFile = ref(null)
+const importData = ref([])
+const importStep = ref(1)
 const sortState = ref({ field: null, order: 0 })
+const historyContextMenu = ref({ show: false, x: 0, y: 0, asset: null, item: null, index: -1 })
+const longPressTimer = ref(null)
 const addForm = ref({ 
   type: 'cash', 
   action: 'buy',
@@ -382,6 +507,7 @@ const addForm = ref({
   date: new Date().toISOString().split('T')[0] 
 })
 const editingAsset = ref(null)
+const editingHistoryIndex = ref(-1)
 const assets = ref([
   {
     id: 1,
@@ -577,7 +703,6 @@ const contextMenuType = ref('')
 const contextMenuData = ref(null)
 const contextMenuX = ref(0)
 const contextMenuY = ref(0)
-const longPressTimer = ref(null)
 
 const tabs = [
   { id: 'cash', name: 'CASH', icon: 'fas fa-wallet' },
@@ -741,7 +866,237 @@ const closeAddDropdown = () => {
 
 const manualAdd = () => {
   closeAddDropdown()
+  
+  const syncDataStr = localStorage.getItem('stockSyncData')
+  if (syncDataStr) {
+    try {
+      const syncData = JSON.parse(syncDataStr)
+      if (syncData.markets) {
+        const totalValue = Object.values(syncData.markets).reduce((sum, val) => sum + val, 0)
+        addForm.value.price = totalValue.toFixed(2)
+      }
+    } catch (e) {
+      console.error('Failed to parse stock sync data:', e)
+    }
+  }
+  
   showAddModal.value = true
+}
+
+const importCSV = () => {
+  closeAddDropdown()
+  showImportModal.value = true
+  importStep.value = 1
+  importFile.value = null
+  importData.value = []
+}
+
+const handleFileSelect = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    importFile.value = file
+    parseCSVFile(file)
+  }
+}
+
+const parseCSVFile = (file) => {
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try {
+      let text = e.target.result
+      if (text.charCodeAt(0) === 0xFEFF) {
+        text = text.slice(1)
+      }
+      
+      const lines = text.split('\n').filter(line => line.trim())
+      
+      if (lines.length < 2) {
+        alert('CSV 文件格式错误或没有数据')
+        return
+      }
+      
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
+      const data = []
+      
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''))
+        if (values.length >= 4) {
+          const row = {}
+          headers.forEach((header, index) => {
+            row[header] = values[index] || ''
+          })
+          data.push(row)
+        }
+      }
+      
+      if (data.length === 0) {
+        alert('CSV 文件没有有效数据')
+        return
+      }
+      
+      importData.value = data
+      importStep.value = 2
+    } catch (err) {
+      console.error('CSV 解析错误:', err)
+      alert('CSV 文件解析失败: ' + err.message)
+    }
+  }
+  reader.onerror = () => {
+    alert('文件读取失败')
+  }
+  reader.readAsText(file, 'UTF-8')
+}
+
+const parseNumber = (value) => {
+  if (!value) return 0
+  const str = String(value).replace(/,/g, '')
+  return parseFloat(str) || 0
+}
+
+const confirmImport = () => {
+  importData.value.forEach(row => {
+    const type = (row['类型'] || row['type'] || row['Type'] || 'cash').toLowerCase()
+    const source = row['来源'] || row['source'] || row['Source'] || ''
+    const action = (row['操作'] || row['action'] || row['Action'] || 'buy').toLowerCase()
+    const price = parseNumber(row['价格'] || row['price'] || row['Price'] || 0)
+    const unit = parseNumber(row['数量'] || row['unit'] || row['Unit'] || 0)
+    const date = row['日期'] || row['date'] || row['Date'] || new Date().toISOString().split('T')[0]
+    
+    if (source && price > 0 && unit > 0) {
+      const existingAsset = assets.value.find(a => a.type === type && a.source === source)
+      
+      if (existingAsset) {
+        const value = price * unit
+        
+        if (action === 'buy') {
+          const totalCost = existingAsset.buyPrice * existingAsset.unit + price * unit
+          const totalUnits = existingAsset.unit + unit
+          existingAsset.buyPrice = totalCost / totalUnits
+          existingAsset.unit = totalUnits
+          existingAsset.currentPrice = price
+          existingAsset.value = existingAsset.currentPrice * existingAsset.unit
+          existingAsset.profit = (existingAsset.currentPrice - existingAsset.buyPrice) * existingAsset.unit
+          existingAsset.change = existingAsset.buyPrice > 0 ? ((existingAsset.currentPrice - existingAsset.buyPrice) / existingAsset.buyPrice * 100) : 0
+          existingAsset.history.push({ date, type: 'buy', price, unit, value, change: 0 })
+        } else if (action === 'sell') {
+          existingAsset.unit -= unit
+          if (existingAsset.unit < 0) existingAsset.unit = 0
+          existingAsset.currentPrice = price
+          existingAsset.value = existingAsset.currentPrice * existingAsset.unit
+          existingAsset.profit = (existingAsset.currentPrice - existingAsset.buyPrice) * existingAsset.unit
+          existingAsset.change = existingAsset.buyPrice > 0 ? ((existingAsset.currentPrice - existingAsset.buyPrice) / existingAsset.buyPrice * 100) : 0
+          existingAsset.history.push({ date, type: 'sell', price, unit, value, change: existingAsset.change })
+        } else if (action === 'update') {
+          existingAsset.currentPrice = price
+          existingAsset.value = existingAsset.currentPrice * existingAsset.unit
+          existingAsset.profit = (existingAsset.currentPrice - existingAsset.buyPrice) * existingAsset.unit
+          existingAsset.change = existingAsset.buyPrice > 0 ? ((existingAsset.currentPrice - existingAsset.buyPrice) / existingAsset.buyPrice * 100) : 0
+          existingAsset.history.push({ date, type: 'update', price, unit: existingAsset.unit, value: existingAsset.value, change: existingAsset.change })
+        }
+      } else {
+        const newAsset = {
+          id: Date.now() + Math.random(),
+          type,
+          source,
+          buyPrice: price,
+          currentPrice: price,
+          unit: action === 'buy' ? unit : 0,
+          value: price * unit,
+          profit: 0,
+          change: 0,
+          history: [{
+            date,
+            type: action,
+            price,
+            unit,
+            value: price * unit,
+            change: 0
+          }]
+        }
+        assets.value.push(newAsset)
+      }
+    }
+  })
+  
+  saveData()
+  showImportModal.value = false
+  importStep.value = 1
+  importFile.value = null
+  importData.value = []
+}
+
+const closeImportModal = () => {
+  showImportModal.value = false
+  importStep.value = 1
+  importFile.value = null
+  importData.value = []
+}
+
+const showHistoryContextMenu = (event, asset, item, index) => {
+  historyContextMenu.value = {
+    show: true,
+    x: event.clientX || event.touches?.[0]?.clientX || 0,
+    y: event.clientY || event.touches?.[0]?.clientY || 0,
+    asset,
+    item,
+    index
+  }
+}
+
+const closeHistoryContextMenu = () => {
+  historyContextMenu.value = { show: false, x: 0, y: 0, asset: null, item: null, index: -1 }
+}
+
+const startHistoryLongPress = (event, asset, item, index) => {
+  longPressTimer.value = setTimeout(() => {
+    showHistoryContextMenu(event, asset, item, index)
+  }, 500)
+}
+
+const cancelHistoryLongPress = () => {
+  if (longPressTimer.value) {
+    clearTimeout(longPressTimer.value)
+    longPressTimer.value = null
+  }
+}
+
+const editHistoryItem = () => {
+  const { asset, item, index } = historyContextMenu.value
+  if (!asset || !item) return
+  
+  addForm.value = {
+    type: asset.type,
+    action: item.type,
+    source: asset.source,
+    price: item.price,
+    unit: item.unit,
+    date: item.date
+  }
+  
+  editingAsset.value = asset
+  editingHistoryIndex.value = index
+  closeHistoryContextMenu()
+  showAddModal.value = true
+}
+
+const deleteHistoryItem = () => {
+  const { asset, index } = historyContextMenu.value
+  if (!asset || index < 0) return
+  
+  asset.history.splice(index, 1)
+  
+  if (asset.history.length > 0) {
+    const lastHistory = asset.history[asset.history.length - 1]
+    asset.currentPrice = lastHistory.price
+    asset.unit = lastHistory.unit
+    asset.value = lastHistory.value
+  } else {
+    asset.unit = 0
+    asset.value = 0
+  }
+  
+  saveData()
+  closeHistoryContextMenu()
 }
 
 const toggleHistory = () => {
@@ -750,6 +1105,52 @@ const toggleHistory = () => {
 
 const refreshData = () => {
   loadData()
+  receiveStockSyncData()
+  fetchCryptoAndGoldPrices()
+}
+
+const fetchCryptoAndGoldPrices = async () => {
+  try {
+    const btcResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
+    const btcData = await btcResponse.json()
+    
+    if (btcData.bitcoin && btcData.bitcoin.usd) {
+      const btcPrice = btcData.bitcoin.usd
+      const btcAsset = assets.value.find(a => a.type === 'emerging' && a.source === 'BTC')
+      if (btcAsset) {
+        btcAsset.currentPrice = btcPrice
+        btcAsset.value = btcPrice * btcAsset.unit
+      }
+    }
+  } catch (e) {
+    console.log('Failed to fetch BTC price:', e)
+  }
+  
+  try {
+    const goldResponse = await fetch('https://v2.xxapi.cn/api/goldprice')
+    const goldData = await goldResponse.json()
+    
+    console.log('Gold API response:', goldData)
+    
+    if (goldData && goldData.data) {
+      const bocGold = goldData.data.find(item => item.name === '中国银行金条')
+      console.log('BOC Gold data:', bocGold)
+      
+      if (bocGold && bocGold.price) {
+        const goldPrice = parseFloat(bocGold.price)
+        console.log('Gold price:', goldPrice)
+        
+        assets.value.filter(a => a.type === 'gold').forEach(goldAsset => {
+          goldAsset.currentPrice = goldPrice
+          goldAsset.value = goldPrice * goldAsset.unit
+        })
+      }
+    }
+  } catch (e) {
+    console.log('Failed to fetch gold price:', e)
+  }
+  
+  saveData()
 }
 
 const startLongPress = (event, type, data) => {
@@ -774,6 +1175,14 @@ const closeContextMenu = () => {
   showContextMenu.value = false
   contextMenuType.value = ''
   contextMenuData.value = null
+}
+
+const showAssetContextMenu = (event, asset) => {
+  contextMenuX.value = event.clientX || event.touches?.[0]?.clientX || 0
+  contextMenuY.value = event.clientY || event.touches?.[0]?.clientY || 0
+  contextMenuType.value = 'asset'
+  contextMenuData.value = asset
+  showContextMenu.value = true
 }
 
 const editAsset = () => {
@@ -945,6 +1354,8 @@ const saveData = () => {
 }
 
 const loadData = () => {
+  localStorage.removeItem('walletData')
+  localStorage.removeItem('walletDataVersion')
   const version = localStorage.getItem('walletDataVersion')
   if (version === '8') {
     const saved = localStorage.getItem('walletData')
@@ -957,9 +1368,6 @@ const loadData = () => {
       } catch (e) {
       }
     }
-  } else {
-    localStorage.removeItem('walletData')
-    localStorage.removeItem('walletDataVersion')
   }
 }
 
@@ -1032,7 +1440,26 @@ const receiveStockSyncData = () => {
 onMounted(() => {
   loadData()
   receiveStockSyncData()
+  fetchCryptoAndGoldPrices()
   emit('update:total', totalWalletValue.value)
+  
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'stockSyncData') {
+      receiveStockSyncData()
+    }
+  })
+  
+  document.addEventListener('click', () => {
+    closeHistoryContextMenu()
+  })
+  
+  setInterval(() => {
+    receiveStockSyncData()
+  }, 5000)
+  
+  setInterval(() => {
+    fetchCryptoAndGoldPrices()
+  }, 60000)
 })
 
 defineExpose({
@@ -1604,7 +2031,7 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10000;
 }
 
 .modal-container {
@@ -1689,6 +2116,22 @@ defineExpose({
 .form-select:focus {
   outline: none;
   border-color: #0891b2;
+}
+
+.form-input::-webkit-outer-spin-button,
+.form-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.form-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.form-input[type=date]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6);
+  cursor: pointer;
+  opacity: 0.7;
 }
 
 .modal-footer {
@@ -2002,5 +2445,183 @@ defineExpose({
   .detail-col .cell-bottom.negative {
     color: var(--accent-red);
   }
+}
+
+.import-modal {
+  width: 400px;
+  max-width: 90vw;
+}
+
+.import-step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.file-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+}
+
+.file-path {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border-radius: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-select-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--accent-blue);
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.file-select-btn:hover {
+  opacity: 0.9;
+}
+
+.import-instructions {
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+}
+
+.instruction-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-btn {
+  background: none;
+  border: none;
+  color: var(--accent-blue);
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+
+.help-btn:hover {
+  opacity: 1;
+}
+
+.help-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.help-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  background: var(--bg-primary);
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.help-row.optional {
+  opacity: 0.7;
+}
+
+.help-label {
+  font-weight: 600;
+  color: var(--accent-blue);
+  min-width: 40px;
+}
+
+.help-row.optional .help-label {
+  color: var(--text-muted);
+}
+
+.help-names {
+  color: var(--text-secondary);
+}
+
+.instruction-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.import-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.import-count {
+  font-size: 11px;
+  color: var(--accent-blue);
+  font-weight: 500;
+}
+
+.import-preview-table {
+  overflow-y: auto;
+  max-height: 240px;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+}
+
+.import-preview-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.import-preview-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.import-preview-table th,
+.import-preview-table td {
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 11px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.import-preview-table th {
+  background: var(--bg-tertiary);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.import-preview-table td {
+  color: var(--text-primary);
+}
+
+.import-preview-table tr:last-child td {
+  border-bottom: none;
 }
 </style>

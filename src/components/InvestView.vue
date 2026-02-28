@@ -739,6 +739,22 @@ const closeContextMenu = () => {
   contextMenuData.value = null
 }
 
+const showStockContextMenu = (event, stock) => {
+  contextMenuX.value = event.clientX || event.touches?.[0]?.clientX || 0
+  contextMenuY.value = event.clientY || event.touches?.[0]?.clientY || 0
+  contextMenuType.value = 'stock'
+  contextMenuData.value = stock
+  showContextMenu.value = true
+}
+
+const showTransContextMenu = (event, stockCode, transIndex) => {
+  contextMenuX.value = event.clientX || event.touches?.[0]?.clientX || 0
+  contextMenuY.value = event.clientY || event.touches?.[0]?.clientY || 0
+  contextMenuType.value = 'transaction'
+  contextMenuData.value = { stockCode, transIndex }
+  showContextMenu.value = true
+}
+
 const deleteStock = (code) => {
   profitData.value = profitData.value.filter(item => item.code !== code)
   if (selectedStockCode.value === code) {
@@ -921,6 +937,10 @@ onMounted(() => {
   fetchExchangeRates()
   refreshPrices()
   syncStockValuesToWallet()
+  
+  document.addEventListener('click', () => {
+    closeContextMenu()
+  })
 })
 
 const selectCategory = (code) => {
@@ -1259,12 +1279,10 @@ defineExpose({
                 class="table-row" 
                 :class="{ 'selected': selectedStockCode === item.code }"
                 @click="selectStock(item.code)"
+                @contextmenu.prevent="showStockContextMenu($event, item)"
                 @touchstart="startLongPress($event, 'stock', item)"
                 @touchend="endLongPress"
                 @touchmove="endLongPress"
-                @mousedown="startLongPress($event, 'stock', item)"
-                @mouseup="endLongPress"
-                @mouseleave="endLongPress"
               >
                 <div class="td col-code">
                   <span class="desktop-only">{{ item.code }}</span>
@@ -1323,12 +1341,10 @@ defineExpose({
                     </div>
                   </div>
                   <div class="trans-row profit-trans" v-for="(trans, idx) in getSortedTransactions(item.transactions)" :key="idx"
+                    @contextmenu.prevent="showTransContextMenu($event, item.code, idx)"
                     @touchstart="startLongPress($event, 'transaction', { stockCode: item.code, transIndex: idx })"
                     @touchend="endLongPress"
                     @touchmove="endLongPress"
-                    @mousedown="startLongPress($event, 'transaction', { stockCode: item.code, transIndex: idx })"
-                    @mouseup="endLongPress"
-                    @mouseleave="endLongPress"
                   >
                     <div class="trans-col date">
                       <span class="desktop-only">{{ trans.date }}</span>
