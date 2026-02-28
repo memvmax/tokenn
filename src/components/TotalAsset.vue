@@ -80,7 +80,7 @@ const displayValue = computed(() => {
 .total-asset-container {
   background: var(--total-asset-bg);
   background-image: var(--total-asset-overlay);
-  border: 1px solid var(--border-light);
+  border: var(--total-asset-border, 1px solid var(--border-light));
   border-radius: 4px;
   padding: 24px 20px;
   margin-bottom: 16px;

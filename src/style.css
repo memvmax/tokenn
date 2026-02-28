@@ -44,6 +44,13 @@ body {
   --total-asset-line: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.5), transparent);
 }
 
+[data-theme="halo"] {
+  --total-asset-bg: url('/images/halo-bg.png') center center / cover no-repeat;
+  --total-asset-overlay: none;
+  --total-asset-line: none;
+  --total-asset-border: 1px solid rgba(212, 175, 55, 0.6);
+}
+
 @layer base {
   * {
     -webkit-font-smoothing: antialiased;
