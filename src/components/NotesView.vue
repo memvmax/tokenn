@@ -10,59 +10,9 @@ const props = defineProps({
 
 const activeTab = ref('notes')
 
-const notesData = ref([
-  {
-    id: 1,
-    title: '茅台投资策略思考',
-    content: '贵州茅台作为高端白酒龙头，具有较强的定价权和品牌护城河。建议在估值回调时分批建仓，目标持仓15%。关注点：1) 渠道改革进展 2) 直销占比提升 3) 系列酒增长',
-    tags: ['策略', '消费'],
-    stockCode: '600519',
-    createdAt: '2024-01-15 10:30'
-  },
-  {
-    id: 2,
-    title: '科技股估值思考',
-    content: 'AI概念股近期涨幅较大，需要关注业绩兑现情况。英伟达、微软等龙头公司估值偏高，等待回调机会。建议关注应用层公司的商业化进展。',
-    tags: ['观察', '科技'],
-    stockCode: '',
-    createdAt: '2024-02-20 14:15'
-  },
-  {
-    id: 3,
-    title: '港股配置计划',
-    content: '港股目前估值较低，腾讯、阿里等互联网龙头具有配置价值。考虑逐步增加港股仓位至20%。风险点：政策不确定性、汇率波动。',
-    tags: ['计划'],
-    stockCode: '00700',
-    createdAt: '2024-03-05 09:00'
-  }
-])
+const notesData = ref([])
 
-const articlesData = ref([
-  {
-    id: 1,
-    title: '巴菲特2024年股东信精华',
-    url: 'https://www.berkshirehathaway.com',
-    source: 'Berkshire Hathaway',
-    tags: ['价值投资', '经典'],
-    savedAt: '2024-02-24'
-  },
-  {
-    id: 2,
-    title: '如何分析一家公司的竞争优势',
-    url: 'https://example.com/article1',
-    source: '雪球',
-    tags: ['方法论', '分析'],
-    savedAt: '2024-03-10'
-  },
-  {
-    id: 3,
-    title: '2024年宏观经济展望',
-    url: 'https://example.com/article2',
-    source: '券商研报',
-    tags: ['宏观', '研究'],
-    savedAt: '2024-03-15'
-  }
-])
+const articlesData = ref([])
 
 const searchQuery = ref('')
 const showAddModal = ref(false)
@@ -88,20 +38,16 @@ const filteredArticles = computed(() => {
 const newItem = ref({
   title: '',
   content: '',
-  tags: [],
   stockCode: '',
   url: '',
   source: ''
 })
-
-const availableTags = ['策略', '观察', '计划', '重要', '待办', '研究', '方法论', '宏观', '价值投资', '经典', '分析']
 
 const addItem = () => {
   editingItem.value = null
   newItem.value = {
     title: '',
     content: '',
-    tags: [],
     stockCode: '',
     url: '',
     source: ''
@@ -158,15 +104,6 @@ const deleteItem = (id) => {
   }
 }
 
-const toggleTag = (tag) => {
-  const index = newItem.value.tags.indexOf(tag)
-  if (index > -1) {
-    newItem.value.tags.splice(index, 1)
-  } else {
-    newItem.value.tags.push(tag)
-  }
-}
-
 const openArticle = (url) => {
   window.open(url, '_blank')
 }
@@ -179,7 +116,6 @@ const labels = {
   searchPlaceholder: { 'zh-CN': '搜索...', 'en-US': 'Search...' },
   title: { 'zh-CN': '标题', 'en-US': 'TITLE' },
   content: { 'zh-CN': '内容', 'en-US': 'CONTENT' },
-  tags: { 'zh-CN': '标签', 'en-US': 'TAGS' },
   stockCode: { 'zh-CN': '关联股票', 'en-US': 'STOCK' },
   stockCodePlaceholder: { 'zh-CN': '可选，如 600519', 'en-US': 'Optional' },
   url: { 'zh-CN': '链接', 'en-US': 'URL' },
@@ -256,9 +192,6 @@ const getLabel = (key) => {
           </div>
           <p class="note-content">{{ item.content }}</p>
           <div class="note-footer">
-            <div class="note-tags">
-              <span v-for="tag in item.tags" :key="tag" class="tag">{{ tag }}</span>
-            </div>
             <div class="note-meta">
               <span v-if="item.stockCode" class="stock-code">{{ item.stockCode }}</span>
               <span class="note-time">{{ item.createdAt }}</span>
@@ -276,19 +209,13 @@ const getLabel = (key) => {
         <div class="articles-table">
           <div class="table-header">
             <div class="th col-title">{{ getLabel('title') }}</div>
-            <div class="th col-source">{{ getLabel('source') }}</div>
-            <div class="th col-tags">{{ getLabel('tags') }}</div>
-            <div class="th col-date">{{ getLabel('savedAt') }}</div>
             <div class="th col-actions"></div>
+            <div class="th col-source">{{ getLabel('source') }}</div>
+            <div class="th col-date">{{ getLabel('savedAt') }}</div>
           </div>
           <div class="table-body">
             <div v-for="item in filteredArticles" :key="item.id" class="table-row" @click="openArticle(item.url)">
               <div class="td col-title">{{ item.title }}</div>
-              <div class="td col-source">{{ item.source }}</div>
-              <div class="td col-tags">
-                <span v-for="tag in item.tags" :key="tag" class="tag">{{ tag }}</span>
-              </div>
-              <div class="td col-date">{{ item.savedAt }}</div>
               <div class="td col-actions" @click.stop>
                 <button class="action-btn" @click="editItem(item)">
                   <i class="fas fa-edit"></i>
@@ -297,6 +224,8 @@ const getLabel = (key) => {
                   <i class="fas fa-trash"></i>
                 </button>
               </div>
+              <div class="td col-source">{{ item.source }}</div>
+              <div class="td col-date">{{ item.savedAt }}</div>
             </div>
           </div>
         </div>
@@ -331,21 +260,6 @@ const getLabel = (key) => {
               <div class="form-group half">
                 <label class="form-label">{{ getLabel('source') }}</label>
                 <input type="text" class="form-input" v-model="newItem.source">
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">{{ getLabel('tags') }}</label>
-              <div class="tag-selector">
-                <button 
-                  v-for="tag in availableTags" 
-                  :key="tag"
-                  class="tag-select-btn"
-                  :class="{ 'active': newItem.tags.includes(tag) }"
-                  @click="toggleTag(tag)"
-                >
-                  {{ tag }}
-                </button>
               </div>
             </div>
 
@@ -597,7 +511,7 @@ const getLabel = (key) => {
 
 .table-header {
   display: grid;
-  grid-template-columns: 1fr 90px 90px 90px 60px;
+  grid-template-columns: 1fr 90px 90px 90px;
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-light);
 }
@@ -615,6 +529,15 @@ const getLabel = (key) => {
   box-sizing: border-box;
 }
 
+.th.col-title,
+.th.col-actions,
+.th.col-source,
+.th.col-date {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
 .th.col-source,
 .th.col-tags,
 .th.col-date {
@@ -626,7 +549,7 @@ const getLabel = (key) => {
 
 .table-row {
   display: grid;
-  grid-template-columns: 1fr 90px 90px 90px 60px;
+  grid-template-columns: 1fr 90px 90px 90px;
   border-bottom: 1px solid var(--border-light);
   transition: background 0.15s ease;
   cursor: pointer;
@@ -681,7 +604,7 @@ const getLabel = (key) => {
 }
 
 .col-actions {
-  justify-content: flex-end;
+  justify-content: center;
   gap: 4px;
 }
 
@@ -866,6 +789,10 @@ const getLabel = (key) => {
 }
 
 @media (max-width: 768px) {
+  .notes-tabs {
+    flex-wrap: wrap;
+  }
+  
   .tab-btn {
     width: 36px;
     height: 36px;
@@ -877,11 +804,18 @@ const getLabel = (key) => {
     display: none;
   }
   
+  .search-box {
+    order: 3;
+    flex: 1;
+    min-width: 120px;
+  }
+  
   .add-btn {
     width: 36px;
     height: 36px;
     padding: 0;
     justify-content: center;
+    margin-left: auto;
   }
   
   .add-btn span {

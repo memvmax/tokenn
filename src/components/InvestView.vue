@@ -1,9 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useStockApi } from '../composables/useStockApi'
-import { useSupabase } from '../lib/supabase'
 
-const { saveUserData, loadUserData, getUser } = useSupabase()
 const currentUser = ref(null)
 
 const exchangeRates = ref({
@@ -797,31 +795,19 @@ const syncStockValuesToWallet = () => {
 
 watch(profitData, () => {
   syncStockValuesToWallet()
-  if (currentUser.value) {
-    saveUserData(currentUser.value.id, 'invest', profitData.value)
-  }
+  saveInvestData()
 }, { deep: true })
 
 const saveInvestData = () => {
   localStorage.setItem('investData', JSON.stringify(profitData.value))
 }
 
-const loadInvestData = async () => {
+const loadInvestData = () => {
   const version = localStorage.getItem('investDataVersion')
   
   if (version !== '9') {
     localStorage.removeItem('investData')
     localStorage.removeItem('investDataVersion')
-  }
-  
-  if (currentUser.value) {
-    const { data: cloudData, error } = await loadUserData(currentUser.value.id, 'invest')
-    if (!error && cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
-      profitData.value = cloudData
-      localStorage.setItem('investData', JSON.stringify(cloudData))
-      localStorage.setItem('investDataVersion', '9')
-      return
-    }
   }
   
   const saved = localStorage.getItem('investData')
@@ -837,11 +823,8 @@ const loadInvestData = async () => {
   }
 }
 
-onMounted(async () => {
-  const { user } = await getUser()
-  currentUser.value = user
-  
-  await loadInvestData()
+onMounted(() => {
+  loadInvestData()
   fetchExchangeRates()
   refreshPrices()
   syncStockValuesToWallet()

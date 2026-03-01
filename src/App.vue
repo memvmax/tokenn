@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import AppHeader from './components/AppHeader.vue';
 import TotalAsset from './components/TotalAsset.vue';
 import NewsFeed from './components/NewsFeed.vue';
@@ -66,12 +66,10 @@ import InvestView from './components/InvestView.vue';
 import NotesView from './components/NotesView.vue';
 import WalletView from './components/WalletView.vue';
 import { useLocale } from './composables/useLocale';
-import { useSupabase } from './lib/supabase';
 import { useDataStorage } from './composables/useDataStorage';
 import { useViewState } from './composables/useViewState';
 
 const { t, initLocale, formatAmount, formatCurrency } = useLocale();
-const { getUser, signOut, onAuthStateChange, isConfigured } = useSupabase();
 const { setUserId, saveData, loadData, saveAllData, loadAllData } = useDataStorage();
 const { currentView, getView } = useViewState();
 
@@ -172,8 +170,7 @@ const handleAuthSuccess = async (session) => {
   showAuthModal.value = false;
 };
 
-const handleLogout = async () => {
-  await signOut();
+const handleLogout = () => {
   user.value = null;
   setUserId(null);
 };
@@ -229,8 +226,6 @@ const handleThemeChange = (themeId) => {
   saveToStorage();
 };
 
-let authSubscription = null;
-
 onMounted(async () => {
   initLocale();
   
@@ -238,32 +233,7 @@ onMounted(async () => {
   currentTheme.value = savedTheme;
   document.documentElement.setAttribute('data-theme', savedTheme);
   
-  if (isConfigured) {
-    const { user: authUser } = await getUser();
-    if (authUser) {
-      user.value = authUser;
-      setUserId(authUser.id);
-    }
-    
-    authSubscription = onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        user.value = session.user;
-        setUserId(session.user.id);
-        loadFromStorage();
-      } else if (event === 'SIGNED_OUT') {
-        user.value = null;
-        setUserId(null);
-      }
-    });
-  }
-  
   await loadFromStorage();
-});
-
-onUnmounted(() => {
-  if (authSubscription) {
-    authSubscription.data.subscription.unsubscribe();
-  }
 });
 </script>
 

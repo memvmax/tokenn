@@ -78,7 +78,6 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useSupabase } from '../lib/supabase';
 
 const props = defineProps({
   isVisible: {
@@ -93,8 +92,6 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'success']);
 
-const { signIn, signUp } = useSupabase();
-
 const isLogin = ref(true);
 const email = ref('');
 const password = ref('');
@@ -103,34 +100,7 @@ const error = ref('');
 const loading = ref(false);
 
 const handleSubmit = async () => {
-  error.value = '';
-  
-  if (!isLogin.value && password.value !== confirmPassword.value) {
-    error.value = props.t('passwordMismatch');
-    return;
-  }
-
-  loading.value = true;
-
-  try {
-    let result;
-    if (isLogin.value) {
-      result = await signIn(email.value, password.value);
-    } else {
-      result = await signUp(email.value, password.value);
-    }
-
-    if (result.error) {
-      error.value = result.error.message;
-    } else {
-      emit('success', result.data);
-      close();
-    }
-  } catch (e) {
-    error.value = e.message;
-  } finally {
-    loading.value = false;
-  }
+  error.value = 'Auth service not configured. Please wait for new auth integration.';
 };
 
 const close = () => {

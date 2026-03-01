@@ -68,7 +68,7 @@
           <span class="section-title">ASSET MONITOR</span>
         </div>
 
-        <div class="data-table" v-if="filteredAssets.length > 0">
+        <div class="data-table">
         <div class="table-header">
           <div class="th col-type sortable" :class="getSortClass('type')" @click="toggleSort('type')">TYPE</div>
           <div class="th col-source">SOURCE</div>
@@ -97,7 +97,7 @@
             <span class="header-bottom">CHANGE</span>
           </div>
         </div>
-        <div class="table-body">
+        <div class="table-body" v-if="filteredAssets.length > 0">
           <template v-for="asset in filteredAssets" :key="asset.id">
             <div 
               class="table-row desktop-row"
@@ -206,12 +206,6 @@
             </div>
           </template>
         </div>
-      </div>
-
-      <div class="empty-state" v-else>
-        <i class="fas fa-wallet"></i>
-        <p>No assets selected</p>
-        <button class="add-first-btn" @click="showAddModal = true">ADD ASSET</button>
       </div>
 
       <div class="section-summary" v-if="filteredAssets.length > 0">
@@ -467,9 +461,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useSupabase } from '../lib/supabase'
 
-const { saveUserData, loadUserData, getUser } = useSupabase()
 const currentUser = ref(null)
 
 const props = defineProps({
@@ -1174,22 +1166,12 @@ const saveData = () => {
   }
 }
 
-const loadData = async () => {
+const loadData = () => {
   const version = localStorage.getItem('walletDataVersion')
   
   if (version !== '9') {
     localStorage.removeItem('walletData')
     localStorage.removeItem('walletDataVersion')
-  }
-  
-  if (currentUser.value) {
-    const { data: cloudData, error } = await loadUserData(currentUser.value.id, 'wallet')
-    if (!error && cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
-      assets.value = cloudData
-      localStorage.setItem('walletData', JSON.stringify(cloudData))
-      localStorage.setItem('walletDataVersion', '9')
-      return
-    }
   }
   
   const saved = localStorage.getItem('walletData')
@@ -1271,11 +1253,8 @@ const receiveStockSyncData = () => {
   }
 }
 
-onMounted(async () => {
-  const { user } = await getUser()
-  currentUser.value = user
-  
-  await loadData()
+onMounted(() => {
+  loadData()
   receiveStockSyncData()
   fetchCryptoAndGoldPrices()
   emit('update:total', totalWalletValue.value)
