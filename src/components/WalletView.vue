@@ -2264,6 +2264,13 @@ defineExpose({
   .col-type {
     align-items: flex-start;
   }
+
+  .col-price .td,
+  .col-price,
+  .col-unit {
+    align-items: flex-end;
+    text-align: right;
+  }
   
   .col-value .td,
   .col-value,
