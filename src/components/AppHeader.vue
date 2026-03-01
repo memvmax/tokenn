@@ -263,8 +263,13 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useLocale } from '../composables/useLocale'
 import { useViewState } from '../composables/useViewState'
+import { useSupabase } from '../lib/useSupabase'
 
-const { currentLocale, setLocale, t } = useLocale()
+const { t } = useLocale()
+const { saveUserData, loadUserData, getUser } = useSupabase()
+const currentUser = ref(null)
+
+const { currentLocale, setLocale } = useLocale()
 const { currentView, viewOptions, setView, getView } = useViewState()
 
 const showViewMenu = ref(false)
@@ -526,20 +531,38 @@ const emitPresetChange = () => {
   })
 }
 
-const savePresets = () => {
+const savePresets = async () => {
+  const data = {
+    presets: presets.value,
+    activePresetId: activePresetId.value
+  }
+  
   try {
-    localStorage.setItem('assetPresets', JSON.stringify({
-      presets: presets.value,
-      activePresetId: activePresetId.value
-    }))
+    localStorage.setItem('assetPresets', JSON.stringify(data))
+    
+    if (currentUser.value) {
+      await saveUserData(currentUser.value.id, 'presets', data)
+    }
   } catch (error) {
     console.error('Save presets failed:', error)
   }
 }
 
-const loadPresets = () => {
+const loadPresets = async () => {
+  const saved = localStorage.getItem('assetPresets')
+  
+  if (currentUser.value) {
+    const { data: cloudData, error } = await loadUserData(currentUser.value.id, 'presets')
+    if (!error && cloudData && cloudData.presets && cloudData.presets.length > 0) {
+      presets.value = cloudData.presets
+      activePresetId.value = cloudData.activePresetId || cloudData.presets[0].id
+      localStorage.setItem('assetPresets', JSON.stringify(cloudData))
+      emitPresetChange()
+      return
+    }
+  }
+  
   try {
-    const saved = localStorage.getItem('assetPresets')
     if (saved) {
       const data = JSON.parse(saved)
       if (data.presets && data.presets.length > 0) {
@@ -605,8 +628,11 @@ const fetchExchangeRates = async () => {
   }
 }
 
-onMounted(() => {
-  loadPresets()
+onMounted(async () => {
+  const { user } = await getUser()
+  currentUser.value = user
+  
+  await loadPresets()
   window.addEventListener('resize', handleResize)
   fetchExchangeRates()
 })

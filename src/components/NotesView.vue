@@ -1,5 +1,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useSupabase } from '../lib/useSupabase'
+
+const { saveUserData, loadUserData, getUser } = useSupabase()
+const currentUser = ref(null)
 
 const props = defineProps({
   t: {
@@ -96,6 +100,7 @@ const saveItem = () => {
   
   showAddModal.value = false
   editingItem.value = null
+  saveNotesData()
 }
 
 const deleteItem = (id) => {
@@ -104,6 +109,7 @@ const deleteItem = (id) => {
   } else {
     articlesData.value = articlesData.value.filter(n => n.id !== id)
   }
+  saveNotesData()
 }
 
 const openArticle = (url) => {
@@ -144,9 +150,54 @@ const handleClickOutside = (event) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  const { user } = await getUser()
+  currentUser.value = user
+  
+  await loadNotesData()
   document.addEventListener('click', handleClickOutside)
 })
+
+const loadNotesData = async () => {
+  if (currentUser.value) {
+    const { data: notesCloud, error: notesError } = await loadUserData(currentUser.value.id, 'notes')
+    if (!notesError && notesCloud && Array.isArray(notesCloud) && notesCloud.length > 0) {
+      notesData.value = notesCloud
+      localStorage.setItem('notesData', JSON.stringify(notesCloud))
+    }
+    
+    const { data: articlesCloud, error: articlesError } = await loadUserData(currentUser.value.id, 'articles')
+    if (!articlesError && articlesCloud && Array.isArray(articlesCloud) && articlesCloud.length > 0) {
+      articlesData.value = articlesCloud
+      localStorage.setItem('articlesData', JSON.stringify(articlesCloud))
+    }
+    return
+  }
+  
+  const savedNotes = localStorage.getItem('notesData')
+  if (savedNotes) {
+    try {
+      notesData.value = JSON.parse(savedNotes)
+    } catch (e) {}
+  }
+  
+  const savedArticles = localStorage.getItem('articlesData')
+  if (savedArticles) {
+    try {
+      articlesData.value = JSON.parse(savedArticles)
+    } catch (e) {}
+  }
+}
+
+const saveNotesData = async () => {
+  localStorage.setItem('notesData', JSON.stringify(notesData.value))
+  localStorage.setItem('articlesData', JSON.stringify(articlesData.value))
+  
+  if (currentUser.value) {
+    await saveUserData(currentUser.value.id, 'notes', notesData.value)
+    await saveUserData(currentUser.value.id, 'articles', articlesData.value)
+  }
+}
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)

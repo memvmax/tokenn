@@ -447,7 +447,9 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useSupabase } from '../lib/useSupabase'
 
+const { saveUserData, loadUserData, getUser } = useSupabase()
 const currentUser = ref(null)
 
 const props = defineProps({
@@ -1204,12 +1206,22 @@ const saveData = () => {
   }
 }
 
-const loadData = () => {
+const loadData = async () => {
   const version = localStorage.getItem('walletDataVersion')
   
   if (version !== '9') {
     localStorage.removeItem('walletData')
     localStorage.removeItem('walletDataVersion')
+  }
+  
+  if (currentUser.value) {
+    const { data: cloudData, error } = await loadUserData(currentUser.value.id, 'wallet')
+    if (!error && cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
+      assets.value = cloudData
+      localStorage.setItem('walletData', JSON.stringify(cloudData))
+      localStorage.setItem('walletDataVersion', '9')
+      return
+    }
   }
   
   const saved = localStorage.getItem('walletData')
@@ -1291,8 +1303,11 @@ const receiveStockSyncData = () => {
   }
 }
 
-onMounted(() => {
-  loadData()
+onMounted(async () => {
+  const { user } = await getUser()
+  currentUser.value = user
+  
+  await loadData()
   receiveStockSyncData()
   fetchCryptoAndGoldPrices()
   emit('update:total', totalWalletValue.value)
