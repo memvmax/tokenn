@@ -28,7 +28,8 @@ export function useStockApi() {
     }
     
     if (market === '美股') {
-      return code
+      // Yahoo Finance 使用 - 代替 . 作为后缀分隔符 (如 PBR.A -> PBR-A)
+      return code.replace(/\./g, '-')
     }
     
     return code
