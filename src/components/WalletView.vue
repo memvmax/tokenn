@@ -1226,7 +1226,7 @@ const removeAsset = (id) => {
 
 const saveData = () => {
   localStorage.setItem('walletData', JSON.stringify(assets.value))
-  localStorage.setItem('walletDataVersion', '8')
+  localStorage.setItem('walletDataVersion', '10')
   emit('update:total', totalWalletValue.value)
   
   if (currentUser.value) {
@@ -1237,31 +1237,44 @@ const saveData = () => {
 const loadData = async () => {
   const version = localStorage.getItem('walletDataVersion')
   
-  if (version !== '9') {
+  if (version !== '10') {
     localStorage.removeItem('walletData')
     localStorage.removeItem('walletDataVersion')
   }
   
+  let loadedData = null
+  
   if (currentUser.value) {
     const { data: cloudData, error } = await loadUserData(currentUser.value.id, 'wallet')
     if (!error && cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
-      assets.value = cloudData
-      localStorage.setItem('walletData', JSON.stringify(cloudData))
-      localStorage.setItem('walletDataVersion', '9')
-      return
+      loadedData = cloudData
     }
   }
   
-  const saved = localStorage.getItem('walletData')
-  if (saved) {
-    try {
-      const data = JSON.parse(saved)
-      if (Array.isArray(data) && data.length > 0) {
-        assets.value = data
-        localStorage.setItem('walletDataVersion', '9')
+  if (!loadedData) {
+    const saved = localStorage.getItem('walletData')
+    if (saved) {
+      try {
+        const data = JSON.parse(saved)
+        if (Array.isArray(data) && data.length > 0) {
+          loadedData = data
+        }
+      } catch (e) {
       }
-    } catch (e) {
     }
+  }
+  
+  if (loadedData) {
+    // 清理 stock 类型的历史记录（移除从 Invest 同步的旧数据）
+    loadedData.forEach(asset => {
+      if (asset.type === 'stock' && asset.history) {
+        // 只保留用户手动添加的历史记录（没有 code/name 字段的）
+        asset.history = asset.history.filter(item => !item.code && !item.name)
+      }
+    })
+    assets.value = loadedData
+    localStorage.setItem('walletDataVersion', '10')
+    saveData()
   }
 }
 
