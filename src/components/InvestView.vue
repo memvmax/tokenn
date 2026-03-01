@@ -270,7 +270,7 @@ const detectMarket = (code) => {
   if (/^\d{5}$/.test(cleanCode) || cleanCode.length === 5 && /^\d/.test(cleanCode)) {
     return '港股'
   }
-  if (/^[A-Z]{1,5}$/.test(cleanCode) && !cleanCode.startsWith('SH') && !cleanCode.startsWith('SZ')) {
+  if (/^[A-Z]{1,5}(\.[A-Z])?$/.test(cleanCode.toUpperCase()) && !cleanCode.startsWith('SH') && !cleanCode.startsWith('SZ')) {
     return '美股'
   }
   if (cleanCode.length === 6 && /^\d+$/.test(cleanCode)) {
@@ -280,7 +280,7 @@ const detectMarket = (code) => {
       return 'A股'
     }
   }
-  return 'A股'
+  return '美股'
 }
 
 const cleanCode = (code) => {
