@@ -928,9 +928,6 @@ const positionSummaryData = computed(() => {
       } else if (field === 'target') {
         valueA = a.avgTargetPercent
         valueB = b.avgTargetPercent
-      } else if (field === 'deviation') {
-        valueA = a.deviation
-        valueB = b.deviation
       }
       
       if (order === 1) {
@@ -1308,7 +1305,6 @@ defineExpose({
             <div class="th col-value sortable" :class="getPositionSortClass('total')" @click="togglePositionSort('total')">TOTAL</div>
             <div class="th col-percent sortable" :class="getPositionSortClass('current')" @click="togglePositionSort('current')">{{ getLabel('currentPercent') }}</div>
             <div class="th col-percent sortable" :class="getPositionSortClass('target')" @click="togglePositionSort('target')">{{ getLabel('targetPercent') }}</div>
-            <div class="th col-diff sortable" :class="getPositionSortClass('deviation')" @click="togglePositionSort('deviation')">{{ getLabel('deviation') }}</div>
           </div>
           <div class="table-body">
             <template v-for="item in positionSummaryData" :key="item.code">
@@ -1321,9 +1317,6 @@ defineExpose({
                 <div class="td col-value font-numeric">{{ formatCNY(item.totalValue) }}</div>
                 <div class="td col-percent font-numeric">{{ item.currentPercent.toFixed(1) }}%</div>
                 <div class="td col-percent font-numeric">{{ item.avgTargetPercent.toFixed(1) }}%</div>
-                <div class="td col-diff font-numeric" :class="getDiffClass(item.deviation)">
-                  {{ item.deviation > 0 ? '+' : '' }}{{ item.deviation.toFixed(1) }}%
-                </div>
               </div>
               
               <div v-if="selectedCategoryCode === item.code && item.stocks" class="transaction-detail">
@@ -1905,7 +1898,7 @@ defineExpose({
 }
 
 .table-header.position-header {
-  grid-template-columns: 1fr 90px 90px 90px 90px;
+  grid-template-columns: 1fr 90px 90px 90px;
 }
 
 .type-toggle-btn {
