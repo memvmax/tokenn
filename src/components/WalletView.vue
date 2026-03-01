@@ -301,7 +301,7 @@
               <select class="form-select" v-model="addForm.currency">
                 <option value="CNY">CNY (人民币)</option>
                 <option value="USD">USD (美元)</option>
-                <option value="EUR">EUR (欧元)</option>
+                <option value="HKD">HKD (港币)</option>
               </select>
             </div>
             <div class="form-group">
@@ -487,7 +487,7 @@ const sortState = ref({ field: null, order: 0 })
 const positionSortState = ref({ field: null, order: 0 })
 const historyContextMenu = ref({ show: false, x: 0, y: 0, asset: null, item: null, index: -1 })
 const longPressTimer = ref(null)
-const exchangeRates = ref({ USD: 7.25, EUR: 7.85, CNY: 1 })
+const exchangeRates = ref({ USD: 7.25, HKD: 0.93, CNY: 1 })
 const displayCurrency = ref('CNY')
 const addForm = ref({ 
   type: 'cash', 
