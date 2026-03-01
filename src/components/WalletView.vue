@@ -215,9 +215,9 @@
         <div class="data-table">
           <div class="table-header position-header">
             <div class="th col-type sortable" :class="getPositionSortClass('type')" @click="togglePositionSort('type')">TYPE</div>
+            <div class="th col-value sortable" :class="getPositionSortClass('total')" @click="togglePositionSort('total')">TOTAL</div>
             <div class="th col-percent sortable" :class="getPositionSortClass('currentPercent')" @click="togglePositionSort('currentPercent')">CURRENT</div>
             <div class="th col-percent">TARGET</div>
-            <div class="th col-diff">DEVIATION</div>
           </div>
           <div class="table-body">
             <template v-for="item in sortedAssetAllocation" :key="item.type">
@@ -227,11 +227,9 @@
                 @click="selectedPositionType = selectedPositionType === item.type ? null : item.type"
               >
                 <div class="td col-type">{{ item.name }}</div>
+                <div class="td col-value font-numeric">{{ formatNumber(item.value) }}</div>
                 <div class="td col-percent font-numeric">{{ item.currentPercent.toFixed(1) }}%</div>
                 <div class="td col-percent font-numeric">{{ item.targetPercent.toFixed(1) }}%</div>
-                <div class="td col-diff font-numeric" :class="getDiffClass(item.deviation)">
-                  {{ item.deviation > 0 ? '+' : '' }}{{ item.deviation.toFixed(1) }}%
-                </div>
               </div>
               
               <div v-if="selectedPositionType === item.type && item.assets" class="asset-detail">
@@ -649,6 +647,9 @@ const sortedAssetAllocation = computed(() => {
     if (field === 'type') {
       aVal = a.name
       bVal = b.name
+    } else if (field === 'total') {
+      aVal = a.value
+      bVal = b.value
     } else if (field === 'currentPercent') {
       aVal = a.currentPercent
       bVal = b.currentPercent
@@ -2196,8 +2197,8 @@ defineExpose({
     justify-content: flex-start;
   }
   
-  .position-header .th.col-percent,
-  .position-header .th.col-diff {
+  .position-header .th.col-value,
+  .position-header .th.col-percent {
     justify-content: flex-end;
   }
   
