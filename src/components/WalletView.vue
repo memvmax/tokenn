@@ -965,7 +965,6 @@ const toggleHistory = () => {
 
 const refreshData = () => {
   loadData()
-  receiveStockSyncData()
   fetchCryptoAndGoldPrices()
 }
 
@@ -1266,103 +1265,19 @@ const loadData = async () => {
   }
 }
 
-const receiveStockSyncData = () => {
-  const syncDataStr = localStorage.getItem('stockSyncData')
-  if (!syncDataStr) return
-  
-  try {
-    const syncData = JSON.parse(syncDataStr)
-    const { date, markets, transactions, isLastDayOfMonth } = syncData
-    
-    // 只更新由 InvestView 同步创建的汇总资产（带有 isFromInvest 标记）
-    // 这样不会覆盖用户手动导入的单个股票资产
-    const marketAssets = {
-      'A股': assets.value.find(a => a.type === 'stock' && a.source === 'A股' && a.isFromInvest === true),
-      '港股': assets.value.find(a => a.type === 'stock' && a.source === '港股' && a.isFromInvest === true),
-      '美股': assets.value.find(a => a.type === 'stock' && a.source === '美股' && a.isFromInvest === true)
-    }
-    
-    // 如果没有找到任何标记的资产，说明没有启用 Invest 同步，直接返回
-    const hasAnyMarketAsset = Object.values(marketAssets).some(a => a !== undefined)
-    if (!hasAnyMarketAsset) {
-      console.log('No Invest-synced market assets found, skipping sync')
-      return
-    }
-    
-    Object.keys(markets).forEach(market => {
-      const asset = marketAssets[market]
-      if (!asset) return
-      
-      const newValue = markets[market]
-      const oldValue = asset.value
-      const changePercent = oldValue > 0 ? ((newValue - oldValue) / oldValue * 100) : 0
-      
-      asset.currentPrice = newValue
-      asset.value = newValue
-      
-      if (transactions && transactions[market]) {
-        asset.history = transactions[market].map(trans => ({
-          date: trans.date,
-          type: trans.type,
-          price: trans.price,
-          unit: trans.quantity,
-          value: trans.value,
-          change: 0,
-          code: trans.code,
-          name: trans.name
-        }))
-      }
-      
-      if (isLastDayOfMonth) {
-        const lastHistory = asset.history[asset.history.length - 1]
-        const lastDate = lastHistory ? lastHistory.date : null
-        const lastValue = lastHistory ? lastHistory.value : 0
-        const monthChange = lastValue > 0 ? ((newValue - lastValue) / lastValue * 100) : 0
-        
-        if (lastDate !== date) {
-          asset.history.push({
-            date,
-            type: 'update',
-            price: newValue,
-            unit: 1,
-            value: newValue,
-            change: monthChange
-          })
-          
-          asset.profit = newValue - (asset.buyPrice || newValue)
-          asset.change = monthChange
-        }
-      }
-    })
-    
-    saveData()
-  } catch (e) {
-    console.error('Failed to parse stock sync data:', e)
-  }
-}
+// 已移除 InvestView 同步逻辑 - 现在 Wallet 和 Invest 数据独立管理
 
 onMounted(async () => {
   const { user } = await getUser()
   currentUser.value = user
   
   await loadData()
-  receiveStockSyncData()
   fetchCryptoAndGoldPrices()
   emit('update:total', totalWalletValue.value)
-  
-  window.addEventListener('storage', (e) => {
-    if (e.key === 'stockSyncData') {
-      receiveStockSyncData()
-    }
-  })
   
   document.addEventListener('click', () => {
     closeHistoryContextMenu()
   })
-  
-  setInterval(() => {
-    receiveStockSyncData()
-  }, 5000)
   
   setInterval(() => {
     fetchCryptoAndGoldPrices()

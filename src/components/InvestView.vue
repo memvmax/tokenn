@@ -768,67 +768,9 @@ const refreshPrices = async () => {
   }
 }
 
-const syncStockValuesToWallet = () => {
-  const marketValues = {
-    'A股': 0,
-    '港股': 0,
-    '美股': 0
-  }
-  
-  const marketTransactions = {
-    'A股': [],
-    '港股': [],
-    '美股': []
-  }
-  
-  profitData.value.forEach(stock => {
-    if (stock.shares > 0 && marketValues.hasOwnProperty(stock.market)) {
-      marketValues[stock.market] += convertToCNY(stock.currentPrice * stock.shares, stock.market)
-    }
-    
-    if (stock.transactions && stock.transactions.length > 0 && marketTransactions.hasOwnProperty(stock.market)) {
-      stock.transactions.forEach(trans => {
-        marketTransactions[stock.market].push({
-          date: trans.date,
-          type: trans.type,
-          price: trans.price,
-          quantity: trans.quantity,
-          value: trans.price * trans.quantity,
-          commission: trans.commission || 0,
-          tax: trans.tax || 0,
-          code: stock.code,
-          name: stock.name
-        })
-      })
-    }
-  })
-  
-  Object.keys(marketTransactions).forEach(market => {
-    marketTransactions[market].sort((a, b) => {
-      const dateA = new Date(a.date.replace(/\//g, '-'))
-      const dateB = new Date(b.date.replace(/\//g, '-'))
-      return dateB - dateA
-    })
-  })
-  
-  const today = new Date()
-  const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-  const isLastDay = today.getDate() === lastDayOfMonth.getDate()
-  
-  const syncData = {
-    date: today.toISOString().split('T')[0],
-    markets: marketValues,
-    transactions: marketTransactions,
-    isLastDayOfMonth: isLastDay
-  }
-  
-  localStorage.setItem('stockSyncData', JSON.stringify(syncData))
-  
-  return syncData
-}
+// 已移除 Wallet 同步逻辑 - Invest 和 Wallet 数据独立管理
 
 watch(profitData, () => {
-  syncStockValuesToWallet()
   saveInvestData()
 }, { deep: true })
 
@@ -878,7 +820,6 @@ onMounted(async () => {
   await loadInvestData()
   fetchExchangeRates()
   refreshPrices()
-  syncStockValuesToWallet()
   
   document.addEventListener('click', () => {
     closeContextMenu()
