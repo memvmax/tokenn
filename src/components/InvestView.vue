@@ -645,23 +645,57 @@ const deleteTransaction = (stockCode, transIndex) => {
 const recalculateStock = (stock) => {
   if (!stock.transactions || stock.transactions.length === 0) return
   
-  let totalCost = 0
-  let totalShares = 0
+  // 分离买入和卖出交易
+  const buyTrans = stock.transactions.filter(t => t.type === 'buy')
+  const sellTrans = stock.transactions.filter(t => t.type === 'sell')
   
-  stock.transactions.forEach(trans => {
-    if (trans.type === 'buy') {
-      totalCost += trans.price * trans.quantity + trans.commission
-      totalShares += trans.quantity
-    } else {
-      totalCost -= trans.price * trans.quantity - trans.commission
-      totalShares -= trans.quantity
-    }
+  // 计算总买入成本和股数
+  let totalBuyCost = 0
+  let totalBuyShares = 0
+  buyTrans.forEach(trans => {
+    totalBuyCost += trans.price * trans.quantity + (trans.commission || 0)
+    totalBuyShares += trans.quantity
   })
   
-  stock.shares = totalShares
-  stock.buyPrice = totalShares > 0 ? totalCost / totalShares : 0
-  stock.profit = stock.currentPrice * stock.shares - totalCost
-  stock.profitPercent = totalCost > 0 ? (stock.profit / totalCost * 100) : 0
+  // 计算总卖出金额
+  let totalSellAmount = 0
+  let totalSellShares = 0
+  sellTrans.forEach(trans => {
+    totalSellAmount += trans.price * trans.quantity - (trans.commission || 0)
+    totalSellShares += trans.quantity
+  })
+  
+  // 已实现盈亏 = 卖出金额 - 对应买入成本（按FIFO计算）
+  let realizedProfit = 0
+  if (totalSellShares > 0) {
+    // 计算平均买入成本
+    const avgBuyCost = totalBuyShares > 0 ? totalBuyCost / totalBuyShares : 0
+    // 已实现盈亏 = 卖出金额 - 卖出股数 × 平均买入成本
+    realizedProfit = totalSellAmount - (totalSellShares * avgBuyCost)
+  }
+  
+  // 当前持仓
+  const currentShares = totalBuyShares - totalSellShares
+  
+  // 持仓成本（剩余买入成本）
+  const remainingCost = totalBuyCost - (totalSellShares * (totalBuyShares > 0 ? totalBuyCost / totalBuyShares : 0))
+  
+  // 未实现盈亏
+  const unrealizedProfit = currentShares > 0 ? (stock.currentPrice * currentShares - remainingCost) : 0
+  
+  // 总盈亏
+  const totalProfit = realizedProfit + unrealizedProfit
+  
+  // 计算收益率（基于总投入成本）
+  const totalCost = totalBuyCost
+  const profitPercent = totalCost > 0 ? (totalProfit / totalCost * 100) : 0
+  
+  stock.shares = currentShares
+  stock.buyPrice = currentShares > 0 ? remainingCost / currentShares : 0
+  stock.profit = totalProfit
+  stock.realizedProfit = realizedProfit
+  stock.unrealizedProfit = unrealizedProfit
+  stock.profitPercent = profitPercent
 }
 
 let searchTimeout = null
@@ -722,10 +756,8 @@ const refreshPrices = async () => {
       console.log(`Looking for stock ${priceData.symbol}, found:`, stock ? stock.code : 'not found')
       if (stock) {
         stock.currentPrice = priceData.price
-        stock.profit = (priceData.price - stock.buyPrice) * stock.shares
-        stock.profitPercent = stock.buyPrice > 0 
-          ? ((priceData.price - stock.buyPrice) / stock.buyPrice * 100) 
-          : 0
+        // 重新计算盈亏（包括已实现和未实现）
+        recalculateStock(stock)
         console.log(`Updated ${stock.code}: currentPrice=${stock.currentPrice}`)
       }
     })
