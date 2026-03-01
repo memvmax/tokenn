@@ -5,9 +5,14 @@ const user = ref(null)
 
 export function useSupabase() {
   const getUser = async () => {
-    const { data: { user: authUser } } = await supabase.auth.getUser()
-    user.value = authUser
-    return { user: authUser }
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      user.value = authUser
+      return { user: authUser }
+    } catch (e) {
+      console.error('getUser error:', e)
+      return { user: null, error: e }
+    }
   }
 
   const signIn = async (email, password) => {
@@ -40,32 +45,61 @@ export function useSupabase() {
   const isConfigured = true
 
   const saveUserData = async (userId, dataType, data) => {
-    const { data: result, error } = await supabase
-      .from('user_data')
-      .upsert({
-        user_id: userId,
-        data_type: dataType,
-        data: JSON.stringify(data),
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id, data_type'
-      })
-    
-    return { data: result, error }
+    try {
+      console.log('Saving to Supabase:', { userId, dataType, dataLength: data?.length })
+      
+      const { data: result, error } = await supabase
+        .from('user_data')
+        .upsert({
+          user_id: userId,
+          data_type: dataType,
+          data: JSON.stringify(data),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id, data_type'
+        })
+      
+      if (error) {
+        console.error('Supabase save error:', error)
+      } else {
+        console.log('Supabase save success:', { dataType })
+      }
+      
+      return { data: result, error }
+    } catch (e) {
+      console.error('Supabase save exception:', e)
+      return { data: null, error: e }
+    }
   }
 
   const loadUserData = async (userId, dataType) => {
-    const { data, error } = await supabase
-      .from('user_data')
-      .select('data')
-      .eq('user_id', userId)
-      .eq('data_type', dataType)
-      .maybeSingle()
-    
-    if (data?.data) {
-      return { data: JSON.parse(data.data), error }
+    try {
+      console.log('Loading from Supabase:', { userId, dataType })
+      
+      const { data, error } = await supabase
+        .from('user_data')
+        .select('data')
+        .eq('user_id', userId)
+        .eq('data_type', dataType)
+        .maybeSingle()
+      
+      if (error) {
+        console.error('Supabase load error:', error)
+        return { data: null, error }
+      }
+      
+      if (data?.data) {
+        const parsed = JSON.parse(data.data)
+        console.log('Supabase load success:', { dataType, dataLength: parsed?.length })
+        return { data: parsed, error }
+      }
+      
+      console.log('Supabase no data found:', { dataType })
+      return { data: null, error }
+    } catch (e) {
+      console.error('Supabase load exception:', e)
+      return { data: null, error: e }
     }
-    return { data: null, error }
   }
 
   return {
