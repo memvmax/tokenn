@@ -906,6 +906,7 @@ const positionSummaryData = computed(() => {
   
   let data = Array.from(categoryMap.values()).map(cat => ({
     ...cat,
+    totalValue: cat.currentValue,
     currentPercent: totalValue > 0 ? (cat.currentValue / totalValue * 100) : 0,
     avgTargetPercent: cat.targetPercent / cat.count,
     deviation: totalValue > 0 ? (cat.currentValue / totalValue * 100) - (cat.targetPercent / cat.count) : 0
@@ -918,7 +919,10 @@ const positionSummaryData = computed(() => {
     data = [...data].sort((a, b) => {
       let valueA, valueB
       
-      if (field === 'current') {
+      if (field === 'total') {
+        valueA = a.totalValue
+        valueB = b.totalValue
+      } else if (field === 'current') {
         valueA = a.currentPercent
         valueB = b.currentPercent
       } else if (field === 'target') {
@@ -965,6 +969,11 @@ const getPositionSortClass = (field) => {
 
 const formatPrice = (value) => {
   return value.toFixed(2)
+}
+
+const formatCNY = (value) => {
+  if (value === null || value === undefined || isNaN(value)) return '¥0'
+  return '¥' + Math.round(value).toLocaleString('en-US')
 }
 
 const formatNumber = (value) => {
@@ -1296,6 +1305,7 @@ defineExpose({
         <div class="data-table">
           <div class="table-header position-header">
             <div class="th col-category">{{ positionViewType === 'industry' ? getLabel('industry') : positionViewType === 'style' ? getLabel('style') : 'MARKET' }}</div>
+            <div class="th col-value sortable" :class="getPositionSortClass('total')" @click="togglePositionSort('total')">TOTAL</div>
             <div class="th col-percent sortable" :class="getPositionSortClass('current')" @click="togglePositionSort('current')">{{ getLabel('currentPercent') }}</div>
             <div class="th col-percent sortable" :class="getPositionSortClass('target')" @click="togglePositionSort('target')">{{ getLabel('targetPercent') }}</div>
             <div class="th col-diff sortable" :class="getPositionSortClass('deviation')" @click="togglePositionSort('deviation')">{{ getLabel('deviation') }}</div>
@@ -1308,6 +1318,7 @@ defineExpose({
                 @click="selectCategory(item.code)"
               >
                 <div class="td col-category">{{ item.name }}</div>
+                <div class="td col-value font-numeric">{{ formatCNY(item.totalValue) }}</div>
                 <div class="td col-percent font-numeric">{{ item.currentPercent.toFixed(1) }}%</div>
                 <div class="td col-percent font-numeric">{{ item.avgTargetPercent.toFixed(1) }}%</div>
                 <div class="td col-diff font-numeric" :class="getDiffClass(item.deviation)">
@@ -1894,7 +1905,7 @@ defineExpose({
 }
 
 .table-header.position-header {
-  grid-template-columns: 1fr 90px 90px 90px;
+  grid-template-columns: 1fr 90px 90px 90px 90px;
 }
 
 .type-toggle-btn {
@@ -2540,6 +2551,7 @@ defineExpose({
     justify-content: flex-start;
   }
   
+  .position-header .th.col-value,
   .position-header .th.col-percent,
   .position-header .th.col-diff {
     justify-content: flex-end;
