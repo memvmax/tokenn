@@ -81,145 +81,7 @@ const markets = [
   { id: '美股', nameEn: 'US STOCK', name: '美股' }
 ]
 
-const profitData = ref([
-  { 
-    code: '600519', 
-    name: '贵州茅台', 
-    market: 'A股', 
-    buyPrice: 1500.10, 
-    currentPrice: 1200.00, 
-    shares: 0, 
-    profit: -30015.00, 
-    profitPercent: -20.0,
-    category1: 'consumption',
-    category2: 'dividend',
-    targetPercent: 15,
-    transactions: [
-      { type: 'buy', price: 1450.00, quantity: 50, date: '2024-01-10', commission: 5.00 },
-      { type: 'buy', price: 1550.00, quantity: 50, date: '2024-02-15', commission: 5.00 },
-      { type: 'sell', price: 1200.00, quantity: 100, date: '2026-02-02', commission: 5.00 },
-    ]
-  },
-  { 
-    code: '000858', 
-    name: '五粮液', 
-    market: 'A股', 
-    buyPrice: 180.03, 
-    currentPrice: 165.00, 
-    shares: 200, 
-    profit: -3006.00, 
-    profitPercent: -8.3,
-    category1: 'consumption',
-    category2: 'dividend',
-    targetPercent: 10,
-    transactions: [
-      { type: 'buy', price: 175.00, quantity: 100, date: '2024-01-05', commission: 3.00 },
-      { type: 'buy', price: 185.00, quantity: 100, date: '2024-02-20', commission: 3.00 },
-    ]
-  },
-  { 
-    code: '00700', 
-    name: '腾讯控股', 
-    market: '港股', 
-    buyPrice: 350.20, 
-    currentPrice: 380.00, 
-    shares: 100, 
-    profit: 2980.00, 
-    profitPercent: 8.5,
-    category1: 'technology',
-    category2: 'growth',
-    targetPercent: 15,
-    transactions: [
-      { type: 'buy', price: 340.00, quantity: 50, date: '2024-01-15', commission: 10.00 },
-      { type: 'buy', price: 360.00, quantity: 50, date: '2024-03-01', commission: 10.00 },
-    ]
-  },
-  { 
-    code: '09988', 
-    name: '阿里巴巴', 
-    market: '港股', 
-    buyPrice: 120.08, 
-    currentPrice: 95.00, 
-    shares: 150, 
-    profit: -3762.00, 
-    profitPercent: -20.9,
-    category1: 'technology',
-    category2: 'value',
-    targetPercent: 10,
-    transactions: [
-      { type: 'buy', price: 110.00, quantity: 100, date: '2024-01-20', commission: 8.00 },
-      { type: 'buy', price: 130.00, quantity: 50, date: '2024-02-25', commission: 4.00 },
-    ]
-  },
-  { 
-    code: 'AAPL', 
-    name: 'Apple Inc.', 
-    market: '美股', 
-    buyPrice: 150.04, 
-    currentPrice: 178.50, 
-    shares: 100, 
-    profit: 2846.00, 
-    profitPercent: 19.0,
-    category1: 'technology',
-    category2: 'growth',
-    targetPercent: 20,
-    transactions: [
-      { type: 'buy', price: 145.00, quantity: 50, date: '2024-01-08', commission: 2.00 },
-      { type: 'buy', price: 155.00, quantity: 50, date: '2024-02-12', commission: 2.00 },
-    ]
-  },
-  { 
-    code: 'TSLA', 
-    name: 'Tesla Inc.', 
-    market: '美股', 
-    buyPrice: 200.05, 
-    currentPrice: 185.00, 
-    shares: 50, 
-    profit: -752.50, 
-    profitPercent: -7.5,
-    category1: 'technology',
-    category2: 'hot',
-    targetPercent: 10,
-    transactions: [
-      { type: 'buy', price: 190.00, quantity: 30, date: '2024-01-25', commission: 1.50 },
-      { type: 'buy', price: 210.00, quantity: 20, date: '2024-03-05', commission: 1.00 },
-    ]
-  },
-  { 
-    code: 'NVDA', 
-    name: 'NVIDIA Corp.', 
-    market: '美股', 
-    buyPrice: 300.05, 
-    currentPrice: 450.00, 
-    shares: 30, 
-    profit: 4498.50, 
-    profitPercent: 50.0,
-    category1: 'technology',
-    category2: 'hot',
-    targetPercent: 15,
-    transactions: [
-      { type: 'buy', price: 280.00, quantity: 20, date: '2024-01-12', commission: 1.00 },
-      { type: 'buy', price: 320.00, quantity: 10, date: '2024-02-28', commission: 0.50 },
-    ]
-  },
-  { 
-    code: 'MSFT', 
-    name: 'Microsoft Corp.', 
-    market: '美股', 
-    buyPrice: 380.00, 
-    currentPrice: 400.00, 
-    shares: 64, 
-    profit: 1280.00, 
-    profitPercent: 5.3,
-    category1: 'technology',
-    category2: 'bluechip',
-    targetPercent: 15,
-    transactions: [
-      { type: 'buy', price: 375.00, quantity: 32, date: '2024-01-18', commission: 2.00 },
-      { type: 'buy', price: 385.00, quantity: 32, date: '2024-02-22', commission: 2.00 },
-    ]
-  }
-])
+const profitData = ref([])
 
 const positionData = computed(() => {
   return profitData.value
@@ -945,10 +807,19 @@ const saveInvestData = () => {
 }
 
 const loadInvestData = async () => {
+  const version = localStorage.getItem('investDataVersion')
+  
+  if (version !== '9') {
+    localStorage.removeItem('investData')
+    localStorage.removeItem('investDataVersion')
+  }
+  
   if (currentUser.value) {
     const { data: cloudData, error } = await loadUserData(currentUser.value.id, 'invest')
     if (!error && cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
       profitData.value = cloudData
+      localStorage.setItem('investData', JSON.stringify(cloudData))
+      localStorage.setItem('investDataVersion', '9')
       return
     }
   }
@@ -959,6 +830,7 @@ const loadInvestData = async () => {
       const data = JSON.parse(saved)
       if (Array.isArray(data) && data.length > 0) {
         profitData.value = data
+        localStorage.setItem('investDataVersion', '9')
       }
     } catch (e) {
     }

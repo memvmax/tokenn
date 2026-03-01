@@ -312,24 +312,10 @@ const availableModules = [
   { id: 'emerging', name: 'EMERGING' }
 ]
 
-const defaultPresets = [
-  { 
-    id: 'default', 
-    name: 'MY PORTFOLIO', 
-    modules: ['cash', 'stock', 'bond', 'gold', 'emerging'],
-    percentages: {
-      cash: 20,
-      stock: 30,
-      bond: 25,
-      gold: 15,
-      emerging: 10
-    },
-    isDefault: true 
-  }
-]
+const defaultPresets = []
 
-const presets = ref([...defaultPresets])
-const activePresetId = ref('default')
+const presets = ref([])
+const activePresetId = ref(null)
 
 const showPresetMenu = ref(false)
 const showMenu = ref(false)
@@ -383,7 +369,7 @@ const selectTheme = (themeId) => {
 }
 
 const currentPreset = computed(() => {
-  return presets.value.find(p => p.id === activePresetId.value) || presets.value[0]
+  return presets.value.find(p => p.id === activePresetId.value) || presets.value[0] || { name: 'NEW PORTFOLIO', modules: [], percentages: {} }
 })
 
 const totalPercentage = computed(() => {

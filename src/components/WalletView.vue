@@ -512,195 +512,7 @@ const addForm = ref({
 })
 const editingAsset = ref(null)
 const editingHistoryIndex = ref(-1)
-const assets = ref([
-  {
-    id: 1,
-    type: 'gold',
-    source: 'ICBC Gold',
-    currentPrice: 680.50,
-    buyPrice: 620.00,
-    unit: 150,
-    value: 102075,
-    profit: 9075,
-    change: 9.76,
-    history: [
-      { date: '2025-08-15', type: 'buy', price: 580.00, unit: 50, value: 29000, change: 0 },
-      { date: '2025-11-20', type: 'buy', price: 640.00, unit: 50, value: 32000, change: 10.34 },
-      { date: '2026-01-10', type: 'buy', price: 660.00, unit: 50, value: 33000, change: 3.13 }
-    ]
-  },
-  {
-    id: 2,
-    type: 'gold',
-    source: 'Bank of China Gold',
-    currentPrice: 680.50,
-    buyPrice: 595.00,
-    unit: 80,
-    value: 54440,
-    profit: 6840,
-    change: 14.37,
-    history: [
-      { date: '2025-06-01', type: 'buy', price: 550.00, unit: 40, value: 22000, change: 0 },
-      { date: '2025-09-15', type: 'buy', price: 640.00, unit: 40, value: 25600, change: 16.36 }
-    ]
-  },
-  {
-    id: 3,
-    type: 'bond',
-    source: 'Treasury 3Y',
-    currentPrice: 102.80,
-    buyPrice: 100.00,
-    unit: 500,
-    value: 51400,
-    profit: 1400,
-    change: 2.80,
-    history: [
-      { date: '2025-01-15', type: 'buy', price: 100.00, unit: 500, value: 50000, change: 0 }
-    ]
-  },
-  {
-    id: 4,
-    type: 'bond',
-    source: 'Corporate Bond ABC',
-    currentPrice: 98.50,
-    buyPrice: 100.00,
-    unit: 200,
-    value: 19700,
-    profit: -300,
-    change: -1.50,
-    history: [
-      { date: '2025-03-20', type: 'buy', price: 100.00, unit: 200, value: 20000, change: 0 }
-    ]
-  },
-  {
-    id: 11,
-    type: 'emerging',
-    source: 'BTC',
-    currentPrice: 680000,
-    buyPrice: 420000,
-    unit: 0.5,
-    value: 340000,
-    profit: 130000,
-    change: 61.9,
-    history: [
-      { date: '2024-06-15', type: 'buy', price: 420000, unit: 0.5, value: 210000, change: 0 }
-    ]
-  },
-  {
-    id: 13,
-    type: 'stock',
-    source: 'A股',
-    currentPrice: 33000,
-    buyPrice: 36006,
-    unit: 1,
-    value: 33000,
-    profit: -3006,
-    change: -8.35,
-    history: [
-      { date: '2024-01-31', type: 'update', price: 90000, unit: 1, value: 90000, change: 0 },
-      { date: '2024-02-29', type: 'update', price: 186000, unit: 1, value: 186000, change: 106.7 },
-      { date: '2024-03-31', type: 'update', price: 195000, unit: 1, value: 195000, change: 4.8 },
-      { date: '2024-04-30', type: 'update', price: 188000, unit: 1, value: 188000, change: -3.6 },
-      { date: '2024-05-31', type: 'update', price: 192000, unit: 1, value: 192000, change: 2.1 },
-      { date: '2024-06-30', type: 'update', price: 185000, unit: 1, value: 185000, change: -3.6 },
-      { date: '2024-07-31', type: 'update', price: 178000, unit: 1, value: 178000, change: -3.8 },
-      { date: '2024-08-31', type: 'update', price: 172000, unit: 1, value: 172000, change: -3.4 },
-      { date: '2024-09-30', type: 'update', price: 165000, unit: 1, value: 165000, change: -4.1 },
-      { date: '2024-10-31', type: 'update', price: 158000, unit: 1, value: 158000, change: -4.2 },
-      { date: '2024-11-30', type: 'update', price: 152000, unit: 1, value: 152000, change: -3.8 },
-      { date: '2024-12-31', type: 'update', price: 148000, unit: 1, value: 148000, change: -2.6 },
-      { date: '2025-01-31', type: 'update', price: 145000, unit: 1, value: 145000, change: -2.0 },
-      { date: '2025-02-28', type: 'update', price: 142000, unit: 1, value: 142000, change: -2.1 },
-      { date: '2025-03-31', type: 'update', price: 138000, unit: 1, value: 138000, change: -2.8 },
-      { date: '2025-04-30', type: 'update', price: 135000, unit: 1, value: 135000, change: -2.2 },
-      { date: '2025-05-31', type: 'update', price: 132000, unit: 1, value: 132000, change: -2.2 },
-      { date: '2025-06-30', type: 'update', price: 128000, unit: 1, value: 128000, change: -3.0 },
-      { date: '2025-07-31', type: 'update', price: 125000, unit: 1, value: 125000, change: -2.3 },
-      { date: '2025-08-31', type: 'update', price: 122000, unit: 1, value: 122000, change: -2.4 },
-      { date: '2025-09-30', type: 'update', price: 118000, unit: 1, value: 118000, change: -3.3 },
-      { date: '2025-10-31', type: 'update', price: 115000, unit: 1, value: 115000, change: -2.5 },
-      { date: '2025-11-30', type: 'update', price: 112000, unit: 1, value: 112000, change: -2.6 },
-      { date: '2025-12-31', type: 'update', price: 108000, unit: 1, value: 108000, change: -3.6 },
-      { date: '2026-01-31', type: 'update', price: 33000, unit: 1, value: 33000, change: -69.4 }
-    ]
-  },
-  {
-    id: 14,
-    type: 'stock',
-    source: '港股',
-    currentPrice: 48070,
-    buyPrice: 47030,
-    unit: 1,
-    value: 48070,
-    profit: 1040,
-    change: 2.21,
-    history: [
-      { date: '2024-01-31', type: 'update', price: 25760, unit: 1, value: 25760, change: 0 },
-      { date: '2024-02-29', type: 'update', price: 32200, unit: 1, value: 32200, change: 25.0 },
-      { date: '2024-03-31', type: 'update', price: 45500, unit: 1, value: 45500, change: 41.3 },
-      { date: '2024-04-30', type: 'update', price: 43200, unit: 1, value: 43200, change: -5.1 },
-      { date: '2024-05-31', type: 'update', price: 44800, unit: 1, value: 44800, change: 3.7 },
-      { date: '2024-06-30', type: 'update', price: 46200, unit: 1, value: 46200, change: 3.1 },
-      { date: '2024-07-31', type: 'update', price: 44500, unit: 1, value: 44500, change: -3.7 },
-      { date: '2024-08-31', type: 'update', price: 42800, unit: 1, value: 42800, change: -3.8 },
-      { date: '2024-09-30', type: 'update', price: 44200, unit: 1, value: 44200, change: 3.3 },
-      { date: '2024-10-31', type: 'update', price: 45500, unit: 1, value: 45500, change: 2.9 },
-      { date: '2024-11-30', type: 'update', price: 46800, unit: 1, value: 46800, change: 2.9 },
-      { date: '2024-12-31', type: 'update', price: 47200, unit: 1, value: 47200, change: 0.9 },
-      { date: '2025-01-31', type: 'update', price: 46500, unit: 1, value: 46500, change: -1.5 },
-      { date: '2025-02-28', type: 'update', price: 45800, unit: 1, value: 45800, change: -1.5 },
-      { date: '2025-03-31', type: 'update', price: 45200, unit: 1, value: 45200, change: -1.3 },
-      { date: '2025-04-30', type: 'update', price: 46500, unit: 1, value: 46500, change: 2.9 },
-      { date: '2025-05-31', type: 'update', price: 47800, unit: 1, value: 47800, change: 2.8 },
-      { date: '2025-06-30', type: 'update', price: 47200, unit: 1, value: 47200, change: -1.3 },
-      { date: '2025-07-31', type: 'update', price: 46500, unit: 1, value: 46500, change: -1.5 },
-      { date: '2025-08-31', type: 'update', price: 45800, unit: 1, value: 45800, change: -1.5 },
-      { date: '2025-09-30', type: 'update', price: 46800, unit: 1, value: 46800, change: 2.2 },
-      { date: '2025-10-31', type: 'update', price: 47500, unit: 1, value: 47500, change: 1.5 },
-      { date: '2025-11-30', type: 'update', price: 48200, unit: 1, value: 48200, change: 1.5 },
-      { date: '2025-12-31', type: 'update', price: 47800, unit: 1, value: 47800, change: -0.8 },
-      { date: '2026-01-31', type: 'update', price: 48070, unit: 1, value: 48070, change: 0.6 }
-    ]
-  },
-  {
-    id: 15,
-    type: 'stock',
-    source: '美股',
-    currentPrice: 479950,
-    buyPrice: 327840,
-    unit: 1,
-    value: 479950,
-    profit: 152110,
-    change: 46.4,
-    history: [
-      { date: '2024-01-31', type: 'update', price: 219960, unit: 1, value: 219960, change: 0 },
-      { date: '2024-02-29', type: 'update', price: 419900, unit: 1, value: 419900, change: 90.9 },
-      { date: '2024-03-31', type: 'update', price: 445000, unit: 1, value: 445000, change: 6.0 },
-      { date: '2024-04-30', type: 'update', price: 425000, unit: 1, value: 425000, change: -4.5 },
-      { date: '2024-05-31', type: 'update', price: 468000, unit: 1, value: 468000, change: 10.1 },
-      { date: '2024-06-30', type: 'update', price: 495000, unit: 1, value: 495000, change: 5.8 },
-      { date: '2024-07-31', type: 'update', price: 512000, unit: 1, value: 512000, change: 3.4 },
-      { date: '2024-08-31', type: 'update', price: 485000, unit: 1, value: 485000, change: -5.3 },
-      { date: '2024-09-30', type: 'update', price: 528000, unit: 1, value: 528000, change: 8.9 },
-      { date: '2024-10-31', type: 'update', price: 555000, unit: 1, value: 555000, change: 5.1 },
-      { date: '2024-11-30', type: 'update', price: 582000, unit: 1, value: 582000, change: 4.9 },
-      { date: '2024-12-31', type: 'update', price: 598000, unit: 1, value: 598000, change: 2.7 },
-      { date: '2025-01-31', type: 'update', price: 575000, unit: 1, value: 575000, change: -3.8 },
-      { date: '2025-02-28', type: 'update', price: 592000, unit: 1, value: 592000, change: 3.0 },
-      { date: '2025-03-31', type: 'update', price: 568000, unit: 1, value: 568000, change: -4.1 },
-      { date: '2025-04-30', type: 'update', price: 545000, unit: 1, value: 545000, change: -4.0 },
-      { date: '2025-05-31', type: 'update', price: 528000, unit: 1, value: 528000, change: -3.1 },
-      { date: '2025-06-30', type: 'update', price: 512000, unit: 1, value: 512000, change: -3.0 },
-      { date: '2025-07-31', type: 'update', price: 495000, unit: 1, value: 495000, change: -3.3 },
-      { date: '2025-08-31', type: 'update', price: 478000, unit: 1, value: 478000, change: -3.4 },
-      { date: '2025-09-30', type: 'update', price: 462000, unit: 1, value: 462000, change: -3.3 },
-      { date: '2025-10-31', type: 'update', price: 448000, unit: 1, value: 448000, change: -3.0 },
-      { date: '2025-11-30', type: 'update', price: 435000, unit: 1, value: 435000, change: -2.9 },
-      { date: '2025-12-31', type: 'update', price: 428000, unit: 1, value: 428000, change: -1.6 },
-      { date: '2026-01-31', type: 'update', price: 479950, unit: 1, value: 479950, change: 12.1 }
-    ]
-  }
-])
+const assets = ref([])
 
 const showContextMenu = ref(false)
 const contextMenuType = ref('')
@@ -1365,25 +1177,30 @@ const saveData = () => {
 const loadData = async () => {
   const version = localStorage.getItem('walletDataVersion')
   
+  if (version !== '9') {
+    localStorage.removeItem('walletData')
+    localStorage.removeItem('walletDataVersion')
+  }
+  
   if (currentUser.value) {
     const { data: cloudData, error } = await loadUserData(currentUser.value.id, 'wallet')
     if (!error && cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
       assets.value = cloudData
       localStorage.setItem('walletData', JSON.stringify(cloudData))
+      localStorage.setItem('walletDataVersion', '9')
       return
     }
   }
   
-  if (version === '8') {
-    const saved = localStorage.getItem('walletData')
-    if (saved) {
-      try {
-        const data = JSON.parse(saved)
-        if (Array.isArray(data) && data.length > 0) {
-          assets.value = data
-        }
-      } catch (e) {
+  const saved = localStorage.getItem('walletData')
+  if (saved) {
+    try {
+      const data = JSON.parse(saved)
+      if (Array.isArray(data) && data.length > 0) {
+        assets.value = data
+        localStorage.setItem('walletDataVersion', '9')
       }
+    } catch (e) {
     }
   }
 }
