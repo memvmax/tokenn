@@ -78,24 +78,23 @@
           <div class="th col-currency">CURRENCY</div>
           <div class="th col-value sortable" :class="getSortClass('value')" @click="toggleSort('value')">VALUE</div>
           <div class="th col-profit sortable" :class="getSortClass('profit')" @click="toggleSort('profit')">PROFIT</div>
-          <div class="th col-change sortable" :class="getSortClass('change')" @click="toggleSort('change')">CHANGE</div>
         </div>
         <div class="table-header mobile-header-row">
           <div class="th col-type">
             <span class="header-top">TYPE</span>
-            <span class="header-bottom">SOURCE</span>
+            <span class="header-bottom">ITEM</span>
           </div>
-          <div class="th col-value">
+          <div class="th col-price">
             <span class="header-top">CURRENT</span>
             <span class="header-bottom">BUY</span>
           </div>
-          <div class="th col-amount">
+          <div class="th col-unit">
             <span class="header-top">UNIT</span>
-            <span class="header-bottom">VALUE</span>
+            <span class="header-bottom">CURRENCY</span>
           </div>
-          <div class="th col-profit">
-            <span class="header-top">PROFIT</span>
-            <span class="header-bottom">CHANGE</span>
+          <div class="th col-value">
+            <span class="header-top">VALUE</span>
+            <span class="header-bottom">PROFIT</span>
           </div>
         </div>
         <div class="table-body" v-if="filteredAssets.length > 0">
@@ -119,9 +118,6 @@
               <div class="td col-profit font-numeric" :class="asset.profit >= 0 ? 'positive' : 'negative'">
                 {{ asset.profit >= 0 ? '+' : '' }}{{ formatNumber(asset.profit) }}
               </div>
-              <div class="td col-change font-numeric" :class="asset.change >= 0 ? 'positive' : 'negative'">
-                {{ asset.change >= 0 ? '+' : '' }}{{ formatNumber(asset.change) }}%
-              </div>
             </div>
             <div 
               class="table-row mobile-row"
@@ -136,17 +132,17 @@
                 <span class="cell-top">{{ asset.type.toUpperCase() }}</span>
                 <span class="cell-bottom">{{ asset.source }}</span>
               </div>
-              <div class="td col-value">
+              <div class="td col-price">
                 <span class="cell-top">{{ formatNumber(asset.currentPrice) }}</span>
                 <span class="cell-bottom">{{ formatNumber(asset.buyPrice) }}</span>
               </div>
-              <div class="td col-amount">
+              <div class="td col-unit">
                 <span class="cell-top">{{ asset.unit }}</span>
-                <span class="cell-bottom">{{ formatNumber(asset.value) }}</span>
+                <span class="cell-bottom">{{ asset.currency || 'CNY' }}</span>
               </div>
-              <div class="td col-profit">
-                <span class="cell-top" :class="asset.profit >= 0 ? 'positive' : 'negative'">{{ asset.profit >= 0 ? '+' : '' }}{{ formatNumber(asset.profit) }}</span>
-                <span class="cell-bottom" :class="asset.change >= 0 ? 'positive' : 'negative'">{{ asset.change >= 0 ? '+' : '' }}{{ formatNumber(asset.change) }}%</span>
+              <div class="td col-value">
+                <span class="cell-top">{{ formatNumber(asset.value) }}</span>
+                <span class="cell-bottom" :class="asset.profit >= 0 ? 'positive' : 'negative'">{{ asset.profit >= 0 ? '+' : '' }}{{ formatNumber(asset.profit) }}</span>
               </div>
             </div>
             
@@ -1613,7 +1609,7 @@ defineExpose({
 
 .table-header {
   display: grid;
-  grid-template-columns: 90px 1fr 90px 90px 90px 70px 90px 90px 90px;
+  grid-template-columns: 90px 1fr 90px 90px 90px 90px 90px 90px;
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-light);
 }
@@ -1676,7 +1672,7 @@ defineExpose({
 }
 
 .col-currency {
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 .col-price, .col-unit, .col-value, .col-profit, .col-change {
@@ -1741,7 +1737,7 @@ defineExpose({
 
 .table-row {
   display: grid;
-  grid-template-columns: 90px 1fr 90px 90px 90px 70px 90px 90px 90px;
+  grid-template-columns: 90px 1fr 90px 90px 90px 90px 90px 90px;
   border-bottom: 1px solid var(--border-light);
   transition: background 0.15s ease;
   cursor: pointer;
@@ -2176,11 +2172,11 @@ defineExpose({
   .table-header:not(.mobile-header-row):not(.position-header) {
     display: none !important;
   }
-  
+
   .mobile-only {
     display: block;
   }
-  
+
   .table-header,
   .table-row {
     grid-template-columns: 1fr 90px 90px 90px;
