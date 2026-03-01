@@ -1274,10 +1274,19 @@ const receiveStockSyncData = () => {
     const syncData = JSON.parse(syncDataStr)
     const { date, markets, transactions, isLastDayOfMonth } = syncData
     
+    // 只更新由 InvestView 同步创建的汇总资产（带有 isFromInvest 标记）
+    // 这样不会覆盖用户手动导入的单个股票资产
     const marketAssets = {
-      'A股': assets.value.find(a => a.type === 'stock' && a.source === 'A股'),
-      '港股': assets.value.find(a => a.type === 'stock' && a.source === '港股'),
-      '美股': assets.value.find(a => a.type === 'stock' && a.source === '美股')
+      'A股': assets.value.find(a => a.type === 'stock' && a.source === 'A股' && a.isFromInvest === true),
+      '港股': assets.value.find(a => a.type === 'stock' && a.source === '港股' && a.isFromInvest === true),
+      '美股': assets.value.find(a => a.type === 'stock' && a.source === '美股' && a.isFromInvest === true)
+    }
+    
+    // 如果没有找到任何标记的资产，说明没有启用 Invest 同步，直接返回
+    const hasAnyMarketAsset = Object.values(marketAssets).some(a => a !== undefined)
+    if (!hasAnyMarketAsset) {
+      console.log('No Invest-synced market assets found, skipping sync')
+      return
     }
     
     Object.keys(markets).forEach(market => {
