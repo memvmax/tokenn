@@ -383,13 +383,17 @@
                     <span class="help-label">数量</span>
                     <span class="help-names">数量、unit、Unit</span>
                   </div>
+                  <div class="help-row">
+                    <span class="help-label">货币</span>
+                    <span class="help-names">货币、currency、Currency（CNY/USD/HKD，默认CNY）</span>
+                  </div>
                   <div class="help-row optional">
                     <span class="help-label">日期</span>
                     <span class="help-names">日期、date、Date（格式：2024-01-15）</span>
                   </div>
                 </div>
                 <div v-else class="instruction-text">
-                  必填：类型、来源、操作、价格、数量<br>
+                  必填：类型、来源、操作、价格、数量、货币<br>
                   可选：日期
                 </div>
               </div>
@@ -814,10 +818,11 @@ const confirmImport = () => {
     const action = (row['操作'] || row['action'] || row['Action'] || 'buy').toLowerCase()
     const price = parseNumber(row['价格'] || row['price'] || row['Price'] || 0)
     const unit = parseNumber(row['数量'] || row['unit'] || row['Unit'] || 0)
+    const currency = (row['货币'] || row['currency'] || row['Currency'] || 'CNY').toUpperCase()
     const date = row['日期'] || row['date'] || row['Date'] || new Date().toISOString().split('T')[0]
     
     if (source && price > 0 && unit > 0) {
-      const existingAsset = assets.value.find(a => a.type === type && a.source === source)
+      const existingAsset = assets.value.find(a => a.type === type && a.source === source && a.currency === currency)
       
       if (existingAsset) {
         const value = price * unit
@@ -855,6 +860,7 @@ const confirmImport = () => {
           buyPrice: price,
           currentPrice: price,
           unit: action === 'buy' ? unit : 0,
+          currency,
           value: price * unit,
           profit: 0,
           change: 0,
