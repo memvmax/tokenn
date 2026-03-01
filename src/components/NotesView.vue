@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({
   t: {
@@ -16,6 +16,8 @@ const articlesData = ref([])
 
 const searchQuery = ref('')
 const showAddModal = ref(false)
+const showSearchModal = ref(false)
+const searchBtnRef = ref(null)
 const editingItem = ref(null)
 
 const filteredNotes = computed(() => {
@@ -133,6 +135,22 @@ const getLabel = (key) => {
   const locale = localStorage.getItem('locale') || 'zh-CN'
   return labels[key]?.[locale] || key
 }
+
+const handleClickOutside = (event) => {
+  const dropdown = document.querySelector('.search-dropdown')
+  const searchBtn = document.querySelector('.search-btn-mobile')
+  if (showSearchModal.value && dropdown && !dropdown.contains(event.target) && searchBtn && !searchBtn.contains(event.target)) {
+    showSearchModal.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <template>
@@ -164,11 +182,32 @@ const getLabel = (key) => {
           v-model="searchQuery"
         >
       </div>
+      
+      <button class="search-btn-mobile" ref="searchBtnRef" @click="showSearchModal = true">
+        <i class="fas fa-search"></i>
+      </button>
 
       <button class="add-btn" @click="addItem">
         <i class="fas fa-plus"></i>
         <span>{{ activeTab === 'notes' ? getLabel('addNote') : getLabel('addArticle') }}</span>
       </button>
+      
+      <div v-if="showSearchModal" class="search-dropdown" @click.stop>
+        <div class="search-dropdown-header">
+          <i class="fas fa-search"></i>
+          <input 
+            type="text" 
+            class="search-dropdown-input" 
+            :placeholder="getLabel('searchPlaceholder')"
+            v-model="searchQuery"
+            ref="searchInput"
+            @keyup.enter="showSearchModal = false"
+          >
+          <button class="search-dropdown-close" @click="showSearchModal = false">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="notes-content">
@@ -290,10 +329,10 @@ const getLabel = (key) => {
 
 .notes-tabs {
   display: flex;
-  align-items: center;
   gap: 8px;
   margin-bottom: 16px;
-  flex-wrap: wrap;
+  align-items: center;
+  position: relative;
 }
 
 .tab-btn {
@@ -355,6 +394,26 @@ const getLabel = (key) => {
 
 .search-input::placeholder {
   color: var(--text-muted);
+}
+
+.search-btn-mobile {
+  display: none;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.search-btn-mobile:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .add-btn {
@@ -790,7 +849,7 @@ const getLabel = (key) => {
 
 @media (max-width: 768px) {
   .notes-tabs {
-    flex-wrap: wrap;
+    overflow: visible;
   }
   
   .tab-btn {
@@ -805,9 +864,12 @@ const getLabel = (key) => {
   }
   
   .search-box {
-    order: 3;
-    flex: 1;
-    min-width: 120px;
+    display: none;
+  }
+  
+  .search-btn-mobile {
+    display: flex;
+    margin-left: auto;
   }
   
   .add-btn {
@@ -815,11 +877,66 @@ const getLabel = (key) => {
     height: 36px;
     padding: 0;
     justify-content: center;
-    margin-left: auto;
   }
   
   .add-btn span {
     display: none;
   }
+}
+
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 8px;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.search-dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.search-dropdown-header i {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.search-dropdown-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+}
+
+.search-dropdown-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-dropdown-close {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border: none;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.search-dropdown-close:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 </style>
