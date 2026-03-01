@@ -71,10 +71,11 @@
         <div class="data-table">
         <div class="table-header">
           <div class="th col-type sortable" :class="getSortClass('type')" @click="toggleSort('type')">TYPE</div>
-          <div class="th col-source">SOURCE</div>
+          <div class="th col-source">ITEM</div>
           <div class="th col-price">CURRENT</div>
           <div class="th col-price">BUY</div>
           <div class="th col-unit">UNIT</div>
+          <div class="th col-currency">CURRENCY</div>
           <div class="th col-value sortable" :class="getSortClass('value')" @click="toggleSort('value')">VALUE</div>
           <div class="th col-profit sortable" :class="getSortClass('profit')" @click="toggleSort('profit')">PROFIT</div>
           <div class="th col-change sortable" :class="getSortClass('change')" @click="toggleSort('change')">CHANGE</div>
@@ -113,6 +114,7 @@
               <div class="td col-price font-numeric">{{ formatNumber(asset.currentPrice) }}</div>
               <div class="td col-price font-numeric">{{ formatNumber(asset.buyPrice) }}</div>
               <div class="td col-unit font-numeric">{{ asset.unit }}</div>
+              <div class="td col-currency font-numeric">{{ asset.currency || 'CNY' }}</div>
               <div class="td col-value font-numeric">{{ formatNumber(asset.value) }}</div>
               <div class="td col-profit font-numeric" :class="asset.profit >= 0 ? 'positive' : 'negative'">
                 {{ asset.profit >= 0 ? '+' : '' }}{{ formatNumber(asset.profit) }}
@@ -301,6 +303,14 @@
               </div>
             </div>
             <div class="form-group">
+              <label class="form-label">CURRENCY</label>
+              <select class="form-select" v-model="addForm.currency">
+                <option value="CNY">CNY (人民币)</option>
+                <option value="USD">USD (美元)</option>
+                <option value="EUR">EUR (欧元)</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label class="form-label">DATE</label>
               <input type="date" class="form-input" v-model="addForm.date">
             </div>
@@ -483,12 +493,15 @@ const sortState = ref({ field: null, order: 0 })
 const positionSortState = ref({ field: null, order: 0 })
 const historyContextMenu = ref({ show: false, x: 0, y: 0, asset: null, item: null, index: -1 })
 const longPressTimer = ref(null)
+const exchangeRates = ref({ USD: 7.25, EUR: 7.85, CNY: 1 })
+const displayCurrency = ref('CNY')
 const addForm = ref({ 
   type: 'cash', 
   action: 'buy',
   source: '', 
   price: '', 
   unit: '', 
+  currency: 'CNY',
   date: '' 
 })
 const editingAsset = ref(null)
@@ -572,8 +585,18 @@ const totalSelectedValue = computed(() => {
 })
 
 const totalWalletValue = computed(() => {
-  return assets.value.reduce((sum, asset) => sum + asset.value, 0)
+  return assets.value.reduce((sum, asset) => {
+    const rate = getExchangeRate(asset.currency || 'CNY', displayCurrency.value)
+    return sum + (asset.value || 0) * rate
+  }, 0)
 })
+
+const getExchangeRate = (fromCurrency, toCurrency) => {
+  if (fromCurrency === toCurrency) return 1
+  const fromRate = exchangeRates.value[fromCurrency] || 1
+  const toRate = exchangeRates.value[toCurrency] || 1
+  return toRate / fromRate
+}
 
 const assetAllocation = computed(() => {
   const allocation = {}
@@ -1043,6 +1066,7 @@ const editAsset = () => {
       source: contextMenuData.value.source,
       price: contextMenuData.value.currentPrice.toString(),
       unit: contextMenuData.value.unit.toString(),
+      currency: contextMenuData.value.currency || 'CNY',
       date: new Date().toISOString().split('T')[0]
     }
     showAddModal.value = true
@@ -1084,6 +1108,7 @@ const addItem = () => {
   const source = addForm.value.source.trim()
   const price = parseFloat(addForm.value.price) || 0
   const unit = parseFloat(addForm.value.unit) || 0
+  const currency = addForm.value.currency || 'CNY'
   const date = addForm.value.date || new Date().toISOString().split('T')[0]
 
   if (!source || price <= 0 || unit <= 0) return
@@ -1091,7 +1116,7 @@ const addItem = () => {
   const value = price * unit
 
   const existingAsset = assets.value.find(a => 
-    a.type === type && a.source.toLowerCase() === source.toLowerCase()
+    a.type === type && a.source.toLowerCase() === source.toLowerCase() && a.currency === currency
   )
 
   if (existingAsset) {
@@ -1129,6 +1154,7 @@ const addItem = () => {
         currentPrice: price,
         buyPrice: price,
         unit,
+        currency,
         value,
         profit: 0,
         change: 0,
@@ -1587,7 +1613,7 @@ defineExpose({
 
 .table-header {
   display: grid;
-  grid-template-columns: 90px 1fr 90px 90px 90px 90px 90px 90px;
+  grid-template-columns: 90px 1fr 90px 90px 90px 70px 90px 90px 90px;
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-light);
 }
@@ -1647,6 +1673,10 @@ defineExpose({
 
 .col-type, .col-source {
   justify-content: flex-start;
+}
+
+.col-currency {
+  justify-content: center;
 }
 
 .col-price, .col-unit, .col-value, .col-profit, .col-change {
@@ -1711,7 +1741,7 @@ defineExpose({
 
 .table-row {
   display: grid;
-  grid-template-columns: 90px 1fr 90px 90px 90px 90px 90px 90px;
+  grid-template-columns: 90px 1fr 90px 90px 90px 70px 90px 90px 90px;
   border-bottom: 1px solid var(--border-light);
   transition: background 0.15s ease;
   cursor: pointer;
