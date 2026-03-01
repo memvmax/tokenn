@@ -207,13 +207,6 @@
           </template>
         </div>
       </div>
-
-      <div class="section-summary" v-if="filteredAssets.length > 0">
-        <div class="summary-row">
-          <span class="summary-label">TOTAL SELECTED</span>
-          <span class="summary-value font-numeric">{{ formatNumber(totalSelectedValue) }} CNY</span>
-        </div>
-      </div>
       </div>
 
       <div v-if="activeTab === 'position'" class="position-section">
@@ -223,13 +216,13 @@
         
         <div class="data-table">
           <div class="table-header position-header">
-            <div class="th col-type">TYPE</div>
-            <div class="th col-percent">CURRENT</div>
+            <div class="th col-type sortable" :class="getPositionSortClass('type')" @click="togglePositionSort('type')">TYPE</div>
+            <div class="th col-percent sortable" :class="getPositionSortClass('currentPercent')" @click="togglePositionSort('currentPercent')">CURRENT</div>
             <div class="th col-percent">TARGET</div>
             <div class="th col-diff">DEVIATION</div>
           </div>
           <div class="table-body">
-            <template v-for="item in assetAllocation" :key="item.type">
+            <template v-for="item in sortedAssetAllocation" :key="item.type">
               <div 
                 class="table-row position-row"
                 :class="{ selected: selectedPositionType === item.type }"
@@ -258,13 +251,6 @@
                 </div>
               </div>
             </template>
-          </div>
-        </div>
-        
-        <div class="section-summary">
-          <div class="summary-row">
-            <span class="summary-label">TOTAL VALUE</span>
-            <span class="summary-value font-numeric">{{ formatNumber(totalWalletValue) }} CNY</span>
           </div>
         </div>
       </div>
@@ -492,6 +478,7 @@ const importFile = ref(null)
 const importData = ref([])
 const importStep = ref(1)
 const sortState = ref({ field: null, order: 0 })
+const positionSortState = ref({ field: null, order: 0 })
 const historyContextMenu = ref({ show: false, x: 0, y: 0, asset: null, item: null, index: -1 })
 const longPressTimer = ref(null)
 const addForm = ref({ 
@@ -626,6 +613,57 @@ const assetAllocation = computed(() => {
   
   return result.sort((a, b) => Math.abs(b.deviation) - Math.abs(a.deviation))
 })
+
+const sortedAssetAllocation = computed(() => {
+  const data = [...assetAllocation.value]
+  const { field, order } = positionSortState.value
+  
+  if (!field || order === 0) {
+    return data.sort((a, b) => Math.abs(b.deviation) - Math.abs(a.deviation))
+  }
+  
+  return data.sort((a, b) => {
+    let aVal, bVal
+    
+    if (field === 'type') {
+      aVal = a.name
+      bVal = b.name
+    } else if (field === 'currentPercent') {
+      aVal = a.currentPercent
+      bVal = b.currentPercent
+    } else {
+      return 0
+    }
+    
+    if (typeof aVal === 'string') {
+      const cmp = aVal.localeCompare(bVal)
+      return order === 1 ? -cmp : cmp
+    } else {
+      return order === 1 ? bVal - aVal : aVal - bVal
+    }
+  })
+})
+
+const togglePositionSort = (field) => {
+  if (positionSortState.value.field === field) {
+    if (positionSortState.value.order === 0) {
+      positionSortState.value = { field, order: 1 }
+    } else if (positionSortState.value.order === 1) {
+      positionSortState.value = { field, order: 2 }
+    } else {
+      positionSortState.value = { field: null, order: 0 }
+    }
+  } else {
+    positionSortState.value = { field, order: 1 }
+  }
+}
+
+const getPositionSortClass = (field) => {
+  if (positionSortState.value.field === field) {
+    return positionSortState.value.order === 1 ? 'sort-desc' : positionSortState.value.order === 2 ? 'sort-asc' : ''
+  }
+  return ''
+}
 
 const formatNumber = (value) => {
   if (!value && value !== 0) return '0.00'
