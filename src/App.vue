@@ -39,6 +39,10 @@
           <NotesView :t="t" />
         </template>
 
+        <template v-else-if="currentView === 'pixel'">
+          <PixelAgentView />
+        </template>
+
         <NewsFeed :t="t" v-show="false" />
       </main>
 
@@ -65,6 +69,7 @@ import AuthModal from './components/AuthModal.vue';
 import InvestView from './components/InvestView.vue';
 import NotesView from './components/NotesView.vue';
 import WalletView from './components/WalletView.vue';
+import PixelAgentView from './components/PixelAgentView.vue';
 import { useLocale } from './composables/useLocale';
 import { useSupabase } from './lib/useSupabase';
 import { useDataStorage } from './composables/useDataStorage';
